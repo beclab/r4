@@ -1,0 +1,59 @@
+---
+version: '4'
+services:
+  document-db:
+    image: mongo:6.0.4
+    container_name: wise-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_DATABASE: document
+    ports:
+      - '27017:27017'
+    volumes:
+      - ${CREATE_USER_JS}:/docker-entrypoint-initdb.d/001_users.js:ro
+      # - ./data:/data/db
+    restart: always
+
+  redis:
+    image: docker.io/bitnami/redis:6.2.6
+    container_name: terminus_recommend_redis
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - REDIS_PASSWORD=terminusrecommendredis123
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    ports:
+      - '6381:6379'
+    volumes:
+      - ${REDIS_HOST_DATA_DIRECTORY}:/bitnami/redis/data
+    command: /opt/bitnami/scripts/redis/run.sh --maxmemory 512MB
+
+  knowledge_base_api:
+    image: aboveos/knowledge-base-api:v0.1.18 
+    container_name: knowledge_base_api_server
+    network_mode: host
+    environment:
+      MONGO_URL: ${MONGO_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      REDIS_ADDR: ${REDIS_ADDR}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - '3010:3010'
+    depends_on:
+      - document-db
+      - rss_backend
+
+  
+  rss_backend:
+    image: aboveos/rss-backend-v2
+    container_name: rss_backend_v2
+    network_mode: host
+    environment:
+      MONGODB_NAME: ${MONGODB_NAME}
+      MONGODB_FEED_COLL: ${MONGODB_FEED_COLL}
+      MONGODB_ENTRY_COLL: ${MONGODB_ENTRY_COLL}
+      LISTEN_ADDR: ${LISTEN_ADDR}
+    ports:
+      - '8080:8080'
+    depends_on:
+      - document-db

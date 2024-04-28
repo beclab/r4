@@ -1,0 +1,27 @@
+syntax="proto3";
+
+package protobuf_entity;
+
+option go_package = "/protobuf_entity";
+
+message Entry {
+    string entry_id=1;
+    string url=2;
+    sint64 created_at=3;
+    sint64 published_at=4;
+    string title=5;
+    string author=6;
+    string feed_id=7;
+    string feed_url=8;
+    string image_url=9;
+    repeated string keyword_list=10;
+    string language=11;
+    bool  embedding_method_all_MiniLM_L6_v2_base=12;
+    repeated float embedding_content_all_MiniLM_L6_v2_base=13;
+    float recall_point=14;
+    int64 published_at_timestamp=15;
+}
+
+message ListEntry {
+    repeated Entry entries=1;
+}

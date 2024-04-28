@@ -1,0 +1,16 @@
+FROM golang:alpine AS build
+
+RUN mkdir /extractorBuild
+COPY prerank-stages  /extractorBuild/prerank-stages
+
+WORKDIR /extractorBuild/prerank-stages
+RUN go mod download
+
+
+RUN cd /extractorBuild/prerank-stages/extractor/ && \
+    go build -o extractor_cmd  -ldflags="-s -w " main.go 
+
+FROM alpine:latest
+COPY --from=build /extractorBuild/prerank-stages/extractor/extractor_cmd /usr/bin/extractor_cmd
+
+ENTRYPOINT ["/usr/bin/extractor_cmd"]

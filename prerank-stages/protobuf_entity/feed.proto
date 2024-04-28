@@ -1,0 +1,56 @@
+syntax="proto3";
+
+package protobuf_entity;
+
+option go_package = "/protobuf_entity";
+
+
+message Feed {
+    string feed_id=1;
+    string feed_url=2;
+    string site_url=3;
+    string title=4;
+    string description=5;
+    string language=6;
+    string  icon_content=7;
+    int32 status=8;
+    int64 reading=9;
+    int64 likes=10;
+    int64 followers=11;
+    int64 last_modify_time=12;
+    string icon_type=13;
+}
+message ListFeed {
+    repeated Feed feeds=1;
+}
+
+message FeedNameOperation {
+    string id = 1 ;
+    string action = 2;
+    int64 time =3;
+    string data = 4; 
+}
+
+message FeedOperation {
+    string id = 1;
+    string action=2; 
+    int64 time=3;
+    string data=4;
+    string feed_id=5;
+}
+
+message FeedIncremntPackage {
+    string provider=1;
+    string feed_name=2;
+    int64 from_time=3;
+    int64 end_time=4;
+    int64 interval=5;
+    repeated FeedOperation feed_operations=6;
+    repeated FeedNameOperation feed_name_operations=7;
+}
+
+message FeedAllPackage {
+    string provider=1;
+    string feed_name=2;
+    repeated Feed feeds=3; 
+ }

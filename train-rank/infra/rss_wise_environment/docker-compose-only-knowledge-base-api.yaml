@@ -1,0 +1,15 @@
+---
+version: '4'
+services:
+
+  knowledge_base_api:
+    image: aboveos/knowledge-base-api 
+    container_name: knowledge_base_api_server
+    network_mode: host
+    environment:
+      MONGO_URL: ${MONGO_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      REDIS_ADDR: ${REDIS_ADDR}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - '3010:3010'

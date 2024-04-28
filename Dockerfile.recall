@@ -1,0 +1,16 @@
+FROM golang:alpine AS build
+
+RUN mkdir /recallBuild
+COPY prerank-stages  /recallBuild/prerank-stages
+
+WORKDIR /recallBuild/prerank-stages
+RUN go mod download
+
+
+RUN cd /recallBuild/prerank-stages/recall/ && \
+    go build -o recall_cmd  -ldflags="-s -w " main.go 
+
+FROM alpine:latest
+COPY --from=build /recallBuild/prerank-stages/recall/recall_cmd /usr/bin/recall_cmd
+COPY prerank-stages/config/  /usr/config/ 
+ENTRYPOINT ["/usr/bin/recall_cmd"]

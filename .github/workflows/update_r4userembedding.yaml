@@ -1,0 +1,31 @@
+name: Update R4 User Embedding
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - "main"
+    tags:
+      - "v*"
+
+jobs:
+  update_sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASS }}
+      - name: get latest tag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        id: get-latest-tag
+        with:
+          fallback: latest
+      - name: Build the docker Docker image
+        run: |
+          docker build . -f Dockerfile.r4userembedding --tag beclab/r4userembedding:${{ steps.get-latest-tag.outputs.tag }}
+          docker push beclab/r4userembedding:${{ steps.get-latest-tag.outputs.tag }}

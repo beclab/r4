@@ -1,0 +1,34 @@
+name: Update Prerank
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - "main"
+    tags:
+      - "v*"
+
+jobs:
+  update_prerank:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.18.3
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASS }}
+      - name: get latest tag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        id: get-latest-tag
+        with:
+          fallback: latest
+      - name: Build the docker Docker image
+        run: |
+          docker build . -f Dockerfile.prerank --tag beclab/r4prerank:${{ steps.get-latest-tag.outputs.tag }}
+          docker push beclab/r4prerank:${{ steps.get-latest-tag.outputs.tag }}

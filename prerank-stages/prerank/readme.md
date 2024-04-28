@@ -1,0 +1,15 @@
+
+## set necessary directory
+```
+export TERMINUS_RECOMMEND_REDIS_ADDR="127.0.0.1:6379"
+export TERMINUS_RECOMMEND_REDIS_PASSOWRD="123456"
+export NFS_ROOT_DIRECTORY="/nfs"
+export JUICEFS_ROOT_DIRECTORY="/juicefs"
+
+export ENTRY_MONGO_GET_API_URL="http://localhost:3010/knowledge/entry/algorithm/"
+export ENTRY_MONGO_UPDATE_API_URL="http://localhost:3010/knowledge/entry/"
+export ALGORITH_MONGO_API_URL="http://localhost:3010/knowledge/algorithm/"
+
+docker run  --name  prerank  -v /tmp/data/nfs:/nfs -v /tmp/data/juicefs:/juicefs -e TERMINUS_RECOMMEND_REDIS_ADDR=$TERMINUS_RECOMMEND_REDIS_ADDR  -e TERMINUS_RECOMMEND_REDIS_PASSOWRD=$TERMINUS_RECOMMEND_REDIS_PASSOWRD -e NFS_ROOT_DIRECTORY=$NFS_ROOT_DIRECTORY -e JUICEFS_ROOT_DIRECTORY=$JUICEFS_ROOT_DIRECTORY  -e ENTRY_MONGO_GET_API_URL=$ENTRY_MONGO_GET_API_URL -e ENTRY_MONGO_UPDATE_API_URL=$ENTRY_MONGO_UPDATE_API_URL  -e ALGORITH_MONGO_API_URL=$ALGORITH_MONGO_API_URL --net=host -d  aboveos/rss-prerank
+
+```
