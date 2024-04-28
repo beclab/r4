@@ -91,6 +91,7 @@ func entriesSaveToMongo(currentList []*model.EntryModel) {
 			if len(addList) >= 100 {
 				api.AddEntriesInMongo(addList)
 				addList = make([]*model.EntryModel, 0)
+				time.Sleep(time.Second * 5)
 			}
 		} else {
 			delete(existEntriesMap, currentEntry.Url)

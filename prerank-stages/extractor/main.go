@@ -80,6 +80,7 @@ func main() {
 				common.Logger.Info("get unextract data ", zap.Int("page", i))
 				extractData = api.GetUnextractedData(limit)
 			}
+			time.Sleep(time.Second * 5)
 		}
 	}
 	api.SetRedisConfig(source, "last_extractor_time", startTimestamp)
