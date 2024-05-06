@@ -115,7 +115,8 @@ func UpdateEntryAlgorith(addAlgorithmList []*model.AlgorithmAddModel) {
 }
 func DelEntriesInMongo(list []string) {
 	if len(list) > 0 {
-		jsonByte, _ := json.Marshal(list)
+		reqData := model.EntryDelModel{EntryUrls: list}
+		jsonByte, _ := json.Marshal(reqData)
 		url := common.EntryMonogoEntryApiUrl() + common.GetAlgorithmSource()
 		request, _ := http.NewRequest("DELETE", url, bytes.NewBuffer(jsonByte))
 		request.Header.Set("Content-Type", "application/json")

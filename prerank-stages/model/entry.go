@@ -47,6 +47,10 @@ type EntryAddModel struct {
 	FullContent string `json:"full_content,omitempty"`
 }
 
+type EntryDelModel struct {
+	EntryUrls []string `json:"entry_urls"`
+}
+
 type EntryAddResponseModel struct {
 	ID     string `json:"_id,omitempty" `
 	Source string `json:"source"`
