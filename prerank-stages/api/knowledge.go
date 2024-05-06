@@ -15,31 +15,30 @@ import (
 	"go.uber.org/zap"
 )
 
-func LoadEntriesInMongo() map[string]int {
+func LoadEntriesInMongo() (map[string]int, error) {
 	existEntryList := make(map[string]int, 0)
 	url := common.EntryAlgorithmMonogoApiUrl() + common.GetAlgorithmSource()
-	client := &http.Client{Timeout: time.Second * 5}
+	client := &http.Client{Timeout: time.Second * 30}
 	res, err := client.Get(url)
 	if err != nil {
 		common.Logger.Error("get entry data  fail", zap.Error(err))
-		return existEntryList
+		return existEntryList, err
 	}
 	if res.StatusCode != 200 {
 		common.Logger.Error("get entry data fail code")
-		return existEntryList
 	}
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
 
 	var resObj model.KnowledgeApiResponseModel
 	if err := json.Unmarshal(body, &resObj); err != nil {
-		log.Print("json decode failed, err", err)
-		return existEntryList
+		common.Logger.Error("json decode failed, err", zap.Error(err))
+		return existEntryList, err
 	}
 	for _, jsonObj := range resObj.Data {
 		existEntryList[jsonObj] = 1
 	}
-	return existEntryList
+	return existEntryList, nil
 
 }
 
@@ -54,7 +53,7 @@ func AddEntriesInMongo(list []*model.EntryModel) {
 		url := common.EntryMonogoEntryApiUrl()
 		request, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonByte))
 		request.Header.Set("Content-Type", "application/json")
-		client := &http.Client{Timeout: time.Second * 5}
+		client := &http.Client{Timeout: time.Second * 10}
 		response, err := client.Do(request)
 		if err != nil {
 			common.Logger.Error("add entry in mongo  fail", zap.Error(err))
@@ -120,7 +119,7 @@ func DelEntriesInMongo(list []string) {
 		url := common.EntryMonogoEntryApiUrl() + common.GetAlgorithmSource()
 		request, _ := http.NewRequest("DELETE", url, bytes.NewBuffer(jsonByte))
 		request.Header.Set("Content-Type", "application/json")
-		client := &http.Client{Timeout: time.Second * 5}
+		client := &http.Client{Timeout: time.Second * 30}
 		_, err := client.Do(request)
 
 		defer request.Body.Close()

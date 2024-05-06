@@ -78,7 +78,11 @@ func entryPrerankCal(language string, maxNum int, startTimestamp int64, userEmbe
 
 func entriesSaveToMongo(currentList []*model.EntryModel) {
 
-	existEntriesMap := api.LoadEntriesInMongo()
+	existEntriesMap, loadError := api.LoadEntriesInMongo()
+	if loadError != nil {
+		common.Logger.Info("add entry to mongo error,failed save")
+		return
+	}
 	common.Logger.Info("load entry in mongo..", zap.Int("len", len(existEntriesMap)))
 	common.Logger.Info("prerank save ..", zap.Int("len", len(currentList)))
 	addCnt := 1
