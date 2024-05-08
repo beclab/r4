@@ -50,7 +50,8 @@ func main() {
 				if rank.RawContent == "" {
 					continue
 				}
-				fullContent, pureContent, _, _, _, _, _, _ := processor.ArticleReadabilityExtractor(rank.RawContent, rank.Url, "", "", true)
+				//fullContent, pureContent, _, _, _, _, _, _ := processor.ArticleReadabilityExtractor(rank.RawContent, rank.Url, "", "", true)
+				fullContent, pureContent := processor.ArticleContentExtractor(rank.RawContent, rank.Url, "", "")
 				var contentLen int
 				if rank.Language != "zh-cn" {
 					contentArr := strings.Split(pureContent, " ")
