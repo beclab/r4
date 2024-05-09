@@ -163,6 +163,11 @@ void rankPredict() {
       knowledgebase::getLastExtractorTime(std::string(source_name));
   LOG(DEBUG) << knowledgebase::LAST_EXTRACTOR_TIME << last_extractor_time
              << std::endl;
+  if (last_extractor_time == -1) {
+    LOG(DEBUG) << "last_extractor_time is  " << last_extractor_time
+               << " mean extractor not executed" << std::endl;
+    return;
+  }
 
   if (last_rank_time != -1 && last_extractor_time != -1 &&
       last_rank_time > last_extractor_time) {
