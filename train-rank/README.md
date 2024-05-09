@@ -22,7 +22,7 @@ bash build.sh
 # Start Develop Environment
 C++ development environment is complex, so we develop in a container.
 ```bash
-host_code_directory="/home/ubuntu/recommend-bytetrade-algorithm/train-rank"
+export host_code_directory="/home/ubuntu/r4/train-rank"
 docker run --name temp_rank_develop -v $host_code_directory:/opt/rss-termius-v2-rank --net=host -d beclab/rank_develop
 ```
 
