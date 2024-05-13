@@ -278,7 +278,7 @@ std::optional<Algorithm> convertFromWebJsonValueToAlgorithm(
     }
 
     if (current_algorithm_extra.has_double_field(
-            ALGORITHM_MONGO_FIELD_PRERANK_SCORE)) {
+            ALGORITHM_MONGO_FIELD_PRERANK_SCORE) || current_algorithm_extra.has_integer_field(ALGORITHM_MONGO_FIELD_PRERANK_SCORE)) {
       temp_algorithm.prerank_score = std::make_optional(
           current_algorithm_extra.at(ALGORITHM_MONGO_FIELD_PRERANK_SCORE)
               .as_double());
@@ -312,7 +312,7 @@ std::optional<Algorithm> convertFromWebJsonValueToAlgorithm(
                << ALGORITHM_MONGO_FIELD_IMPRESSION << std::endl;
   }
 
-  if (current_item.has_double_field(ALGORITHM_MONGO_FIELD_SCORE)) {
+  if (current_item.has_double_field(ALGORITHM_MONGO_FIELD_SCORE)||current_item.has_integer_field(ALGORITHM_MONGO_FIELD_SCORE)) {
     temp_algorithm.score =
         current_item.at(ALGORITHM_MONGO_FIELD_SCORE).as_double();
   } else {

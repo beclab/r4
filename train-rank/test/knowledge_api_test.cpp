@@ -132,7 +132,7 @@ TEST(KnowledgeApiTest, TestGetAlgorithmAccordingRanked) {
   init_log();
   std::vector<Algorithm> algorithm_list;
   int count;
-  knowledgebase::getAlgorithmAccordingRanked(10, 10, "bert_v2", true,
+  knowledgebase::getAlgorithmAccordingRanked(0, 10, "worldnews", false,
                                              &algorithm_list, &count);
   std::cout << algorithm_list.size() << " " << count << std::endl;
   if (algorithm_list.size() > 0) {
@@ -148,7 +148,7 @@ TEST(KnowledgeApiTest, TestGetAllAlgorithmAccordingRanked) {
   init_log();
   std::vector<Algorithm> algorithm_list;
   int count;
-  knowledgebase::getAllAlgorithmAccordingRanked("bert_v2", &algorithm_list,
+  knowledgebase::getAllAlgorithmAccordingRanked("worldnews", &algorithm_list,
                                                 true, &count);
   std::unordered_set<std::string> algorithm_id_set;
 
