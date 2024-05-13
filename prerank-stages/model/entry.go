@@ -138,7 +138,7 @@ func GetEntryAddModel(entryModel *EntryModel) *EntryAddModel {
 	result.KeywordList = entryModel.KeywordList
 	result.Language = entryModel.Language
 	result.Source = common.GetAlgorithmSource()
-	result.Crawler = false
+	//result.Crawler = false
 	result.Extract = false
 	result.Readlater = false
 	result.Starred = false
