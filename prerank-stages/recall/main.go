@@ -199,7 +199,7 @@ func main() {
 	lastRecallTime, _ := strconv.ParseInt(lastRecallTimeStr, 10, 64)
 	lastRecallExecTimeStr, _ := api.GetRedisConfig(source, "last_recall_exec_time").(string)
 	lastRecallExecTime, _ := strconv.ParseInt(lastRecallExecTimeStr, 10, 64)
-	if lastRecallExecTimeStr != "" && startTimestamp < lastRecallExecTime+10*60 {
+	if lastRecallExecTimeStr != "" && startTimestamp < lastRecallExecTime+60*60 {
 		common.Logger.Info("recall is end no execute", zap.String("source:", source), zap.String("last recall exec time:", lastRecallExecTimeStr), zap.Int64("now time:", startTimestamp))
 		return
 	}
