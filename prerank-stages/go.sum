@@ -2,8 +2,8 @@ github.com/PuerkitoBio/goquery v1.9.1 h1:mTL6XjbJTZdpfL+Gwl5U2h1l9yEkJjhmlTeV9VP
 github.com/PuerkitoBio/goquery v1.9.1/go.mod h1:cW1n6TmIMDoORQU5IU/P1T3tGFunOeXEpGP2WHRwkbY=
 github.com/andybalholm/cascadia v1.3.2 h1:3Xi6Dw5lHF15JtdcmAHD3i1+T8plmv7BQ/nsViSLyss=
 github.com/andybalholm/cascadia v1.3.2/go.mod h1:7gtRlve5FxPPgIgX36uWBX58OdBsSS6lUvCFb+h7KvU=
-github.com/beclab/article-extractor v0.0.5 h1:9CQIzS7Rj3qz03jvhXHbzv46PrbkUpgEnIPx40Xtpao=
-github.com/beclab/article-extractor v0.0.5/go.mod h1:ih8W3OrtbD586xkigBhfrKWD1GDFXEEbow3uVZ6U/bI=
+github.com/beclab/article-extractor v0.0.10 h1:G2mwPUNC67pBzV5QGlFWXqf2JPmX/yncSiXNiFoN/VE=
+github.com/beclab/article-extractor v0.0.10/go.mod h1:ih8W3OrtbD586xkigBhfrKWD1GDFXEEbow3uVZ6U/bI=
 github.com/bsm/ginkgo/v2 v2.12.0 h1:Ny8MWAHyOepLGlLKYmXG4IEkioBysk6GpaRTLC8zwWs=
 github.com/bsm/gomega v1.27.10 h1:yeMWxP2pV2fG3FgAODIY8EiRE3dy0aeFYt4l7wh6yKA=
 github.com/cespare/xxhash/v2 v2.2.0 h1:DC2CZ1Ep5Y4k3ZQ899DldepgrayRUGE6BBZ/cd9Cj44=
