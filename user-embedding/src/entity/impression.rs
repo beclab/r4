@@ -1,4 +1,4 @@
-pub const MONGO_ID: &str = "_id";
+pub const MONGO_ID: &str = "id";
 pub const MONGO_ENTRY_ID: &str = "entry_id";
 pub const MONGO_SOURCE: &str = "source";
 pub const MONGO_BATCH_ID: &str = "batch_id";
