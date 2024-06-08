@@ -4,7 +4,7 @@
 #include <vector>
 #include <optional>
 
-static const char ALGORITHM_MONGO_FIELD_ID[] = "_id";
+static const char ALGORITHM_MONGO_FIELD_ID[] = "id";
 static const char ALGORITHM_MONGO_FIELD_ENTRY[] = "entry";
 static const char ALGORITHM_MONGO_FIELD_SOURCE[] = "source";
 static const char ALGORITHM_MONGO_FIELD_SCORE[] = "score";

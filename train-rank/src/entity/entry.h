@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-static const char ENTRY_ID[] = "_id";
+static const char ENTRY_ID[] = "id";
 static const char ENTRY_FILE_TYPE[] = "file_type";
 static const char ENTRY_READ_LATER[] = "readlater";
 static const char ENTRY_CRAWLER[] = "crawler";
