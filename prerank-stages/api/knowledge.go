@@ -69,10 +69,12 @@ func AddEntriesInMongo(list []*model.EntryModel) {
 		if resObj.Code == 0 {
 			resEntryMap := make(map[string]string, 0)
 			for _, resDataDetail := range resObj.Data {
+				common.Logger.Info("response entry direct",zap.String("url",resDataDetail.Url),zap.String("id",resDataDetail.ID),zap.String("source",resDataDetail.Source))
 				resEntryMap[resDataDetail.Url] = resDataDetail.ID
 			}
 			addAlgorithmList := make([]*model.AlgorithmAddModel, 0)
 			for _, entryModel := range list {
+				common.Logger.Info("construct add algorithm",zap.String("url",entryModel.Url),zap.String("id", resEntryMap[entryModel.Url]))
 				algoModel := model.GetAddAlgorithmModel(resEntryMap[entryModel.Url], entryModel.RecallPoint, entryModel.PrerankPoint, entryModel.Embedding)
 				addAlgorithmList = append(addAlgorithmList, algoModel)
 			}
@@ -87,6 +89,9 @@ func AddEntriesInMongo(list []*model.EntryModel) {
 
 func UpdateEntryAlgorith(addAlgorithmList []*model.AlgorithmAddModel) {
 	if len(addAlgorithmList) > 0 {
+		for _,currentAlgorithm := range addAlgorithmList {
+			common.Logger.Info("current_algorithm",zap.String("source",currentAlgorithm.Source),zap.String("entry_id",currentAlgorithm.Entry))
+		}
 		algoUrl := common.AlgorithMonogoApiUrl()
 		algoJsonByte, err := json.Marshal(addAlgorithmList)
 		if err != nil {
