@@ -52,7 +52,7 @@ type EntryDelModel struct {
 }
 
 type EntryAddResponseModel struct {
-	ID     string `json:"_id,omitempty" `
+	ID     string `json:"id,omitempty" `
 	Source string `json:"source"`
 	Url    string `json:"url"`
 }

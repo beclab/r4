@@ -15,8 +15,8 @@ bash build.sh
 
 # Develop Environment
 ```bash
-host_code_directory="/home/ubuntu/recommend-bytetrade-algorithm/user-embedding"
-host_hugging_face_directory="/home/ubuntu/huggingface"
+export host_code_directory="/home/ubuntu/r4/user-embedding"
+export host_hugging_face_directory="/home/ubuntu/huggingface"
 docker run --name temp_userembedding_develop -v $host_code_directory:/opt/rss-termius-v2-userembedding -v $host_hugging_face_directory:/root/.cache/huggingface --net=host -d beclab/userembedding_develop
 ```
 Use VSCode to open the user-embedding directory, then attach to the `temp_userembedding_develop` container.

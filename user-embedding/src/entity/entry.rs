@@ -1,4 +1,4 @@
-pub const MONGO_ID: &str = "_id";
+pub const MONGO_ID: &str = "id";
 pub const MONGO_FEED_ID: &str = "feed";
 pub const MONGO_STATUS: &str = "status";
 pub const MONGO_TITLE: &str = "title";
