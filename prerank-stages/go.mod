@@ -3,7 +3,7 @@ module bytetrade.io/web3os/prerank_stages
 go 1.20
 
 require (
-	github.com/beclab/article-extractor v0.0.10
+	github.com/beclab/article-extractor v0.0.13
 	github.com/redis/go-redis/v9 v9.5.1
 	go.mongodb.org/mongo-driver v1.15.0
 	go.uber.org/zap v1.27.0
