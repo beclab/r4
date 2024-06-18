@@ -2,12 +2,9 @@ name: Update Recall
 
 on:
   workflow_dispatch:
-
-  push:
-    branches:
-      - "main"
-    tags:
-      - "v*"
+    inputs:
+      tags:
+        description: 'Release Tags'
 
 jobs:
   update_recall:
@@ -15,20 +12,22 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
-      - uses: actions/setup-go@v2
-        with:
-          go-version: 1.18.3
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASS }}
-      - name: get latest tag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
-        id: get-latest-tag
+      
+      - name: Build and push Docker image 
+        uses: docker/build-push-action@v3
         with:
-          fallback: latest
-      - name: Build the docker Docker image
-        run: |
-          docker build . -f Dockerfile.recall --tag beclab/r4recall:${{ steps.get-latest-tag.outputs.tag }}
-          docker push beclab/r4recall:${{ steps.get-latest-tag.outputs.tag }}
+            push: true
+            tags: beclab/r4recall:${{ github.event.inputs.tags }}
+            file: Dockerfile.recall
+            platforms: linux/arm64
