@@ -1,28 +1,30 @@
 name: Update Train
 
 on:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
   workflow_dispatch:
     inputs:
       tags:
         description: 'Release Tags'
-      target-platform:
-        description: 'Target Platform'
         required: true
-        default: 'amd64'
 
 jobs:
-  update_train:
+  build_and_push_amd64:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
-      
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
@@ -30,19 +32,52 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASS }}
 
       - name: Build and push Docker image for amd64
-        if: ${{ github.event.inputs['target-platform'] == 'amd64' }}
         uses: docker/build-push-action@v3
         with:
             push: true
-            tags: beclab/r4train:${{ github.event.inputs.tags }}
+            tags: beclab/r4train:${{ github.ref_name }}-amd64
             file: Dockerfile.r4train.amd64
             platforms: linux/amd64
 
+  build_and_push_arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASS }}
+
       - name: Build and push Docker image for arm64
-        if: ${{ github.event.inputs['target-platform'] == 'arm64' }}
         uses: docker/build-push-action@v3
         with:
             push: true
-            tags: beclab/r4train:${{ github.event.inputs.tags }}
+            tags: beclab/r4train:${{ github.ref_name }}-arm64
             file: Dockerfile.r4train.arm64
             platforms: linux/arm64
+
+  create_and_push_manifest:
+    runs-on: ubuntu-latest
+    needs: [build_and_push_amd64, build_and_push_arm64]
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASS }}
+
+      - name: Create and push manifest
+        run: |
+          docker manifest create beclab/r4train:${{ github.ref_name }} \
+            beclab/r4train:${{ github.ref_name }}-amd64 \
+            beclab/r4train:${{ github.ref_name }}-arm64
+          docker manifest push beclab/r4train:${{ github.ref_name }}
