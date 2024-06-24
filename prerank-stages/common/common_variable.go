@@ -163,6 +163,11 @@ func RecallFilePath(source, language string) string {
 	return path
 }
 
+func GetArticleTemplatePluginsPath() string {
+	path := filepath.Join(JUICEFSRootDirectory(), "template_plugins", "plugins.so")
+	return path
+}
+
 func ParseInt(value string, defaultV int) int {
 	if value == "" {
 		return defaultV

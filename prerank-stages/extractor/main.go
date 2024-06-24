@@ -7,7 +7,7 @@ import (
 
 	"bytetrade.io/web3os/prerank_stages/common"
 	"bytetrade.io/web3os/prerank_stages/model"
-	"github.com/beclab/article-extractor/processor"
+	"github.com/Above-Os/article-dynamic-extractor/processor"
 
 	"bytetrade.io/web3os/prerank_stages/api"
 
@@ -40,6 +40,8 @@ func main() {
 		return
 	}
 	limit := 50
+	pluginsPath := common.GetArticleTemplatePluginsPath()
+	common.Logger.Info("plugins path", zap.String("url", pluginsPath))
 	extractData := api.GetUnextractedData(limit)
 	sum := extractData.Count
 	if sum > 0 {
@@ -51,7 +53,7 @@ func main() {
 					continue
 				}
 				//fullContent, pureContent, _, _, _, _, _, _ := processor.ArticleReadabilityExtractor(rank.RawContent, rank.Url, "", "", true)
-				fullContent, pureContent := processor.ArticleContentExtractor(rank.RawContent, rank.Url, "", "")
+				fullContent, pureContent := processor.ArticleContentExtractor(pluginsPath, rank.RawContent, rank.Url, "", "")
 				var contentLen int
 				if rank.Language != "zh-cn" {
 					contentArr := strings.Split(pureContent, " ")
