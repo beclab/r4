@@ -96,21 +96,28 @@ RUN cd /opt/rss-terminus-v2-rank && \
     cd /opt && \
     rm -r rss-termius-v2-rank
 
-RUN if [ -f /usr/lib/x86_64-linux-gnu/libgomp.so.1 ]; then cp /usr/lib/x86_64-linux-gnu/libgomp.so.1 /usr/local/lib/; fi && \
-    if [ -f /usr/lib/x86_64-linux-gnu/libcpprest.so.2.10 ]; then cp /usr/lib/x86_64-linux-gnu/libcpprest.so.2.10 /usr/local/lib/; fi && \
-    if [ -f /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1 ]; then cp /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1 /usr/local/lib/; fi && \
-    if [ -f /usr/lib/x86_64-linux-gnu/libbrotlienc.so.1 ]; then cp /usr/lib/x86_64-linux-gnu/libbrotlienc.so.1 /usr/local/lib/; fi && \
-    if [ -f /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1 ]; then cp /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1 /usr/local/lib/; fi && \
-    if [ -f /usr/lib/x86_64-linux-gnu/libicuuc.so.70 ]; then cp /usr/lib/x86_64-linux-gnu/libicuuc.so.70 /usr/local/lib/; fi && \
-    if [ -f /usr/lib/x86_64-linux-gnu/libicudata.so.70 ]; then cp /usr/lib/x86_64-linux-gnu/libicudata.so.70 /usr/local/lib/; fi
+RUN TARGET_DIR="/usr/lib/x86_64-linux-gnu" \
+    && FILES="libgomp.so.1 libcpprest.so.2.10 libbrotlidec.so.1 libbrotlienc.so.1 libbrotlicommon.so.1 libicuuc.so.70 libicudata.so.70" \
+    && if [ ! -d "$TARGET_DIR" ]; then \
+        echo "Directory $TARGET_DIR does not exist. Creating..." \
+        && mkdir -p "$TARGET_DIR" \
+        && for FILE in $FILES; do \
+            echo "Creating file $TARGET_DIR/$FILE" \
+            && touch "$TARGET_DIR/$FILE"; \
+        done; \
+    fi
 
-RUN if [ -f /usr/lib/aarch64-linux-gnu/libgomp.so.1 ]; then cp /usr/lib/aarch64-linux-gnu/libgomp.so.1 /usr/local/lib/; fi && \
-    if [ -f /usr/lib/aarch64-linux-gnu/libcpprest.so.2.10 ]; then cp /usr/lib/aarch64-linux-gnu/libcpprest.so.2.10 /usr/local/lib/; fi && \
-    if [ -f /usr/lib/aarch64-linux-gnu/libbrotlidec.so.1 ]; then cp /usr/lib/aarch64-linux-gnu/libbrotlidec.so.1 /usr/local/lib/; fi && \
-    if [ -f /usr/lib/aarch64-linux-gnu/libbrotlienc.so.1 ]; then cp /usr/lib/aarch64-linux-gnu/libbrotlienc.so.1 /usr/local/lib/; fi && \
-    if [ -f /usr/lib/aarch64-linux-gnu/libbrotlicommon.so.1 ]; then cp /usr/lib/aarch64-linux-gnu/libbrotlicommon.so.1 /usr/local/lib/; fi && \
-    if [ -f /usr/lib/aarch64-linux-gnu/libicuuc.so.70 ]; then cp /usr/lib/aarch64-linux-gnu/libicuuc.so.70 /usr/local/lib/; fi && \
-    if [ -f /usr/lib/aarch64-linux-gnu/libicudata.so.70 ]; then cp /usr/lib/aarch64-linux-gnu/libicudata.so.70 /usr/local/lib/; fi
+RUN TARGET_DIR="/usr/lib/aarch64-linux-gnu" \
+    && FILES="libgomp.so.1 libcpprest.so.2.10 libbrotlidec.so.1 libbrotlienc.so.1 libbrotlicommon.so.1 libicuuc.so.70 libicudata.so.70" \
+    && if [ ! -d "$TARGET_DIR" ]; then \
+        echo "Directory $TARGET_DIR does not exist. Creating..." \
+        && mkdir -p "$TARGET_DIR" \
+        && for FILE in $FILES; do \
+            echo "Creating file $TARGET_DIR/$FILE" \
+            && touch "$TARGET_DIR/$FILE"; \
+        done; \
+    fi
+
 
 FROM ubuntu:jammy
 # FROM alpine
@@ -122,13 +129,48 @@ COPY  --from=builder /usr/local/lib/libbsoncxx.so._noabi  /usr/local/lib/libbson
 COPY  --from=builder  /usr/local/lib/libmongoc-1.0.so.0  /usr/local/lib/libmongoc-1.0.so.0
 COPY   --from=builder  /usr/local/lib/libbson-1.0.so.0  /usr/local/lib/libbson-1.0.so.0
 
-COPY --from=builder /usr/local/lib/libgomp.so.1 /usr/local/lib/libgomp.so.1
-COPY --from=builder /usr/local/lib/libcpprest.so.2.10  /usr/local/lib/libcpprest.so.2.10
-COPY --from=builder /usr/local/lib/libbrotlidec.so.1 /usr/local/lib/libbrotlidec.so.1
-COPY --from=builder /usr/local/lib/libbrotlienc.so.1 /usr/local/lib/libbrotlienc.so.1
-COPY --from=builder /usr/local/lib/libbrotlicommon.so.1  /usr/local/lib/libbrotlicommon.so.1
-COPY --from=builder /usr/local/lib/libicuuc.so.70  /usr/local/lib/libicuuc.so.70 
-COPY --from=builder /usr/local/lib/libicudata.so.70 /usr/local/lib/libicudata.so.70
+
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libgomp.so.1 /usr/lib/x86_64-linux-gnu/libgomp.so.1
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libcpprest.so.2.10  /usr/lib/x86_64-linux-gnu/libcpprest.so.2.10
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1 /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libbrotlienc.so.1 /usr/lib/x86_64-linux-gnu/libbrotlienc.so.1
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1  /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libicuuc.so.70  /usr/lib/x86_64-linux-gnu/libicuuc.so.70 
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libicudata.so.70 /usr/lib/x86_64-linux-gnu/libicudata.so.70
+
+COPY --from=builder /usr/lib/aarch64-linux-gnu/libgomp.so.1 /usr/lib/aarch64-linux-gnu/libgomp.so.1
+COPY --from=builder /usr/lib/aarch64-linux-gnu/libcpprest.so.2.10  /usr/lib/aarch64-linux-gnu/libcpprest.so.2.10
+COPY --from=builder /usr/lib/aarch64-linux-gnu/libbrotlidec.so.1 /usr/lib/aarch64-linux-gnu/libbrotlidec.so.1
+COPY --from=builder /usr/lib/aarch64-linux-gnu/libbrotlienc.so.1 /usr/lib/aarch64-linux-gnu/libbrotlienc.so.1
+COPY --from=builder /usr/lib/aarch64-linux-gnu/libbrotlicommon.so.1  /usr/lib/aarch64-linux-gnu/libbrotlicommon.so.1
+COPY --from=builder /usr/lib/aarch64-linux-gnu/libicuuc.so.70  /usr/lib/aarch64-linux-gnu/libicuuc.so.70 
+COPY --from=builder /usr/lib/aarch64-linux-gnu/libicudata.so.70 /usr/lib/aarch64-linux-gnu/libicudata.so.70
+
+
+RUN echo '#!/bin/bash\n\
+ARCH=$(uname -m)\n\
+if [[ "$ARCH" == "x86_64" || "$ARCH" == "amd64" ]]; then\n\
+    if [ -d "/usr/lib/aarch64-linux-gnu" ]; then\n\
+        echo "Detected architecture: $ARCH. Deleting /usr/lib/aarch64-linux-gnu"\n\
+        rm -rf /usr/lib/aarch64-linux-gnu\n\
+    else\n\
+        echo "Directory /usr/lib/aarch64-linux-gnu does not exist."\n\
+    fi\n\
+elif [[ "$ARCH" == "arm"* || "$ARCH" == "aarch64" ]]; then\n\
+    if [ -d "/usr/lib/x86_64-linux-gnu" ]; then\n\
+        echo "Detected architecture: $ARCH. Deleting /usr/lib/x86_64-linux-gnu"\n\
+        rm -rf /usr/lib/x86_64-linux-gnu\n\
+    else\n\
+        echo "Directory /usr/lib/x86_64-linux-gnu does not exist."\n\
+    fi\n\
+else\n\
+    echo "Unsupported architecture: $ARCH"\n\
+fi' > /usr/local/bin/remove_dirs.sh && chmod +x /usr/local/bin/remove_dirs.sh
+
+RUN /usr/local/bin/remove_dirs.sh
+
+
+
 RUN mkdir /opt/rank_model/
 CMD ["/usr/local/bin/bertv2rank"]
 # ENTRYPOINT ["tail", "-f", "/dev/null"]
