@@ -92,7 +92,7 @@ RUN cd /opt/rss-terminus-v2-rank && \
     cd build && \
     cmake .. && \
     make && \
-    cp bertv2train /usr/local/bin && \
+    cp test_cpprest /usr/local/bin && \
     cd /opt && \
     rm -r rss-termius-v2-rank
 
@@ -118,11 +118,12 @@ RUN TARGET_DIR="/usr/lib/aarch64-linux-gnu" \
         done; \
     fi
 
+
 FROM ubuntu:jammy
 # FROM alpine
 
 
-COPY --from=builder /usr/local/bin/bertv2train /usr/local/bin/bertv2train
+COPY --from=builder /usr/local/bin/test_cpprest /usr/local/bin/test_cpprest
 COPY  --from=builder /usr/local/lib/libmongocxx.so._noabi /usr/local/lib/libmongocxx.so._noabi
 COPY  --from=builder /usr/local/lib/libbsoncxx.so._noabi  /usr/local/lib/libbsoncxx.so._noabi
 COPY  --from=builder  /usr/local/lib/libmongoc-1.0.so.0  /usr/local/lib/libmongoc-1.0.so.0
@@ -144,7 +145,7 @@ COPY --from=builder /usr/lib/aarch64-linux-gnu/libbrotlicommon.so.1  /usr/lib/aa
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libicuuc.so.70  /usr/lib/aarch64-linux-gnu/libicuuc.so.70 
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libicudata.so.70 /usr/lib/aarch64-linux-gnu/libicudata.so.70
 
-
+# 添加脚本到镜像并运行脚本
 RUN echo '#!/bin/bash\n\
 ARCH=$(uname -m)\n\
 if [[ "$ARCH" == "x86_64" || "$ARCH" == "amd64" ]]; then\n\
@@ -168,6 +169,7 @@ fi' > /usr/local/bin/remove_dirs.sh && chmod +x /usr/local/bin/remove_dirs.sh
 RUN /usr/local/bin/remove_dirs.sh
 
 
+
 RUN mkdir /opt/rank_model/
-CMD ["/usr/local/bin/bertv2train"]
-# ENTRYPOINT ["tail", "-f", "/dev/null"]
+# CMD ["/usr/local/bin/test_cpprest"]
+ENTRYPOINT ["tail", "-f", "/dev/null"]

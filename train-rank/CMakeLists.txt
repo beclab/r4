@@ -125,6 +125,7 @@ cpprestsdk::cpprest
  )
 
 
+
  add_executable(
   common_test
   test/common_test.cpp
@@ -159,6 +160,18 @@ cpprestsdk::cpprest
  crypto
  ssl
  )
+
+ add_executable(
+  test_cpprest
+  test/cpprest_test.cpp
+  )
+
+  target_link_libraries(
+    test_cpprest
+    cpprestsdk::cpprest
+    crypto
+    ssl
+  )
 
 # https://github.com/Microsoft/cpprestsdk/wiki/How-to-build-for-Linux
 
