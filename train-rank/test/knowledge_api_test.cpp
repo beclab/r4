@@ -105,7 +105,7 @@ TEST(KnowledgeApiTest, TestUpdateLastExtractorTime) {
   // --gtest_filter=KnowledgeApiTest.TestUpdateLastExtractorTime
   initDevelop();
   init_log();
-  knowledgebase::updateLastExtractorTime("bert_v2", 1711080229);
+  knowledgebase::updateLastExtractorTime("r4world", 1711080229);
 }
 
 TEST(KnowledgeApiTest, TestGetLastRankTime) {
