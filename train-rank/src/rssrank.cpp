@@ -227,6 +227,8 @@ void rankPredict() {
             current_batch_algorithm_ids.size(),
             std::vector<float>(getCurrentEmbeddingDimension(), 0));
 
+        fillFeaturesKnowledgeVector(current_batch_feature,current_batch_algorithm_ids,FillFeatureSource::ALGORITHM);
+
         std::vector<float> current_batch_feature_flatten =
             flatten(current_batch_feature);
         std::unordered_map<std::string, float> id_to_score =
