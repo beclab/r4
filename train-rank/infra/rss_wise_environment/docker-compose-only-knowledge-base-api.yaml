@@ -3,7 +3,7 @@ version: '4'
 services:
 
   knowledge_base_api:
-    image: aboveos/knowledge-base-api 
+    image: aboveos/knowledge-base-api:v0.1.18  
     container_name: knowledge_base_api_server
     network_mode: host
     environment:
@@ -13,3 +13,16 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     ports:
       - '3010:3010'
+
+  redis:
+    image: docker.io/bitnami/redis:6.2.6
+    container_name: terminus_recommend_redis
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      - REDIS_PASSWORD=terminusrecommendredis123
+      - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+    ports:
+      - '6381:6379'
+    volumes:
+      - ${REDIS_HOST_DATA_DIRECTORY}:/bitnami/redis/data
+    command: /opt/bitnami/scripts/redis/run.sh --maxmemory 512MB

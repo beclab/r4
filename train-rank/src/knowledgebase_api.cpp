@@ -39,7 +39,7 @@ bool updateAlgorithmScoreAndRanked(
       .then([](pplx::task<string_t> previousTask) {
         try {
           string_t const &result = previousTask.get();
-          LOG(DEBUG) << result << endl;
+          // LOG(DEBUG) << result << endl;
         } catch (http_exception const &e) {
           // printf("Error exception:%s\n", e.what());
           LOG(ERROR) << "updateAlgorithmScoreAndRanked Error exception "
