@@ -1,10 +1,13 @@
+#include <gflags/gflags.h>
+
 #include <chrono>
 #include <iostream>
 #include <thread>
 
 #include "rssrank.h"
 #include "common_tool.h"
-int main() {
+int main(int argc, char** argv) {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   init_log();
   const char *source_name = std::getenv(TERMINUS_RECOMMEND_SOURCE_NAME);
   if (source_name == nullptr) {
@@ -22,6 +25,7 @@ int main() {
              << std::endl;
   setenv(TERMINUS_RECOMMEND_EMBEDDING_NAME, "bert_v2", 0);
   setenv(TERMINUS_RECOMMEND_EMBEDDING_DIMENSION, "384", 0);
-  rssrank::rankPredict();
+  //rssrank::rankPredict();
+  rssrank::rankLR();
   LOG(DEBUG) << "compelete rank" << std::endl;
 }

@@ -13,8 +13,23 @@ using namespace web::http::client;
 #include "entity/entry.h"
 #include "entity/impression.h"
 #include "entity/rank_algorithm.h"
+#include "entity/reco_metadata.h"
 
 namespace knowledgebase {
+
+class EntryCache {
+public:
+    static EntryCache& getInstance();
+    std::optional<Entry> getEntryById(const std::string& id);
+
+    void dumpStatistics();
+
+private:
+    EntryCache();
+    std::unordered_map<std::string, Entry> cache;
+    int cache_miss;
+    int cache_hit;
+};
 
 static const char ALGORITHM_API_SUFFIX[] = "/knowledge/algorithm";
 static const char IMPRESSION_API_SUFFIX[] = "/knowledge/impression";
@@ -25,8 +40,8 @@ static const char LAST_EXTRACTOR_TIME[] = "last_extractor_time";
 
 bool updateAlgorithmScoreAndRanked(const std::string& entry_id,
                                    float rank_score, bool ranked);
-bool updateAlgorithmScoreAndRanked(
-    const std::unordered_map<std::string, float>& algorithm_id_to_rank_score);
+bool updateAlgorithmScoreAndMetadata(
+    const std::unordered_map<std::string, ScoreWithMetadata>& algorithm_id_to_score_with_meta);
 bool rerank(const std::string& source);
 void getImpression(int limit, int offset, std::string source,
                    std::vector<Impression>* impression_list, int* count);

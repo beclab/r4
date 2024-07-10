@@ -1,8 +1,11 @@
+#include <gflags/gflags.h>
+
 #include "rssrank.h"
 #include "common_tool.h"
 #include "knowledgebase_api.h"
 
-int main() {
+int main(int argc, char** argv) {
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
   init_log();
   const char *source_name = std::getenv(TERMINUS_RECOMMEND_SOURCE_NAME);
   if (source_name == nullptr) {
@@ -22,7 +25,10 @@ int main() {
   setenv(TERMINUS_RECOMMEND_EMBEDDING_NAME, "bert_v2", 0);
   setenv(TERMINUS_RECOMMEND_EMBEDDING_DIMENSION, "384", 0);
 
-  rssrank::trainOneBigBatch();
+  // Since currently the ranking logic is rule-based and not relying on the model, train
+  // is not necessary for now, comment it out.
+  //rssrank::trainOneBigBatch();
+  //rssrank::trainLR();
   knowledgebase::rerank(std::string(source_name));
   LOG(DEBUG) << "compelete train and ranked reset" << std::endl;
   knowledgebase::updateLastRankTime(source_name, 0);

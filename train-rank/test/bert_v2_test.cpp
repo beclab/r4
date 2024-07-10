@@ -12,11 +12,13 @@
 #include "../src/xgboost_macro.hpp"
 #include "test_common.h"
 
+#include "../src/entity/reco_metadata.h"
+
 TEST(BertV2Test, predictRankTest) {
   // --gtest_filter=BertV2Test.predictRankTest
   initDevelop();
   init_log();
-  rssrank::rankPredict();
+  rssrank::rankLR();
 }
 
 TEST(BertV2Test, BertV2TrainBigBatchTest) {
@@ -40,7 +42,7 @@ TEST(BertV2Test, getAllEntryToPrerankSourceForCurrentSourceKnowledge) {
   // --gtest_filter=BertV2Test.getAllEntryToPrerankSourceForCurrentSourceKnowledge
   initDevelop();
   init_log();
-  std::unordered_map<std::string, float> algorithm_entry_to_prerank_score =
+  std::unordered_map<std::string, ScoreWithMetadata> algorithm_entry_to_prerank_score =
       rssrank::getAllEntryToPrerankSourceForCurrentSourceKnowledge();
   for (auto current : algorithm_entry_to_prerank_score) {
     std::cout << current.first << " " << current.second << std::endl;

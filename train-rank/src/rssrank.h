@@ -13,10 +13,18 @@ namespace fs = std::filesystem;
 
 #include <xgboost/c_api.h>
 
+#include <gflags/gflags.h>
+
 #include "entity/impression.h"
+#include "entity/reco_metadata.h"
+
+DECLARE_string(recommend_source_name);
 
 namespace rssrank {
 bool trainOneBigBatch();
+bool rankLR();
+bool doRank();
+bool trainLR();
 static const float clicked_weight = 0.1;
 static const float read_finish_weight = 0.2;
 static const float read_speed_weight = 0.3;
@@ -56,7 +64,7 @@ bool fillFeaturesKnowledgeVector(std::vector<std::vector<float>>& features,
                                  enum FillFeatureSource embedding_source);
 
 std::unordered_map<std::string, std::string> getNotRankedAlgorithmToEntry();
-std::unordered_map<std::string, float>
+std::unordered_map<std::string, ScoreWithMetadata>
 getAllEntryToPrerankSourceForCurrentSourceKnowledge();
 
 bool trainOneBigBatchWithPreparedDataVector(

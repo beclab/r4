@@ -3,6 +3,8 @@
 #include <cpprest/json.h>
 
 #include <optional>
+#include <chrono>
+#include <thread>
 
 #include "easylogging++.h"
 
@@ -10,43 +12,142 @@ using namespace web::json;
 
 namespace knowledgebase {
 
-bool updateAlgorithmScoreAndRanked(
-    const std::unordered_map<std::string, float> &algorithm_id_to_rank_score) {
+EntryCache::EntryCache():cache_miss(0), cache_hit(0) {
+}
+
+EntryCache& EntryCache::getInstance() {
+    static EntryCache instance;
+    return instance;
+}
+
+std::optional<Entry> EntryCache::getEntryById(const std::string& id) {
+    if (cache.find(id) != cache.end()) {
+        ++cache_hit;
+        return std::make_optional(cache[id]);
+    }
+    ++cache_miss;
+
+    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+        std::string current_entry_api_suffix =
+        std::string(ENTRY_API_SUFFIX) + "/" + id;
+
+    LOG(DEBUG) << "current_entry_api_suffix " << current_entry_api_suffix
+                 << std::endl;
+
+    uri_builder builder(U(current_entry_api_suffix));
+
+    // Impression current_impression;
+    std::optional<Entry> option_entry = std::nullopt;
+
+    client.request(methods::GET, builder.to_string())
+            .then([](http_response response) -> pplx::task<web::json::value> {
+            if (response.status_code() == status_codes::OK) {
+              return response.extract_json();
+            }
+            return pplx::task_from_result(web::json::value());
+          })
+          .then([&option_entry](pplx::task<web::json::value> previousTask) {
+            try {
+              web::json::value const &v = previousTask.get();
+              int code = v.at("code").as_integer();
+              std::string message = "null";
+              if (v.has_string_field("message")) {
+                message = v.at("message").as_string();
+              }
+              LOG(DEBUG) << "code " << code << " message " << message << std::endl;
+              if (code == 0) {
+                web::json::value current_value = v.at("data");
+                option_entry = convertFromWebJsonValueToEntry(current_value);
+              }
+            } catch (http_exception const &e) {
+              LOG(ERROR) << "Error exception " << e.what() << std::endl;
+            }
+          })
+          .wait();
+
+    if (option_entry.has_value()) {
+        cache[id] = option_entry.value();
+    }
+    return option_entry;
+}
+
+void EntryCache::dumpStatistics() {
+    LOG(INFO) << "Cache hit: " << cache_hit << ", miss: " << cache_miss << endl;
+    for (auto& pr : cache) {
+        LOG(INFO) << pr.first << endl;
+    }
+}
+
+bool updateAlgorithmScoreAndMetadata(
+    const std::unordered_map<std::string, ScoreWithMetadata> &algorithm_id_to_score_with_meta) {
   // LOG(DEBUG) << "algorithm url " <<
   // concat_prefix_and_suffix_get_url(algorithm_api_suffix) << std::endl;
   http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
 
   web::json::value algorithm_list;
 
-  size_t index = 0;
-  for (const auto &current_item : algorithm_id_to_rank_score) {
+  auto send = [&client](const web::json::value& payload) {
+    bool success = false;
+    while (!success) {
+      client.request(methods::POST, U(ALGORITHM_API_SUFFIX), payload)
+          .then([](http_response response) -> pplx::task<string_t> {
+            if (response.status_code() == status_codes::Created) {
+              return response.extract_string();
+            }
+            return pplx::task_from_result(string_t());
+          })
+          .then([&](pplx::task<string_t> previousTask) {
+            try {
+              string_t const &result = previousTask.get();
+              success = true;
+              // LOG(DEBUG) << result << endl;
+            } catch (http_exception const &e) {
+              // printf("Error exception:%s\n", e.what());
+              LOG(ERROR) << "updateAlgorithmScoreAndMetadata Error exception "
+                         << e.what() << std::endl;
+            }
+          })
+          .wait();
+      if (!success) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        LOG(INFO) << "updateAlgorithmScoreAndMetadata retrying..." << std::endl;
+      } else {
+        LOG(INFO) << "updateAlgorithmScoreAndMetadata succeed." << std::endl;
+      }
+    }
+  };
+
+  size_t index = 0, batch_limit = 100;
+  for (const auto &current_item : algorithm_id_to_score_with_meta) {
     web::json::value current_algorithm;
     current_algorithm["id"] = web::json::value::string(current_item.first);
-    current_algorithm["score"] = web::json::value::number(current_item.second);
+    current_algorithm["score"] = web::json::value::number(current_item.second.score);
     current_algorithm["ranked"] = web::json::value::boolean(true);
+    auto& extra = current_algorithm["extra"] = web::json::value();
+    // TODO(haochengwang): Keyword as a reason here
+    if (current_item.second.rankExecuted) {
+        extra["reason_type"] = web::json::value::string("ARTICLE");
+        auto& reason_data = extra["reason_data"] = web::json::value();
+        auto& articles = current_item.second.reason.articles;
+        for (int i = 0; i < articles.size(); ++i) {
+            reason_data[i]["id"] = web::json::value::string(articles[i].id);
+            reason_data[i]["title"] = web::json::value::string(articles[i].title);
+            reason_data[i]["url"] = web::json::value::string(articles[i].url);
+        }
+    }
     algorithm_list[index++] = current_algorithm;
+
+    if (index >= batch_limit) {
+      send(algorithm_list);
+      index = 0;
+      algorithm_list = web::json::value();
+    }
   }
 
-  // LOG(DEBUG) << algorithm_list.to_string() << std::endl;
+  if (index > 0) {
+    send(algorithm_list);
+  }
 
-  client.request(methods::POST, U(ALGORITHM_API_SUFFIX), algorithm_list)
-      .then([](http_response response) -> pplx::task<string_t> {
-        if (response.status_code() == status_codes::Created) {
-          return response.extract_string();
-        }
-        return pplx::task_from_result(string_t());
-      })
-      .then([](pplx::task<string_t> previousTask) {
-        try {
-          string_t const &result = previousTask.get();
-          // LOG(DEBUG) << result << endl;
-        } catch (http_exception const &e) {
-          // printf("Error exception:%s\n", e.what());
-          LOG(ERROR) << "updateAlgorithmScoreAndRanked Error exception "
-                     << e.what() << std::endl;
-        }
-      })
-      .wait();
   return true;
 }
 
@@ -423,8 +524,8 @@ std::optional<Impression> convertFromWebJsonValueToImpression(
         current_item.at(IMPRESSION_MONGO_FIELD_READ_TIME).as_double();
   } else {
     temp_impression.read_time = 0;
-    LOG(DEBUG) << "temp_impression " << temp_impression.id << " have no "
-               << IMPRESSION_MONGO_FIELD_READ_TIME << std::endl;
+    //LOG(DEBUG) << "temp_impression " << temp_impression.id << " have no "
+    //           << IMPRESSION_MONGO_FIELD_READ_TIME << std::endl;
   }
 
   if (current_item.has_string_field(IMPRESSION_MONGO_FIELD_SOURCE)) {

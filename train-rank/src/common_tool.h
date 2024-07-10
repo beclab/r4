@@ -8,7 +8,10 @@
 #include <string>
 #include <vector>
 
+
 using namespace std::chrono;
+
+//DECLARE_string(model_path_root);
 
 #include "easylogging++.h"
 // using namespace std;
@@ -30,6 +33,8 @@ bool isStringEmptyOrWhitespace(const std::string& str);
 int countStringToken(const std::string& content);
 
 bool isConvertibleToInt(const std::string& str);
+
+std::string envOrBlank(const char* env);
 
 template <class T1, class T2>
 double AUROC(const T1 label[], const T2 score[], int n) {

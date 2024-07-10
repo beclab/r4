@@ -18,8 +18,86 @@ namespace fs = std::filesystem;
 #include "knowledgebase_api.h"
 #include "xgboost_macro.hpp"
 
+#include "lr/feature_extractor.h"
+#include "lr/logistic_regression.h"
+#include "lr/model_serializer.h"
+
+using std::vector;
+using lr::FeatureExtractor;
+using lr::EmbeddingDistanceExtractor;
+
+DEFINE_string(model_path_root, envOrBlank("MODEL_PATH_ROOT"), "Model path root");
+DEFINE_string(recommend_source_name, envOrBlank("TERMINUS_RECOMMEND_SOURCE_NAME"), "Terminus recommend source name");
+DEFINE_bool(forced, false, "Whether forced execution, ignoring last rank time");
+DEFINE_bool(upload_score, true, "Whether upload score to knowledge");
+DEFINE_bool(verbose, false, "Whether output all the details");
+
 // Get all the databases from a given client.
 namespace rssrank {
+
+namespace {
+
+vector<Impression> getImpressionsForLR() {
+    const int batch_size = 1000;
+    int offset = 0;
+    int count;
+
+    vector<Impression> impressions;
+    while (true) {
+        LOG(DEBUG) << "offset " << offset << " limit " << batch_size << " count "
+                   << count;
+        std::vector<Impression> temp_impressions;
+        knowledgebase::getImpression(batch_size, offset, FLAGS_recommend_source_name,
+                                     &temp_impressions, &count);
+        // impression_list.insert(impression_list.end(),temp_impression.begin(),temp_impression.end());
+        for (const auto &current_impression : temp_impressions) {
+            if (current_impression.embedding == std::nullopt) {
+                LOG(ERROR) << "current_impression " << current_impression.id
+                           << " embedding not exist" << std::endl;
+                continue;
+            }
+            size_t current_embedding_dimension =
+                current_impression.embedding.value().size();
+            if (current_embedding_dimension != getCurrentEmbeddingDimension()) {
+                LOG(ERROR) << "current_impression " << current_impression.id
+                   << " embedding dimension size "
+                   << current_embedding_dimension << " not equal to "
+                   << getCurrentEmbeddingDimension() << std::endl;
+                continue;
+            }
+
+            impressions.push_back(current_impression);
+        }
+        offset = offset + batch_size;
+        if (offset >= count) {
+            break;
+        }
+    }
+    return impressions;
+}
+
+ScoreWithMetadata buildScoreWithMeta(double score, const std::string& entry_id) {
+    ScoreWithMetadata result;
+    result.score = score;
+    result.rankExecuted = true;
+    RecoReasonArticle article;
+    article.id = entry_id;
+    auto entry = knowledgebase::EntryCache::getInstance().getEntryById(entry_id);
+    if (entry.has_value()) {
+        article.title = entry.value().title;
+        article.url = entry.value().url;
+    }
+    result.reason.articles.push_back(std::move(article));
+
+    return result;
+}
+
+std::unique_ptr<lr::LogisticRegression> loadDefaultModel() {
+    return std::unique_ptr<lr::LogisticRegression>(
+        new lr::LogisticRegression(1, vector<double>{1.0, 0.0}));
+}
+
+}  // namespace
 
 std::string getRankModelPath(ModelPathType model_path_type) {
   const char *source_name = std::getenv(TERMINUS_RECOMMEND_SOURCE_NAME);
@@ -76,6 +154,7 @@ std::unordered_map<std::string, std::string> getNotRankedAlgorithmToEntry() {
   int offset = 0;
   const char *source_name = std::getenv("TERMINUS_RECOMMEND_SOURCE_NAME");
   std::unordered_map<std::string, std::string> algorithm_id_to_entry_id;
+  // Load unranked items
   while (true) {
     std::vector<Algorithm> temp_algorithm;
     int count = 0;
@@ -103,12 +182,43 @@ std::unordered_map<std::string, std::string> getNotRankedAlgorithmToEntry() {
       break;
     }
   }
+  // Load ranked items
+  while (true) {
+    std::vector<Algorithm> temp_algorithm;
+    int count = 0;
+    knowledgebase::getAlgorithmAccordingRanked(batch_size, offset, source_name,
+                                               true, &temp_algorithm, &count);
+    LOG(DEBUG) << "offset " << offset << " limit " << batch_size << " count "
+               << count;
+    for (Algorithm current : temp_algorithm) {
+      if (current.embedding == std::nullopt) {
+        LOG(ERROR) << "current algorithm " << current.id << " have no embedding"
+                   << std::endl;
+        continue;
+      }
+      if (current.embedding.value().size() != getCurrentEmbeddingDimension()) {
+        LOG(ERROR) << "current algorithm " << current.id << " embedding size "
+                   << current.embedding.value().size()
+                   << " is not equal embedding dimension " << std::endl;
+        continue;
+      }
+      if (current.impression > 0) {
+        continue;
+      }
+      algorithm_id_to_entry_id.emplace(
+          std::make_pair(current.id, current.entry));
+    }
+    offset = offset + batch_size;
+    if (offset >= count) {
+      break;
+    }
+  }
   return algorithm_id_to_entry_id;
 }
 
-std::unordered_map<std::string, float>
+std::unordered_map<std::string, ScoreWithMetadata>
 getAllEntryToPrerankSourceForCurrentSourceKnowledge() {
-  std::unordered_map<std::string, float> algorithm_entry_id_to_prerank_score;
+  std::unordered_map<std::string, ScoreWithMetadata> algorithm_entry_id_to_score_with_meta;
   const char *source_name = std::getenv("TERMINUS_RECOMMEND_SOURCE_NAME");
 
   const int batch_size = 100;
@@ -140,8 +250,8 @@ getAllEntryToPrerankSourceForCurrentSourceKnowledge() {
           continue;
         }
 
-        algorithm_entry_id_to_prerank_score[current.id] =
-            current.prerank_score.value();
+        algorithm_entry_id_to_score_with_meta[current.id] =
+            ScoreWithMetadata(current.prerank_score.value());
       }
     }
     offset = offset + batch_size;
@@ -149,12 +259,12 @@ getAllEntryToPrerankSourceForCurrentSourceKnowledge() {
       break;
     }
   }
-  LOG(INFO) << "algorithm_entry_id_to_preprank_score "
-            << algorithm_entry_id_to_prerank_score.size() << std::endl;
-  return algorithm_entry_id_to_prerank_score;
+  LOG(INFO) << "algorithm_entry_id_to_score_with_meta "
+            << algorithm_entry_id_to_score_with_meta.size() << std::endl;
+  return algorithm_entry_id_to_score_with_meta;
 }
 
-void rankPredict() {
+/*void rankPredict() {
   const char *source_name = std::getenv("TERMINUS_RECOMMEND_SOURCE_NAME");
   int64_t last_rank_time =
       knowledgebase::getLastRankTime(std::string(source_name));
@@ -256,7 +366,7 @@ void rankPredict() {
     LOG(ERROR) << "copy prerank score to score" << std::endl;
     knowledgebase::updateLastRankTime(source_name, getTimeStampNow());
   }
-}
+}*/
 
 void getEachImpressionScoreKnowledge(
     std::unordered_map<std::string, float> *positive,
@@ -577,6 +687,206 @@ bool trainOneBigBatchWithPreparedDataVector(
 
   XGDMatrixFree(h_train[0]);
   XGBoosterFree(h_booster);
+}
+
+vector<FeatureExtractor*> initLRFeatureExtractors() {
+    return {new EmbeddingDistanceExtractor()};
+}
+
+bool needRerank() {
+    if (FLAGS_forced) {
+        LOG(INFO) << "Forced execution ignoring last rank and extractor time" << std::endl;
+        return true;
+    } else {
+        int64_t last_rank_time =
+            knowledgebase::getLastRankTime(FLAGS_recommend_source_name);
+        LOG(DEBUG) << knowledgebase::LAST_RANK_TIME << last_rank_time << std::endl;
+        int64_t last_extractor_time =
+            knowledgebase::getLastExtractorTime(FLAGS_recommend_source_name);
+        LOG(DEBUG) << knowledgebase::LAST_EXTRACTOR_TIME << last_extractor_time
+            << std::endl;
+
+        if (last_extractor_time == -1) {
+            LOG(DEBUG) << "last_extractor_time is  " << last_extractor_time
+                       << " mean extractor not executed" << std::endl;
+            return false;
+        }
+
+        if (last_rank_time != -1 && last_extractor_time != -1 &&
+            last_rank_time > last_extractor_time) {
+            LOG(DEBUG) << knowledgebase::LAST_RANK_TIME << " bigger than"
+                       << knowledgebase::LAST_EXTRACTOR_TIME << " task top"
+                       << std::endl;
+            return false;
+        }
+        return true;
+    }
+}
+
+bool rankLR() {
+    if (FLAGS_recommend_source_name.size() == 0) {
+        LOG(ERROR) << "recommend_source_name not provided." << std::endl;
+        return false;
+    }
+
+    if (!needRerank()) {
+        return false;
+    }
+
+    if (!doRank()) {
+        std::unordered_map<std::string, ScoreWithMetadata> entry_to_score_with_metadata =
+            rssrank::getAllEntryToPrerankSourceForCurrentSourceKnowledge();
+        knowledgebase::updateAlgorithmScoreAndMetadata(entry_to_score_with_metadata);
+        LOG(ERROR) << "falling back to prerank score." << std::endl;
+        knowledgebase::updateLastRankTime(FLAGS_recommend_source_name, getTimeStampNow());
+    }
+
+    return true;
+}
+
+bool doRank() {
+    std::unique_ptr<lr::LogisticRegression> logistic_regression;
+    if (FLAGS_model_path_root.size() != 0) {
+        auto model_file = FLAGS_model_path_root + "/lr.model";
+        if (fs::exists(model_file)) {
+            lr::SimpleModelSerializer serializer;
+            lr::LogisticRegression* model;
+            if (!serializer.loadModel(model_file, &model)) {
+                LOG(ERROR) << "Failed to load model file." << endl;
+                return false;
+            }
+            logistic_regression.reset(model);
+        } else {
+            LOG(ERROR) << "Failed to load model file: " << model_file << endl;
+            return false;
+        }
+    } else {  // Load the default model, since currently only one feature is present the model is not important
+        logistic_regression = loadDefaultModel();
+    }
+
+    for (auto weight : logistic_regression->weights) {
+        LOG(INFO) << "LR model weights: " << weight << std::endl;
+    }
+
+    // TODO(haochengwang): Sort the impressions by event time
+    auto feature_extractors = initLRFeatureExtractors();
+    auto impressions = getImpressionsForLR();
+    for (const auto& impression : impressions) {
+        for (auto extractor : feature_extractors) {
+            extractor->addSample(impression);
+        }
+    }
+
+    for (auto extractor : feature_extractors) {
+        if (!extractor->ready()) {
+            LOG(ERROR) << "Not all the feature extractor are ready.";
+            return false;
+        }
+    }
+
+    std::unordered_map<std::string, std::string> not_ranked_algorithm_to_entry =
+        getNotRankedAlgorithmToEntry();
+    LOG(INFO) << "not_ranked_algorithm_to_entry size "
+              << not_ranked_algorithm_to_entry.size() << std::endl;
+    std::vector<std::string> need_reinfer_algorithm_entry;
+    std::unordered_map<std::string, ScoreWithMetadata> id_to_score_with_meta;
+    for (const auto &current_item : not_ranked_algorithm_to_entry) {
+        std::optional<Entry> temp_entry =
+            knowledgebase::GetEntryById(current_item.second);
+        if (temp_entry == std::nullopt) {
+            LOG(ERROR) << "entry [" << current_item.second
+                       << "] not exist, algorithm [" << current_item.first << "]"
+                       << std::endl;
+            continue;
+        }
+        if (!temp_entry.value().extract) {
+            LOG(ERROR) << "entry [" << current_item.second
+                       << "] not extract, algorithm [" << current_item.first << "]"
+                       << std::endl;
+            continue;
+        }
+        std::optional<Algorithm> current_algorithm =
+              knowledgebase::GetAlgorithmById(current_item.first);
+        if (current_algorithm == std::nullopt) {
+            LOG(ERROR) << "Algorithm item not found, id = " << current_item.first << std::endl;
+            continue;
+        }
+        if (current_algorithm.value().embedding == std::nullopt) {
+            LOG(ERROR) << "Algorithm item no embbeding found, id = " << current_item.first << std::endl;
+            continue;
+        }
+
+        vector<double> features(feature_extractors.size(), 0.0);
+        for (int i = 0; i < feature_extractors.size(); ++i) {
+            features[i] = feature_extractors[i]->extract(current_algorithm.value());
+        }
+
+        auto score = logistic_regression->predict(features);
+        if (FLAGS_verbose) {
+            LOG(INFO) << "Score: " << score << endl;
+        }
+        auto reason = feature_extractors[0]->getReason(current_algorithm.value());
+        id_to_score_with_meta.emplace(current_item.first, buildScoreWithMeta(score, reason.reason));
+    }
+    LOG(INFO) << "id_to_score_with_meta size " << id_to_score_with_meta.size() << std::endl;
+    knowledgebase::EntryCache::getInstance().dumpStatistics();
+    if (FLAGS_verbose) {
+        for (const auto& pr : id_to_score_with_meta) {
+            LOG(INFO) << pr.first << "->" << pr.second << std::endl;
+        }
+    }
+    if (FLAGS_upload_score) {
+        knowledgebase::updateAlgorithmScoreAndMetadata(id_to_score_with_meta);
+        knowledgebase::updateLastRankTime(FLAGS_recommend_source_name, getTimeStampNow());
+    }
+    return true;
+}
+
+bool trainLR() {
+    const char *source_name = std::getenv("TERMINUS_RECOMMEND_SOURCE_NAME");
+    auto impressions = getImpressionsForLR();
+
+    // TODO(haochengwang): Sort the impressions by event time
+    auto feature_extractors = initLRFeatureExtractors();
+    lr::LogisticRegression logistic_regression(feature_extractors.size());
+
+    vector<vector<double> > pos, neg;
+    for (const auto& impression : impressions) {
+        bool available = true;
+        vector<double> f;
+        for (auto extractor : feature_extractors) {
+            if (extractor->ready()) {
+                f.push_back(extractor->extract(impression));
+            } else {
+                available = false;
+            }
+        }
+
+        if (available) {
+            if (impression.clicked) {
+                pos.push_back(f);
+            } else {
+                neg.push_back(f);
+            }
+        }
+
+        for (auto extractor : feature_extractors) {
+            extractor->addSample(impression);
+        }
+    }
+    logistic_regression.fit(pos, neg, 0.1, 1000);
+
+    for (auto weight : logistic_regression.weights) {
+        LOG(INFO) << "LR weight: " << weight << std::endl;
+    }
+
+    lr::SimpleModelSerializer serializer;
+    if (!serializer.saveModel(FLAGS_model_path_root + "/lr.model", logistic_regression)) {
+        LOG(ERROR) << "Failed to save model." << endl;
+        return false;
+    }
+
+    return true;
 }
 
 bool trainOneBigBatch() {
