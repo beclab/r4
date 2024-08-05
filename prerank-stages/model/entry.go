@@ -45,6 +45,8 @@ type EntryAddModel struct {
 	Disabled    bool   `json:"disabled,omitempty"`
 	RawContent  string `json:"raw_content,omitempty"`
 	FullContent string `json:"full_content,omitempty"`
+
+	FileType string `json:"file_type,omitempty"`
 }
 
 type EntryDelModel struct {
@@ -137,6 +139,7 @@ func GetEntryAddModel(entryModel *EntryModel) *EntryAddModel {
 	result.ImageUrl = entryModel.ImageUrl
 	result.KeywordList = entryModel.KeywordList
 	result.Language = entryModel.Language
+	result.FileType = "article"
 	result.Source = common.GetAlgorithmSource()
 	//result.Crawler = false
 	result.Extract = false
