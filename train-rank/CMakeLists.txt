@@ -12,10 +12,21 @@ project(ranktrain)
 # https://stackoverflow.com/questions/37210716/using-the-mongodb-cxx-driver-in-a-cmake-c-project
 # include_directories("/usr/local/lib")
 
+include_directories("/usr/local/include")
+include_directories("/opt/homebrew/opt/cpprestsdk/include")
+include_directories("/opt/homebrew/opt/boost/include")
+include_directories("/opt/homebrew/Cellar/openssl@3/3.3.1/include")
+link_directories("/usr/local/lib")
+link_directories("/opt/homebrew/opt/openssl/lib/")
+link_directories("/opt/homebrew/opt/boost/lib/")
+link_directories("/opt/homebrew/opt/llvm/lib/c++/")
+
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(GFLAGS_NAMESPACE "google")
+set(_GLIBCXX_USE_CXX11_ABI 0)
 add_library(rankcommon STATIC src/data_process.cpp
                               src/easylogging++.h
                               src/easylogging++.cc
@@ -24,14 +35,18 @@ add_library(rankcommon STATIC src/data_process.cpp
                               src/rssrank.h
                               src/rssrank.cpp
                               src/knowledgebase_api.h
-                              src/knowledgebase_api.cpp)
+                              src/knowledgebase_api.cpp
+                              src/lr/logistic_regression.cpp
+                              src/lr/feature_extractor.cpp
+                              src/lr/model_serializer.cpp
+                              src/entity/reco_metadata.cpp)
                               
 
 
                               
 find_package(xgboost REQUIRED)
 find_package(cpprestsdk REQUIRED)
-
+#find_package(gflags REQUIRED)
 
 
 enable_testing()
@@ -61,7 +76,6 @@ target_link_libraries(
   libgmock_main.a  
   libgtest.a
   rankcommon
-  
 )
 
 add_executable(
@@ -86,11 +100,12 @@ cpprestsdk::cpprest
  boost_system
  crypto
  ssl
+ gflags
  )
 
 
 
- add_executable( 
+add_executable(
   bertv2train
   src/bert_v2_train_executable.cpp
 )
@@ -105,9 +120,10 @@ cpprestsdk::cpprest
  boost_system
  crypto
  ssl
+ gflags
  )
 
- add_executable( 
+add_executable(
   bertv2rank
   src/bert_v2_rank.cpp
 )
@@ -117,13 +133,31 @@ target_link_libraries(
   rankcommon
   xgboost::xgboost 
   # ${LIBMONGOCXX_LIBRARIES}
-# ${LIBBSONCXX_LIBRARIES}
-cpprestsdk::cpprest
- boost_system
- crypto
- ssl
- )
+  # ${LIBBSONCXX_LIBRARIES}
+  cpprestsdk::cpprest
+  boost_system
+  crypto
+  ssl
+  gflags
+)
 
+add_executable(
+  embedding_inspector
+  src/tools/embedding_inspector.cpp
+)
+
+target_link_libraries(
+  embedding_inspector
+  rankcommon
+  xgboost::xgboost
+  # ${LIBMONGOCXX_LIBRARIES}
+  # ${LIBBSONCXX_LIBRARIES}
+  cpprestsdk::cpprest
+  boost_system
+  crypto
+  ssl
+  gflags
+)
 
 
  add_executable(
@@ -159,6 +193,7 @@ cpprestsdk::cpprest
  boost_system
  crypto
  ssl
+ gflags
  )
 
  add_executable(
@@ -171,6 +206,7 @@ cpprestsdk::cpprest
     cpprestsdk::cpprest
     crypto
     ssl
+    gflags
   )
 
 # https://github.com/Microsoft/cpprestsdk/wiki/How-to-build-for-Linux

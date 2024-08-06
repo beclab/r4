@@ -4,7 +4,9 @@
 
 #include "../src/common_tool.h"
 #include "../src/knowledgebase_api.h"
+#include "../src/entity/reco_metadata.h"
 #include "test_common.h"
+
 
 TEST(KnowledgeApiTest, TestUpdateRankScore) {
   // --gtest_filter=KnowledgeApiTest.TestUpdateRankScore
@@ -17,10 +19,10 @@ TEST(KnowledgeApiTest, TestUpdateAlgorithmRankedScored) {
   // --gtest_filter=KnowledgeApiTest.TestUpdateAlgorithmRankedScored
   initDevelop();
   init_log();
-  std::unordered_map<std::string, float> entry_id_to_score;
-  entry_id_to_score["656d09e6a2e46f241f9a7b89"] = 0.25;
-  entry_id_to_score["656d09e6a2e46f241f9a7b8a"] = 0.5;
-  knowledgebase::updateAlgorithmScoreAndRanked(entry_id_to_score);
+  std::unordered_map<std::string, ScoreWithMetadata> entry_id_to_score;
+  entry_id_to_score["656d09e6a2e46f241f9a7b89"] = ScoreWithMetadata(0.25);
+  entry_id_to_score["656d09e6a2e46f241f9a7b8a"] = ScoreWithMetadata(0.5);
+  knowledgebase::updateAlgorithmScoreAndMetadata(entry_id_to_score);
 }
 
 TEST(KnowledgeApiTest, TestRerank) {

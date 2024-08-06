@@ -71,3 +71,12 @@ std::time_t getTimeStampNow() {
   std::time_t timestamp = tp.time_since_epoch().count();
   return timestamp;
 }
+
+std::string envOrBlank(const char* env) {
+    auto envvar = std::getenv(env);
+    if (envvar == nullptr) {
+        return "";
+    } else {
+        return std::string(envvar);
+    }
+}

@@ -5,6 +5,7 @@ RUN mkdir -p /opt/rss-termius-v2-rank && \
 RUN apt-get update && \
     apt-get install build-essential -y && \
     apt-get install cmake -y && \
+    apt-get install libgflags-dev -y && \
     apt install git -y && \
     apt install curl -y && \
     apt install pkg-config -y && \
@@ -21,8 +22,7 @@ RUN apt-get update && \
     make -j$(nproc) && \
     make install && \
     cd /opt && \
-    rm -r xgboost 
-
+    rm -r xgboost
 
 RUN cd /opt && \
     curl -LJO https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz  && \
@@ -105,13 +105,17 @@ COPY  --from=builder /usr/local/lib/libmongocxx.so._noabi /usr/local/lib/libmong
 COPY  --from=builder /usr/local/lib/libbsoncxx.so._noabi  /usr/local/lib/libbsoncxx.so._noabi
 COPY  --from=builder  /usr/local/lib/libmongoc-1.0.so.0  /usr/local/lib/libmongoc-1.0.so.0
 COPY   --from=builder  /usr/local/lib/libbson-1.0.so.0  /usr/local/lib/libbson-1.0.so.0
+
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libgomp.so.1 /usr/lib/x86_64-linux-gnu/libgomp.so.1
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libcpprest.so.2.10  /usr/lib/x86_64-linux-gnu/libcpprest.so.2.10
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1 /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libbrotlienc.so.1 /usr/lib/x86_64-linux-gnu/libbrotlienc.so.1
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1  /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1
-COPY --from=builder /usr/lib/x86_64-linux-gnu/libicuuc.so.70  /usr/lib/x86_64-linux-gnu/libicuuc.so.70 
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libicuuc.so.70  /usr/lib/x86_64-linux-gnu/libicuuc.so.70
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libicudata.so.70 /usr/lib/x86_64-linux-gnu/libicudata.so.70
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libgflags.so.2.2 /usr/lib/x86_64-linux-gnu/libgflags.so.2.2
+#COPY --from=builder /usr/lib/x86_64-linux-gnu/libgflags_nothreads.so.2.2 /usr/lib/x86_64-linux-gnu/libgflags_nothreads.so.2.2
+
 RUN mkdir /opt/rank_model/
 CMD ["/usr/local/bin/bertv2rank"]
 # ENTRYPOINT ["tail", "-f", "/dev/null"]

@@ -5,6 +5,7 @@ RUN mkdir -p /opt/rss-termius-v2-rank && \
 RUN apt-get update && \
     apt-get install build-essential -y && \
     apt-get install cmake -y && \
+    apt-get install libgflags-dev -y && \
     apt install git -y && \
     apt install curl -y && \
     apt install pkg-config -y && \
@@ -97,7 +98,7 @@ RUN cd /opt/rss-terminus-v2-rank && \
     rm -r rss-termius-v2-rank
 
 RUN TARGET_DIR="/usr/lib/x86_64-linux-gnu" \
-    && FILES="libgomp.so.1 libcpprest.so.2.10 libbrotlidec.so.1 libbrotlienc.so.1 libbrotlicommon.so.1 libicuuc.so.70 libicudata.so.70" \
+    && FILES="libgomp.so.1 libcpprest.so.2.10 libbrotlidec.so.1 libbrotlienc.so.1 libbrotlicommon.so.1 libicuuc.so.70 libicudata.so.70 libgflags.so.2.2" \
     && if [ ! -d "$TARGET_DIR" ]; then \
         echo "Directory $TARGET_DIR does not exist. Creating..." \
         && mkdir -p "$TARGET_DIR" \
@@ -108,7 +109,7 @@ RUN TARGET_DIR="/usr/lib/x86_64-linux-gnu" \
     fi
 
 RUN TARGET_DIR="/usr/lib/aarch64-linux-gnu" \
-    && FILES="libgomp.so.1 libcpprest.so.2.10 libbrotlidec.so.1 libbrotlienc.so.1 libbrotlicommon.so.1 libicuuc.so.70 libicudata.so.70" \
+    && FILES="libgomp.so.1 libcpprest.so.2.10 libbrotlidec.so.1 libbrotlienc.so.1 libbrotlicommon.so.1 libicuuc.so.70 libicudata.so.70 libgflags.so.2.2" \
     && if [ ! -d "$TARGET_DIR" ]; then \
         echo "Directory $TARGET_DIR does not exist. Creating..." \
         && mkdir -p "$TARGET_DIR" \
@@ -128,6 +129,7 @@ COPY  --from=builder /usr/local/lib/libbsoncxx.so._noabi  /usr/local/lib/libbson
 COPY  --from=builder  /usr/local/lib/libmongoc-1.0.so.0  /usr/local/lib/libmongoc-1.0.so.0
 COPY   --from=builder  /usr/local/lib/libbson-1.0.so.0  /usr/local/lib/libbson-1.0.so.0
 
+
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libgomp.so.1 /usr/lib/x86_64-linux-gnu/libgomp.so.1
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libcpprest.so.2.10  /usr/lib/x86_64-linux-gnu/libcpprest.so.2.10
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1 /usr/lib/x86_64-linux-gnu/libbrotlidec.so.1
@@ -135,6 +137,8 @@ COPY --from=builder /usr/lib/x86_64-linux-gnu/libbrotlienc.so.1 /usr/lib/x86_64-
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1  /usr/lib/x86_64-linux-gnu/libbrotlicommon.so.1
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libicuuc.so.70  /usr/lib/x86_64-linux-gnu/libicuuc.so.70 
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libicudata.so.70 /usr/lib/x86_64-linux-gnu/libicudata.so.70
+COPY --from=builder /usr/lib/x86_64-linux-gnu/libgflags.so.2.2 /usr/lib/x86_64-linux-gnu/libgflags.so.2.2
+#COPY --from=builder /usr/lib/x86_64-linux-gnu/libgflags_nothreads.so.2.2 /usr/lib/x86_64-linux-gnu/libgflags_nothreads.so.2.2
 
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libgomp.so.1 /usr/lib/aarch64-linux-gnu/libgomp.so.1
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libcpprest.so.2.10  /usr/lib/aarch64-linux-gnu/libcpprest.so.2.10
@@ -143,6 +147,8 @@ COPY --from=builder /usr/lib/aarch64-linux-gnu/libbrotlienc.so.1 /usr/lib/aarch6
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libbrotlicommon.so.1  /usr/lib/aarch64-linux-gnu/libbrotlicommon.so.1
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libicuuc.so.70  /usr/lib/aarch64-linux-gnu/libicuuc.so.70 
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libicudata.so.70 /usr/lib/aarch64-linux-gnu/libicudata.so.70
+COPY --from=builder /usr/lib/aarch64-linux-gnu/libgflags.so.2.2 /usr/lib/x86_64-linux-gnu/libgflags.so.2.2
+#COPY --from=builder /usr/lib/aarch64-linux-gnu/libgflags_nothreads.so.2.2 /usr/lib/x86_64-linux-gnu/libgflags_nothreads.so.2.2
 
 
 RUN echo '#!/bin/bash\n\
