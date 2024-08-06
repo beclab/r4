@@ -23,7 +23,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           push: true
-          tags: beclab/r4train:${{ github.event.inputs.tags }}
+          tags: beclab/r4train:${{ github.event.inputs.tags }}-amd64
           file: Dockerfile.r4train.amd64
           platforms: linux/amd64
 
@@ -43,7 +43,7 @@ jobs:
         uses: docker/build-push-action@v3
         with:
             push: true
-            tags: beclab/r4train:${{ github.event.inputs.tags }}
+            tags: beclab/r4train:${{ github.event.inputs.tags }}-arm64
             file: Dockerfile.r4train.arm64
             platforms: linux/arm64
 
