@@ -107,16 +107,16 @@ COPY  --from=builder /usr/local/lib/libbsoncxx.so._noabi  /usr/local/lib/libbson
 COPY  --from=builder  /usr/local/lib/libmongoc-1.0.so.0  /usr/local/lib/libmongoc-1.0.so.0
 COPY   --from=builder  /usr/local/lib/libbson-1.0.so.0  /usr/local/lib/libbson-1.0.so.0
 
-COPY --from=builder /usr/lib/aarch64-linux-gnu/libgflags.so.2.2 /usr/lib/x86_64-linux-gnu/libgflags.so.2.2
-#COPY --from=builder /usr/lib/aarch64-linux-gnu/libgflags_nothreads.so.2.2 /usr/lib/x86_64-linux-gnu/libgflags_nothreads.so.2.2
-
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libgomp.so.1 /usr/lib/aarch64-linux-gnu/libgomp.so.1
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libcpprest.so.2.10  /usr/lib/aarch64-linux-gnu/libcpprest.so.2.10
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libbrotlidec.so.1 /usr/lib/aarch64-linux-gnu/libbrotlidec.so.1
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libbrotlienc.so.1 /usr/lib/aarch64-linux-gnu/libbrotlienc.so.1
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libbrotlicommon.so.1  /usr/lib/aarch64-linux-gnu/libbrotlicommon.so.1
-COPY --from=builder /usr/lib/aarch64-linux-gnu/libicuuc.so.70  /usr/lib/aarch64-linux-gnu/libicuuc.so.70 
+COPY --from=builder /usr/lib/aarch64-linux-gnu/libicuuc.so.70  /usr/lib/aarch64-linux-gnu/libicuuc.so.70
 COPY --from=builder /usr/lib/aarch64-linux-gnu/libicudata.so.70 /usr/lib/aarch64-linux-gnu/libicudata.so.70
+COPY --from=builder /usr/lib/aarch64-linux-gnu/libgflags.so.2.2 /usr/lib/x86_64-linux-gnu/libgflags.so.2.2
+#COPY --from=builder /usr/lib/aarch64-linux-gnu/libgflags_nothreads.so.2.2 /usr/lib/x86_64-linux-gnu/libgflags_nothreads.so.2.2
+
 RUN mkdir /opt/rank_model/
 CMD ["/usr/local/bin/bertv2train"]
 # ENTRYPOINT ["tail", "-f", "/dev/null"]
