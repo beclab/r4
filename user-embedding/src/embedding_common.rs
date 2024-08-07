@@ -328,12 +328,48 @@ pub async fn retrieve_current_algorithm_impression_knowledge(
     return Some(cumulative_tensor);
 }
 
+pub struct ModelInfoField {
+    pub model_name: &'static str,
+    pub hugging_face_model_name: &'static str,
+    pub hugging_face_model_revision: &'static str,
+    pub embedding_dimension: usize,
+
+}
+
+lazy_static! {
+    pub static ref MODEL_RELATED_INFO_MAP: HashMap<&'static str, ModelInfoField> = {
+        let mut m = HashMap::new();
+        m.insert(
+            "bert_v2",
+            ModelInfoField {
+                model_name: "bert_v2",
+                hugging_face_model_name: "sentence-transformers/all-MiniLM-L6-v2",
+                hugging_face_model_revision: "refs/pr/21",
+                embedding_dimension: 384,
+            },
+
+        );
+        m.insert(
+            "bert_v3",
+            ModelInfoField {
+                model_name: "bert_v3",
+                hugging_face_model_name: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+                hugging_face_model_revision: "refs/heads/main" ,
+                embedding_dimension: 384,
+            },
+            
+        );
+        m
+    };
+}
+
+
 #[cfg(test)]
 mod embeddingcommontest {
 
     use anyhow::Error as AnyhowError;
 
-    use crate::{bertv2, common_test_operation, embedding_common};
+    use crate::{bertcommon, common_test_operation, embedding_common};
 
     use super::calculate_one_sentence;
     use super::*;
@@ -346,7 +382,7 @@ mod embeddingcommontest {
 
         let current_tensor = retrieve_current_algorithm_impression_knowledge(
             source_name,
-            bertv2::BERTV2_EMBEDDING_DIMENSION,
+           384,
         )
         .await
         .expect("add cumulative tensor fail");
