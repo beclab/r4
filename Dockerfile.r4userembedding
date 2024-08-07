@@ -27,7 +27,7 @@ FROM  ubuntu:jammy
 WORKDIR /userembedding
 
 # Copy our build
-COPY --from=builder /userembedding/target/release/ ./
+COPY --from=builder /userembedding/target/release/userembedding ./
 
 
 CMD ["/userembedding/userembedding"]
