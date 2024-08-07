@@ -182,6 +182,7 @@ std::unordered_map<std::string, std::string> getNotRankedAlgorithmToEntry() {
       break;
     }
   }
+  offset = 0;
   // Load ranked items
   while (true) {
     std::vector<Algorithm> temp_algorithm;
