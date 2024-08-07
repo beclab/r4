@@ -14,4 +14,4 @@ PREFIX=beclab
 
 docker  build    \
     -f ${DOCKER_FILE_PATH} \
-    -t ${PREFIX}/bertv2userembedding $root_dir
+    -t ${PREFIX}/userembedding $root_dir

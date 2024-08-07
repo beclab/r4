@@ -10,7 +10,8 @@ pub fn init_env() {
         "TERMINUS_RECOMMEND_REDIS_PASSOWRD",
         "terminusrecommendredis123",
     );
-    env::set_var("KNOWLEDGE_BASE_API_URL", "http://52.202.37.138:3010")
+    env::set_var("KNOWLEDGE_BASE_API_URL", "http://52.202.37.138:3010");
+    env::set_var("EMBEDDING_METHOD", "bert_v2");
     // env::set_var("TERMINUS_RECOMMEND_REDIS_URI", "redis://127.0.0.1:6381");
     // env::set_var("TERMINUS_RECOMMEND_REDIS_URI", "redis://:terminusrecommendredis123@127.0.0.1:6381");
 }

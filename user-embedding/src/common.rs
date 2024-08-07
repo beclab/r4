@@ -8,6 +8,14 @@ use std::{
 
 pub const ENTRY_COLLECTION_NAME: &str = "entries";
 pub const IMPRESSIONS_COLLECTION_NAME: &str = "impressions";
+
+pub fn init_tracing() {
+    tracing_subscriber::fmt()
+        .with_line_number(true)
+        .with_file(true)
+        .init();
+    tracing::info!("init tracing log successfully");
+}
 pub fn init_logger() {
     let env: env_logger::Env<'_> =
         env_logger::Env::default().filter_or(env_logger::DEFAULT_FILTER_ENV, "debug");

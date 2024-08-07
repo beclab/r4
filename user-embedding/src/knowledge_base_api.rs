@@ -594,13 +594,13 @@ mod knowledgebaseapitest {
     use super::*;
     use crate::common_test_operation;
     use crate::embedding_common;
-    use crate::{bertv2, embedding_common::init_user_embedding};
+    use crate::{bertcommon, embedding_common::init_user_embedding};
 
     #[tokio::test]
     async fn test_set_user_embedding_str() {
         // common::init_logger();
         common_test_operation::init_env();
-        let init_tensor = init_user_embedding(bertv2::BERTV2_EMBEDDING_DIMENSION);
+        let init_tensor = init_user_embedding(384);
         embedding_common::set_user_embedding_knowledgebase(&init_tensor).await;
         // set_user_embedding_str_through_knowledge(String::from("1.1;1.1;1.2;3"), 3).await;
         let result = get_user_embedding_str().await;

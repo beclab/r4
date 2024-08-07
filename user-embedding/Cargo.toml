@@ -30,7 +30,10 @@ tokio = {version = "1.33.0",features = ["full"]}
 ndarray = "0.15.6"
 ndarray-rand = "0.14.0"
 reqwest = {version="0.11.23",features = ["json"] }
+time = "0.3.36"
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
 
 [[bin]]
-name = "bertv2userembedding"
-path = "src/bertv2_userembedding.rs"
+name = "userembedding"
+path = "src/userembedding.rs"
