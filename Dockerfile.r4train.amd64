@@ -88,6 +88,7 @@ RUN cd /opt && \
 ADD train-rank/src /opt/rss-terminus-v2-rank/src
 ADD train-rank/test /opt/rss-terminus-v2-rank/test
 COPY train-rank/CMakeLists.txt /opt/rss-terminus-v2-rank/CMakeLists.txt
+COPY train-rank/*.cmake /opt/rss-terminus-v2-rank/
 RUN cd /opt/rss-terminus-v2-rank && \
     mkdir build && \
     cd build && \

@@ -21,6 +21,18 @@ link_directories("/opt/homebrew/opt/openssl/lib/")
 link_directories("/opt/homebrew/opt/boost/lib/")
 link_directories("/opt/homebrew/opt/llvm/lib/c++/")
 
+# Add a custom command that produces version.cpp, plus
+# a dummy output that's not actually produced, in order
+# to force version.cmake to always be re-run before the build
+add_custom_command(
+    OUTPUT src/gitinfo.h
+    COMMAND ${CMAKE_COMMAND} -P
+            ${CMAKE_CURRENT_SOURCE_DIR}/version.cmake)
+
+add_custom_target(
+  gen_git_info
+  DEPENDS src/gitinfo.h
+)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -41,7 +53,7 @@ add_library(rankcommon STATIC src/data_process.cpp
                               src/lr/model_serializer.cpp
                               src/entity/reco_metadata.cpp)
                               
-
+add_dependencies(rankcommon gen_git_info)
 
                               
 find_package(xgboost REQUIRED)

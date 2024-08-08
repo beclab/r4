@@ -4,11 +4,17 @@
 #include <iostream>
 #include <thread>
 
+#include "gitinfo.h"
 #include "rssrank.h"
 #include "common_tool.h"
+
 int main(int argc, char** argv) {
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   init_log();
+  LOG(INFO) << "Git rev: " << GIT_REV;
+  LOG(INFO) << "Git tag: " << GIT_TAG;
+  LOG(INFO) << "Git branch: " << GIT_BRANCH;
+
   const char *source_name = std::getenv(TERMINUS_RECOMMEND_SOURCE_NAME);
   if (source_name == nullptr) {
     LOG(ERROR) << TERMINUS_RECOMMEND_SOURCE_NAME << " NOT EXIST" << std::endl;

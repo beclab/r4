@@ -28,7 +28,6 @@ using lr::EmbeddingDistanceExtractor;
 
 DEFINE_string(model_path_root, envOrBlank("MODEL_PATH_ROOT"), "Model path root");
 DEFINE_string(recommend_source_name, envOrBlank("TERMINUS_RECOMMEND_SOURCE_NAME"), "Terminus recommend source name");
-DEFINE_bool(forced, false, "Whether forced execution, ignoring last rank time");
 DEFINE_bool(upload_score, true, "Whether upload score to knowledge");
 DEFINE_bool(verbose, false, "Whether output all the details");
 
@@ -694,43 +693,9 @@ vector<FeatureExtractor*> initLRFeatureExtractors() {
     return {new EmbeddingDistanceExtractor()};
 }
 
-bool needRerank() {
-    if (FLAGS_forced) {
-        LOG(INFO) << "Forced execution ignoring last rank and extractor time" << std::endl;
-        return true;
-    } else {
-        int64_t last_rank_time =
-            knowledgebase::getLastRankTime(FLAGS_recommend_source_name);
-        LOG(DEBUG) << knowledgebase::LAST_RANK_TIME << last_rank_time << std::endl;
-        int64_t last_extractor_time =
-            knowledgebase::getLastExtractorTime(FLAGS_recommend_source_name);
-        LOG(DEBUG) << knowledgebase::LAST_EXTRACTOR_TIME << last_extractor_time
-            << std::endl;
-
-        if (last_extractor_time == -1) {
-            LOG(DEBUG) << "last_extractor_time is  " << last_extractor_time
-                       << " mean extractor not executed" << std::endl;
-            return false;
-        }
-
-        if (last_rank_time != -1 && last_extractor_time != -1 &&
-            last_rank_time > last_extractor_time) {
-            LOG(DEBUG) << knowledgebase::LAST_RANK_TIME << " bigger than"
-                       << knowledgebase::LAST_EXTRACTOR_TIME << " task top"
-                       << std::endl;
-            return false;
-        }
-        return true;
-    }
-}
-
 bool rankLR() {
     if (FLAGS_recommend_source_name.size() == 0) {
         LOG(ERROR) << "recommend_source_name not provided." << std::endl;
-        return false;
-    }
-
-    if (!needRerank()) {
         return false;
     }
 
