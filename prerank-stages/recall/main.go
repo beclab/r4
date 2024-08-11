@@ -142,9 +142,9 @@ func entryRecallCal(entryPath string, language string, maxNum int, LastRecallTim
 
 		filePath := filepath.Join(entryPath, fileName)
 		currentZlibFileByte, _ := os.ReadFile(filePath)
-		uncompressByte := common.DoZlibUnCompress(currentZlibFileByte)
+		//uncompressByte := common.DoZlibUnCompress(currentZlibFileByte)
 		var protoEntryList protobuf_entity.ListEntry
-		proto.Unmarshal(uncompressByte, &protoEntryList)
+		proto.Unmarshal(currentZlibFileByte, &protoEntryList)
 		for _, protoEntry := range protoEntryList.Entries {
 			if protoEntry.Language != language {
 				continue

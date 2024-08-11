@@ -10,7 +10,7 @@ import (
 const (
 	defaultSyncProvider  = "bytetrade"
 	defaultSyncFeedName  = "zhcntech"
-	defaultSyncModelName = "bert_v2"
+	defaultSyncModelName = "bert_v3"
 
 	FeedPathPrefix   = "/feed/"
 	EntryPathPrefix  = "/entry/"
