@@ -142,9 +142,9 @@ func entryRecallCal(entryPath string, language string, maxNum int, LastRecallTim
 
 		filePath := filepath.Join(entryPath, fileName)
 		currentZlibFileByte, _ := os.ReadFile(filePath)
-		uncompressByte := common.DoZlibUnCompress(currentZlibFileByte)
+		//uncompressByte := common.DoZlibUnCompress(currentZlibFileByte)
 		var protoEntryList protobuf_entity.ListEntry
-		proto.Unmarshal(uncompressByte, &protoEntryList)
+		proto.Unmarshal(currentZlibFileByte, &protoEntryList)
 		for _, protoEntry := range protoEntryList.Entries {
 			if protoEntry.Language != language {
 				continue
@@ -167,7 +167,7 @@ func entryRecallCal(entryPath string, language string, maxNum int, LastRecallTim
 				if maxCreatedAt < protoEntry.CreatedAt {
 					maxCreatedAt = protoEntry.CreatedAt
 				}
-				point, coineErr := common.Cosine(protoEntry.EmbeddingContentAll_MiniLM_L6V2Base, userEmbedding)
+				point, coineErr := common.Cosine(protoEntry.Embedding, userEmbedding)
 				if coineErr != nil {
 					common.Logger.Error("coine cal Err", zap.String("file", filepath.Join(entryPath, file.Name())), zap.Error(coineErr))
 					continue

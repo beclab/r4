@@ -123,7 +123,7 @@ func GetEntryModel(protoEntity *protobuf_entity.Entry) *EntryModel {
 	result.ImageUrl = protoEntity.ImageUrl
 	result.KeywordList = protoEntity.KeywordList
 	result.Language = protoEntity.Language
-	result.Embedding = protoEntity.EmbeddingContentAll_MiniLM_L6V2Base
+	result.Embedding = protoEntity.Embedding
 	result.RecallPoint = float32(protoEntity.RecallPoint)
 	result.PublishedAtTimestamp = protoEntity.PublishedAtTimestamp
 	return &result

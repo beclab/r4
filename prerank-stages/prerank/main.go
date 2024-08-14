@@ -60,7 +60,7 @@ func entryPrerankCal(language string, maxNum int, startTimestamp int64, userEmbe
 			}
 		}
 
-		point, coineErr := common.Cosine(curEntry.EmbeddingContentAll_MiniLM_L6V2Base, userEmbedding)
+		point, coineErr := common.Cosine(curEntry.Embedding, userEmbedding)
 		if coineErr != nil {
 			common.Logger.Error("coine cal Err", zap.Error(coineErr))
 			continue
