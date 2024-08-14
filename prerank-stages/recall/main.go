@@ -188,7 +188,7 @@ func main() {
 	source := common.GetAlgorithmSource()
 	startTimestamp := int64(time.Now().UTC().Unix())
 
-	syncKey := common.GetSyncProvider() + common.GetSyncFeedName()
+	syncKey := common.GetSyncProvider() + common.GetSyncFeedName() + "_" + common.GetSyncModelName()
 	lastSyncTimeStr, _ := api.GetRedisConfig(syncKey, "last_sync_time").(string)
 	if lastSyncTimeStr == "" {
 		common.Logger.Info("sync data is not end no execute", zap.String("syncKey:", syncKey))
