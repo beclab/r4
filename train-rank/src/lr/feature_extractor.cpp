@@ -44,14 +44,14 @@ double EmbeddingDistanceExtractor::extract(const Impression& item) {
     if (!item.embedding.has_value()) {
         return 0.0;
     }
-    return extract(Item(item.id, item.embedding.value()));
+    return extract(Item(item.entry_id, item.embedding.value()));
 }
 
 double EmbeddingDistanceExtractor::extract(const Algorithm& item) {
     if (!item.embedding.has_value()) {
         return 0.0;
     }
-    return extract(Item(item.id, item.embedding.value()));
+    return extract(Item(item.entry, item.embedding.value()));
 }
 
 double EmbeddingDistanceExtractor::extract(const Item& item) {
@@ -64,7 +64,7 @@ double EmbeddingDistanceExtractor::extract(const Item& item) {
         minNegCos = std::max(minNegCos, embeddingCosine(neg.embedding, item.embedding));
     }
     // TODO(haochengwang): Optimize me
-    return minPosCos;
+    return minPosCos + 1.0;
 }
 
 Reason EmbeddingDistanceExtractor::getReason(const Algorithm& item) {
