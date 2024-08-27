@@ -2,6 +2,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+#include <gflags/gflags.h>
+
 using std::cerr;
 using std::endl;
 
@@ -15,12 +18,16 @@ using namespace web::http::client;
 #include "entity/rank_algorithm.h"
 #include "entity/reco_metadata.h"
 
+DECLARE_string(recommend_source_name);
+
 namespace knowledgebase {
 
 class EntryCache {
 public:
     static EntryCache& getInstance();
+    void init();
     std::optional<Entry> getEntryById(const std::string& id);
+    void loadAllEntries();
 
     void dumpStatistics();
 
@@ -63,6 +70,10 @@ void getAllAlgorithmAccordingRanked(std::string source,
                                     bool ranked, int* count);
 std::optional<Algorithm> GetAlgorithmById(const std::string& id);
 std::optional<Entry> GetEntryById(const std::string& id);
+std::unordered_map<std::string, Entry> getEntries(const std::string& source);
+std::unordered_map<std::string, Entry> getEntries(const std::string& source);
+void getEntries(int limit, int offset, const std::string& source,
+                std::vector<Entry> *entry_list,  int *count);
 bool updateKnowledgeConfig(const std::string& source, const std::string& key,
                            const web::json::value& value);
 bool updateLastRankTime(std::string source, int64_t last_rank_time);

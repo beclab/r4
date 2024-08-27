@@ -26,7 +26,8 @@ public:
     struct Item {
         std::string id;
         std::vector<double> embedding;
-        Item(std::string id, const std::vector<double>& embedding): id(id), embedding(embedding) {}
+        Item(std::string id, const std::vector<double>& embedding):
+                id(id), embedding(embedding) {}
     };
     EmbeddingDistanceExtractor();
 

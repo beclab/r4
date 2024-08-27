@@ -6,11 +6,14 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
+#include <cmath>
 #include <random>
 #include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include <boost/date_time.hpp>
 
 #include "common_tool.h"
 #include "data_process.h"
@@ -94,6 +97,19 @@ ScoreWithMetadata buildScoreWithMeta(double score, const std::string& entry_id) 
 std::unique_ptr<lr::LogisticRegression> loadDefaultModel() {
     return std::unique_ptr<lr::LogisticRegression>(
         new lr::LogisticRegression(1, vector<double>{1.0, 0.0}));
+}
+
+double getTimeCoefficient(boost::posix_time::ptime timestamp) {
+    auto now = boost::posix_time::second_clock::local_time();
+    auto diff = (now - timestamp).total_seconds();
+
+    if (diff <= 0) {
+        return 1.0;
+    }
+
+    double result = 1.8 / (1.0 + std::exp(- 86400.0 / diff)) - 0.8;
+
+    return result;
 }
 
 }  // namespace
@@ -222,43 +238,48 @@ getAllEntryToPrerankSourceForCurrentSourceKnowledge() {
   const char *source_name = std::getenv("TERMINUS_RECOMMEND_SOURCE_NAME");
 
   const int batch_size = 100;
-  int offset = 0;
 
-  while (true) {
-    std::vector<Algorithm> temp_algorithm;
-    int count = 0;
-    knowledgebase::getAlgorithmAccordingRanked(batch_size, offset, source_name,
-                                               false, &temp_algorithm, &count);
-    LOG(INFO) << "offset " << offset << " limit " << batch_size << " count "
-              << count;
+  auto get_scores = [&](bool ranked) {
+      int offset = 0;
+      while (true) {
+        std::vector<Algorithm> temp_algorithm;
+        int count = 0;
+        knowledgebase::getAlgorithmAccordingRanked(batch_size, offset, source_name,
+                                                   ranked, &temp_algorithm, &count);
+        LOG(INFO) << "offset " << offset << " limit " << batch_size << " count "
+                  << count;
 
-    // algorithm_list.insert(algorithm_list.end(),temp_algorithm.begin(),temp_algorithm.end());
-    for (Algorithm current : temp_algorithm) {
-      if (current.prerank_score != std::nullopt) {
-        std::optional<Entry> temp_entry =
-            knowledgebase::GetEntryById(current.entry);
-        if (temp_entry == std::nullopt) {
-          LOG(INFO) << "entry [" << current.entry << "] not exist, algorithm ["
-                    << current.id << "]" << std::endl;
-          continue;
+        // algorithm_list.insert(algorithm_list.end(),temp_algorithm.begin(),temp_algorithm.end());
+        for (Algorithm current : temp_algorithm) {
+          if (current.prerank_score != std::nullopt) {
+            std::optional<Entry> temp_entry =
+                knowledgebase::GetEntryById(current.entry);
+            if (temp_entry == std::nullopt) {
+              LOG(INFO) << "entry [" << current.entry << "] not exist, algorithm ["
+                        << current.id << "]" << std::endl;
+              continue;
+            }
+
+            if (temp_entry.value().extract == false) {
+              LOG(INFO) << "entry [" << current.entry
+                        << "] not extract, algorithm [" << current.id << "]"
+                        << std::endl;
+              continue;
+            }
+
+            algorithm_entry_id_to_score_with_meta[current.id] =
+                ScoreWithMetadata(current.prerank_score.value() * getTimeCoefficient(temp_entry.value().timestamp));
+          }
         }
-
-        if (temp_entry.value().extract == false) {
-          LOG(INFO) << "entry [" << current.entry
-                    << "] not extract, algorithm [" << current.id << "]"
-                    << std::endl;
-          continue;
+        offset = offset + batch_size;
+        if (offset >= count) {
+          break;
         }
-
-        algorithm_entry_id_to_score_with_meta[current.id] =
-            ScoreWithMetadata(current.prerank_score.value());
       }
-    }
-    offset = offset + batch_size;
-    if (offset >= count) {
-      break;
-    }
-  }
+  };
+  get_scores(false);
+  get_scores(true);
+
   LOG(INFO) << "algorithm_entry_id_to_score_with_meta "
             << algorithm_entry_id_to_score_with_meta.size() << std::endl;
   return algorithm_entry_id_to_score_with_meta;
@@ -699,6 +720,8 @@ bool rankLR() {
         return false;
     }
 
+    knowledgebase::EntryCache::getInstance().init();
+
     if (!doRank()) {
         std::unordered_map<std::string, ScoreWithMetadata> entry_to_score_with_metadata =
             rssrank::getAllEntryToPrerankSourceForCurrentSourceKnowledge();
@@ -758,7 +781,7 @@ bool doRank() {
     std::unordered_map<std::string, ScoreWithMetadata> id_to_score_with_meta;
     for (const auto &current_item : not_ranked_algorithm_to_entry) {
         std::optional<Entry> temp_entry =
-            knowledgebase::GetEntryById(current_item.second);
+            knowledgebase::EntryCache::getInstance().getEntryById(current_item.second);
         if (temp_entry == std::nullopt) {
             LOG(ERROR) << "entry [" << current_item.second
                        << "] not exist, algorithm [" << current_item.first << "]"
@@ -788,6 +811,7 @@ bool doRank() {
         }
 
         auto score = logistic_regression->predict(features);
+        score *= getTimeCoefficient(temp_entry.value().timestamp);
         if (FLAGS_verbose) {
             LOG(INFO) << "Score: " << score << endl;
         }

@@ -3,15 +3,37 @@
 #include <cpprest/json.h>
 
 #include <optional>
+#include <iostream>
 #include <chrono>
 #include <thread>
 
 #include "easylogging++.h"
 
+#include <boost/date_time.hpp>
+
 using namespace web::json;
+
+using std::string;
+using std::unordered_map;
+using std::vector;
 
 namespace knowledgebase {
 
+namespace {
+
+boost::posix_time::ptime parse_time(string& timestamp_str) {
+    timestamp_str[10] = ' ';
+    timestamp_str.pop_back();  // remove the last 'Z'
+
+    try {
+        return boost::posix_time::time_from_string(timestamp_str);
+    } catch (boost::bad_lexical_cast& e) {
+        LOG(ERROR) << "Failed to convert timestamp " << timestamp_str << ", Reason: " << e.what();
+        return boost::posix_time::ptime(boost::gregorian::date(1970, 1, 1));
+    }
+}
+
+}  // namespace
 EntryCache::EntryCache():cache_miss(0), cache_hit(0) {
 }
 
@@ -20,62 +42,31 @@ EntryCache& EntryCache::getInstance() {
     return instance;
 }
 
+void EntryCache::init() {
+    loadAllEntries();
+}
+
 std::optional<Entry> EntryCache::getEntryById(const std::string& id) {
     if (cache.find(id) != cache.end()) {
         ++cache_hit;
         return std::make_optional(cache[id]);
     }
-    ++cache_miss;
-
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
-        std::string current_entry_api_suffix =
-        std::string(ENTRY_API_SUFFIX) + "/" + id;
-
-    LOG(DEBUG) << "current_entry_api_suffix " << current_entry_api_suffix
-                 << std::endl;
-
-    uri_builder builder(U(current_entry_api_suffix));
-
-    // Impression current_impression;
-    std::optional<Entry> option_entry = std::nullopt;
-
-    client.request(methods::GET, builder.to_string())
-            .then([](http_response response) -> pplx::task<web::json::value> {
-            if (response.status_code() == status_codes::OK) {
-              return response.extract_json();
-            }
-            return pplx::task_from_result(web::json::value());
-          })
-          .then([&option_entry](pplx::task<web::json::value> previousTask) {
-            try {
-              web::json::value const &v = previousTask.get();
-              int code = v.at("code").as_integer();
-              std::string message = "null";
-              if (v.has_string_field("message")) {
-                message = v.at("message").as_string();
-              }
-              LOG(DEBUG) << "code " << code << " message " << message << std::endl;
-              if (code == 0) {
-                web::json::value current_value = v.at("data");
-                option_entry = convertFromWebJsonValueToEntry(current_value);
-              }
-            } catch (http_exception const &e) {
-              LOG(ERROR) << "Error exception " << e.what() << std::endl;
-            }
-          })
-          .wait();
-
-    if (option_entry.has_value()) {
-        cache[id] = option_entry.value();
+    auto result = GetEntryById(id);
+    if (result != std::nullopt) {
+        ++cache_hit;
+        cache[id] = result.value();
+        return result;
     }
-    return option_entry;
+    ++cache_miss;
+    return std::nullopt;
+}
+
+void EntryCache::loadAllEntries() {
+    cache = getEntries(FLAGS_recommend_source_name);
 }
 
 void EntryCache::dumpStatistics() {
     LOG(INFO) << "Cache hit: " << cache_hit << ", miss: " << cache_miss << endl;
-    for (auto& pr : cache) {
-        LOG(INFO) << pr.first << endl;
-    }
 }
 
 bool updateAlgorithmScoreAndMetadata(
@@ -326,6 +317,15 @@ std::optional<Entry> convertFromWebJsonValueToEntry(
     temp_entry.extract = current_item.at(ENTRY_EXTRACT).as_bool();
   } else {
     LOG(ERROR) << "current web json value have no " << ENTRY_EXTRACT
+               << std::endl;
+    return std::nullopt;
+  }
+
+  if (current_item.has_string_field(ENTRY_CREATED_AT)) {
+    auto timestamp_str = current_item.at(ENTRY_CREATED_AT).as_string();
+    temp_entry.timestamp = parse_time(timestamp_str);
+  } else {
+    LOG(ERROR) << "current web json value have no " << ENTRY_CREATED_AT
                << std::endl;
     return std::nullopt;
   }
@@ -823,6 +823,77 @@ std::optional<Entry> GetEntryById(const std::string &id) {
       })
       .wait();
   return option_entry;
+}
+
+unordered_map<string, Entry> getEntries(const string& source) {
+    unordered_map<string, Entry> result;
+    int offset = 0, count = 0, limit = 100;
+    do {
+        vector<Entry> entry_list;
+        getEntries(limit, offset, source, &entry_list, &count);
+        for (auto& entry : entry_list) {
+            result.emplace(entry.id, std::move(entry));
+        }
+        offset += limit;
+    } while (result.size() < count);
+    return result;
+}
+
+void getEntries(int limit, int offset, const string& source,
+                std::vector<Entry> *entry_list,  int *count) {
+    entry_list->clear();
+    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    std::string current_suffix =
+        std::string(ENTRY_API_SUFFIX) + "?offset=" + std::to_string(offset)
+        + "&limit=" + std::to_string(limit) + "&source=" + source + "&extract=true"
+        + "&fields=id,file_type,language,url,title,readlater,crawler,starred,disabled,saved,unread,extract,created_at";
+    LOG(DEBUG) << "current_suffix " << current_suffix
+               << std::endl;
+
+    bool success = false;
+    while (!success) {
+        client.request(methods::GET, U(current_suffix))
+            .then([](http_response response) -> pplx::task<web::json::value> {
+                if (response.status_code() == status_codes::OK) {
+                    return response.extract_json();
+                }
+                return pplx::task_from_result(web::json::value());
+            })
+            .then([&](pplx::task<web::json::value> previousTask) {
+                try {
+                    web::json::value const &v = previousTask.get();
+                    int code = v.at("code").as_integer();
+                    std::string message = "null";
+                    if (v.has_string_field("message")) {
+                        message = v.at("message").as_string();
+                    }
+                    LOG(DEBUG) << "code " << code << " message " << message << std::endl;
+                    if (code == 0) {
+                        web::json::value data_value = v.at("data");
+                        web::json::value items = data_value.at("items");
+                        *count = data_value.at("count").as_integer();
+                        for (auto iter = items.as_array().cbegin(); iter != items.as_array().cend(); ++iter) {
+                            auto item = convertFromWebJsonValueToEntry(*iter);
+                            if (item == std::nullopt) {
+                                continue;
+                            }
+                            entry_list->push_back(item.value());
+                        }
+                    }
+                    success = true;
+                } catch (http_exception const &e) {
+                    LOG(ERROR) << "Error exception " << e.what() << std::endl;
+                }
+            })
+            .wait();
+
+       if (!success) {
+           std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+           LOG(INFO) << "getEntries retrying..." << std::endl;
+       } else {
+           LOG(INFO) << "getEntries succeed." << std::endl;
+       }
+    }
 }
 
 std::optional<Algorithm> GetAlgorithmById(const std::string &id) {
