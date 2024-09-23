@@ -37,3 +37,7 @@ tracing-subscriber = "0.3.18"
 [[bin]]
 name = "userembedding"
 path = "src/userembedding.rs"
+
+[[bin]]
+name = "downloadmodel"
+path = "src/download_model.rs"
