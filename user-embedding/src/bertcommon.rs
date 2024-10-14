@@ -6,6 +6,7 @@ use candle_transformers::models::bert::BertModel;
 use log::{debug as logdebug, error as logerror};
 use ndarray_rand::rand;
 use rand::seq::SliceRandom;
+use tokenizers::Tokenizer;
 
 use crate::{
     embedding_common::{self, normalize_l2, TokenizerImplSimple},
@@ -13,7 +14,7 @@ use crate::{
 };
 
 // const HUGGING_FACE_MODEL_NAME: &str = "sentence-transformers/all-MiniLM-L6-v2";
-// const HUGGING_FACE_MODEL_REVISION: &str = "refs/pr/21"; 
+// const HUGGING_FACE_MODEL_REVISION: &str = "refs/pr/21";
 pub const BERT_V2_EMBEDDING_DIMENSION: usize = 384;
 pub const BERT_V3_EMBEDDING_DIMENSION: usize = 384;
 
@@ -72,26 +73,50 @@ pub async fn calculate_single_entry_pure(
 async fn calculate_userembedding() -> AnyhowResult<Tensor, AnyhowError> {
     let current_source_name: String = env::var("TERMINUS_RECOMMEND_SOURCE_NAME")
         .expect("TERMINUS_RECOMMEND_SOURCE_NAME env not found.");
-    let embedding_method: String =std::env::var("EMBEDDING_METHOD").expect("EMBEDDING_METHOD not exist");
-    let model_related_info: &embedding_common::ModelInfoField = embedding_common::MODEL_RELATED_INFO_MAP.get(embedding_method.as_str()).unwrap();  
+    let embedding_method: String =
+        std::env::var("EMBEDDING_METHOD").expect("EMBEDDING_METHOD not exist");
+    let model_related_info: &embedding_common::ModelInfoField =
+        embedding_common::MODEL_RELATED_INFO_MAP
+            .get(embedding_method.as_str())
+            .unwrap();
     let mut option_cumulative_tensor: Option<Tensor> = None;
-    if model_related_info.model_name == "bert_v2"{
-    let cumulative_embedding_data: [f32; BERT_V2_EMBEDDING_DIMENSION] =
-        [0f32; BERT_V2_EMBEDDING_DIMENSION];
+    if model_related_info.model_name == "bert_v2" {
+        let cumulative_embedding_data: [f32; BERT_V2_EMBEDDING_DIMENSION] =
+            [0f32; BERT_V2_EMBEDDING_DIMENSION];
         option_cumulative_tensor = Some(Tensor::new(&cumulative_embedding_data, &Device::Cpu)?);
-    }else if model_related_info.model_name == "bert_v3"{
+    } else if model_related_info.model_name == "bert_v3" {
         let cumulative_embedding_data: [f32; BERT_V3_EMBEDDING_DIMENSION] =
-        [0f32; BERT_V3_EMBEDDING_DIMENSION];
+            [0f32; BERT_V3_EMBEDDING_DIMENSION];
         option_cumulative_tensor = Some(Tensor::new(&cumulative_embedding_data, &Device::Cpu)?);
-    }else{
+    } else {
         tracing::error!("embedding method {} not exist", embedding_method);
         return Err(AnyhowError::msg("embedding method not exist"));
     }
     let mut cumulative_tensor: Tensor = option_cumulative_tensor.unwrap();
     let default_model: String = model_related_info.hugging_face_model_name.to_string();
     let default_revision: String = model_related_info.hugging_face_model_revision.to_string();
-    let (model, mut tokenizer) =
-        embedding_common::build_model_and_tokenizer(default_model, default_revision).unwrap();
+    let MODEL_INTERNET: String = env::var("MY_ENV_VAR").unwrap_or("false".to_string());
+    let mut model_option: Option<BertModel> = None;
+    let mut model_tokenizer: Option<Tokenizer> = None;
+
+    if MODEL_INTERNET == "true" {
+        logdebug!("use internet model");
+        let (model, mut tokenizer, _) = embedding_common::build_model_and_tokenizer_from_internet(
+            default_model,
+            default_revision,
+        )
+        .unwrap();
+        model_option = Some(model);
+        model_tokenizer = Some(tokenizer);
+    } else {
+        logdebug!("use local model");
+        let (model, mut tokenizers) =
+            embedding_common::build_model_and_tokenizer_from_local(model_related_info).unwrap();
+        model_option = Some(model);
+        model_tokenizer = Some(tokenizers);
+    }
+    let model: BertModel = model_option.unwrap();
+    let mut tokenizer: Tokenizer = model_tokenizer.unwrap();
     let current_tokenizer: &TokenizerImplSimple = tokenizer
         .with_padding(None)
         .with_truncation(None)
@@ -146,15 +171,20 @@ async fn calculate_userembedding() -> AnyhowResult<Tensor, AnyhowError> {
 }
 
 pub async fn execute_bertv2_user_embedding() {
-    let embedding_method: String =std::env::var("EMBEDDING_METHOD").expect("EMBEDDING_METHOD not exist");
-    let model_related_info: &embedding_common::ModelInfoField = embedding_common::MODEL_RELATED_INFO_MAP.get(embedding_method.as_str()).unwrap(); 
+    let embedding_method: String =
+        std::env::var("EMBEDDING_METHOD").expect("EMBEDDING_METHOD not exist");
+    let model_related_info: &embedding_common::ModelInfoField =
+        embedding_common::MODEL_RELATED_INFO_MAP
+            .get(embedding_method.as_str())
+            .unwrap();
     let user_embedding: Tensor = calculate_userembedding()
         .await
         .expect("calculate user embedding fail");
-    let original_user_embedding =
-        embedding_common::retrieve_user_embedding_through_knowledge(model_related_info.embedding_dimension)
-            .await
-            .expect("retrieve user embedding through knowledge base fail");
+    let original_user_embedding = embedding_common::retrieve_user_embedding_through_knowledge(
+        model_related_info.embedding_dimension,
+    )
+    .await
+    .expect("retrieve user embedding through knowledge base fail");
     let new_user_embedding_result = user_embedding.add(&original_user_embedding);
     match new_user_embedding_result {
         Ok(current_new_user_embedding) => {
@@ -181,13 +211,20 @@ mod bertv2test {
     async fn test_calculate_single_entry() {
         // cargo test bertv2test::test_calculate_single_entry
         common_test_operation::init_env();
-        let embedding_method: String =std::env::var("EMBEDDING_METHOD").expect("EMBEDDING_METHOD not exist");
-        let model_related_info: &embedding_common::ModelInfoField = embedding_common::MODEL_RELATED_INFO_MAP.get(embedding_method.as_str()).unwrap(); 
+        let embedding_method: String =
+            std::env::var("EMBEDDING_METHOD").expect("EMBEDDING_METHOD not exist");
+        let model_related_info: &embedding_common::ModelInfoField =
+            embedding_common::MODEL_RELATED_INFO_MAP
+                .get(embedding_method.as_str())
+                .unwrap();
 
         let default_model: String = model_related_info.hugging_face_model_name.to_string();
         let default_revision: String = model_related_info.hugging_face_model_revision.to_string();
-        let (model, mut tokenizer) =
-            embedding_common::build_model_and_tokenizer(default_model, default_revision).unwrap();
+        let (model, mut tokenizer, _) = embedding_common::build_model_and_tokenizer_from_internet(
+            default_model,
+            default_revision,
+        )
+        .unwrap();
         let current_tokenizer: &TokenizerImplSimple = tokenizer
             .with_padding(None)
             .with_truncation(None)

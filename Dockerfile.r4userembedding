@@ -10,7 +10,7 @@ RUN mkdir -p /userembedding && \
     apt install build-essential -y && \
     apt-get install libssl-dev -y && \
     apt-get install pkg-config -y 
-    
+
 ENV PATH="/root/.cargo/bin:${PATH}"
 WORKDIR /userembedding
 COPY user-embedding/src  /userembedding/src
@@ -22,7 +22,7 @@ RUN cargo build --release
 FROM  ubuntu:jammy
 
 # Import from builder.
-
+ENV MODEL_INTERNET = "true"
 
 WORKDIR /userembedding
 

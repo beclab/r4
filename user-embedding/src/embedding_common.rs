@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::Add};
+use std::{collections::HashMap, fs, ops::Add};
 
 use anyhow::{bail, Error as AnyhowError, Result as AnyhowResult};
 use candle_core::{DType, Device, Result as CandleResult, Tensor};
@@ -9,6 +9,7 @@ use log::{debug as logdebug, error as logerror};
 use ndarray::Array;
 use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
+use serde::{Deserialize, Serialize};
 use text_splitter::TextSplitter;
 use tokenizers::Tokenizer;
 
@@ -30,21 +31,33 @@ pub fn build_device(cpu: bool) -> CandleResult<Device> {
     }
 }
 
-pub fn build_model_and_tokenizer(
-    default_model: String,
-    default_revision: String,
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BertModelFilePath {
+    pub config_filename: String,
+    pub tokenizer_filename: String,
+    pub weights_filename: String,
+}
+
+pub fn build_model_and_tokenizer_from_local(
+    current_model_info_field: &ModelInfoField,
 ) -> AnyhowResult<(BertModel, Tokenizer)> {
     let device = build_device(false)?;
-    let repo = Repo::with_revision(default_model, RepoType::Model, default_revision);
-    let (config_filename, tokenizer_filename, weights_filename) = {
-        let api = Api::new()?;
-        let api = api.repo(repo);
-        let config = api.get("config.json")?;
-        let tokenizer = api.get("tokenizer.json")?;
-        let weights = api.get("model.safetensors")?;
+    let current_model_file_path = format!(
+        "/root/.cache/huggingface/{}.json",
+        current_model_info_field.model_name
+    );
+    let file_content = fs::read_to_string(current_model_file_path).map_err(|e| {
+        logerror!("read file error {}", e);
+        AnyhowError::msg(e)
+    })?;
+    let data: BertModelFilePath = serde_json::from_str(&file_content).map_err(|e| {
+        logerror!("parse json error {}", e);
+        AnyhowError::msg(e)
+    })?;
+    let config_filename = fs::canonicalize(data.config_filename)?;
+    let tokenizer_filename = fs::canonicalize(data.tokenizer_filename)?;
+    let weights_filename = fs::canonicalize(data.weights_filename)?;
 
-        (config, tokenizer, weights)
-    };
     logdebug!(
         "[{}] [{}]  config_filename {} tokenizer_filename {} weights_filename {}",
         file!(),
@@ -60,6 +73,44 @@ pub fn build_model_and_tokenizer(
     let vb = unsafe { VarBuilder::from_mmaped_safetensors(&[weights_filename], DTYPE, &device)? };
     let model = BertModel::load(vb, &config)?;
     Ok((model, tokenizer))
+}
+
+pub fn build_model_and_tokenizer_from_internet(
+    default_model: String,
+    default_revision: String,
+) -> AnyhowResult<(BertModel, Tokenizer, BertModelFilePath)> {
+    let device = build_device(false)?;
+
+    let repo = Repo::with_revision(default_model, RepoType::Model, default_revision);
+    let (config_filename, tokenizer_filename, weights_filename) = {
+        let api = Api::new()?;
+        let api = api.repo(repo);
+        let config = api.get("config.json")?;
+        let tokenizer = api.get("tokenizer.json")?;
+        let weights = api.get("model.safetensors")?;
+
+        (config, tokenizer, weights)
+    };
+    let current_bert_model_file_path = BertModelFilePath {
+        config_filename: config_filename.display().to_string(),
+        tokenizer_filename: tokenizer_filename.display().to_string(),
+        weights_filename: weights_filename.display().to_string(),
+    };
+    logdebug!(
+        "[{}] [{}]  config_filename {} tokenizer_filename {} weights_filename {}",
+        file!(),
+        line!(),
+        config_filename.display(),
+        tokenizer_filename.display(),
+        weights_filename.display()
+    );
+
+    let config = std::fs::read_to_string(config_filename)?;
+    let config: Config = serde_json::from_str(&config)?;
+    let tokenizer = Tokenizer::from_file(tokenizer_filename).map_err(AnyhowError::msg)?;
+    let vb = unsafe { VarBuilder::from_mmaped_safetensors(&[weights_filename], DTYPE, &device)? };
+    let model = BertModel::load(vb, &config)?;
+    Ok((model, tokenizer, current_bert_model_file_path))
 }
 
 pub fn normalize_l2(v: &Tensor, dimension: usize) -> AnyhowResult<Tensor> {
@@ -333,7 +384,6 @@ pub struct ModelInfoField {
     pub hugging_face_model_name: &'static str,
     pub hugging_face_model_revision: &'static str,
     pub embedding_dimension: usize,
-
 }
 
 lazy_static! {
@@ -347,22 +397,20 @@ lazy_static! {
                 hugging_face_model_revision: "refs/pr/21",
                 embedding_dimension: 384,
             },
-
         );
         m.insert(
             "bert_v3",
             ModelInfoField {
                 model_name: "bert_v3",
-                hugging_face_model_name: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-                hugging_face_model_revision: "refs/heads/main" ,
+                hugging_face_model_name:
+                    "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+                hugging_face_model_revision: "refs/heads/main",
                 embedding_dimension: 384,
             },
-            
         );
         m
     };
 }
-
 
 #[cfg(test)]
 mod embeddingcommontest {
@@ -380,12 +428,9 @@ mod embeddingcommontest {
         common_test_operation::init_env();
         let source_name = String::from("bert_v2");
 
-        let current_tensor = retrieve_current_algorithm_impression_knowledge(
-            source_name,
-           384,
-        )
-        .await
-        .expect("add cumulative tensor fail");
+        let current_tensor = retrieve_current_algorithm_impression_knowledge(source_name, 384)
+            .await
+            .expect("add cumulative tensor fail");
         logerror!("current_tensor {}", current_tensor);
     }
 
@@ -425,14 +470,17 @@ mod embeddingcommontest {
     }
 
     #[test]
-    fn test_build_model_and_tokenizer() {
+    fn test_build_model_and_tokenizer_from_internet() {
         // env::set_var("CUDA_COMPUTE_CAP","86");
-        // cargo test embeddingcommontest::test_build_model_and_tokenizer
+        // cargo test embeddingcommontest::test_build_model_and_tokenizer_from_internet
         common::init_logger();
         let default_model = "sentence-transformers/all-MiniLM-L6-v2".to_string();
         let default_revision = "refs/pr/21".to_string();
-        let (model, mut tokenizer) =
-            embedding_common::build_model_and_tokenizer(default_model, default_revision).unwrap();
+        let (model, mut tokenizer, _) = embedding_common::build_model_and_tokenizer_from_internet(
+            default_model,
+            default_revision,
+        )
+        .unwrap();
         let current_tokenizer: &TokenizerImplSimple = tokenizer
             .with_padding(None)
             .with_truncation(None)
@@ -456,5 +504,32 @@ mod embeddingcommontest {
             Ok(tensor) => println!("tensor {:?}", tensor.shape()),
             Err(err) => println!("err {}", err),
         }
+    }
+
+    #[test]
+    fn test_build_model_and_tokenizer_from_local() {
+        // cargo test embeddingcommontest::test_build_model_and_tokenizer_from_local
+        common::init_logger();
+        let current_model_info_field = embedding_common::MODEL_RELATED_INFO_MAP
+            .get("bert_v2")
+            .unwrap();
+        let (model, mut tokenizer) =
+            embedding_common::build_model_and_tokenizer_from_local(current_model_info_field)
+                .unwrap();
+        let current_tokenizer: &TokenizerImplSimple = tokenizer
+            .with_padding(None)
+            .with_truncation(None)
+            .map_err(AnyhowError::msg)
+            .unwrap();
+        let current_tensor = calculate_one_sentence(
+            &model,
+            current_tokenizer,
+            String::from("How beautiful the blonde girl"),
+            500,
+        )
+        .unwrap();
+        println!("*******************result {:?}", current_tensor);
+        let result = current_tensor.get(0).unwrap().to_vec1::<f32>().unwrap();
+        println!("********************** vec<f32> {:?}", result);
     }
 }
