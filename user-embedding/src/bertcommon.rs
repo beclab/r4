@@ -95,10 +95,10 @@ async fn calculate_userembedding() -> AnyhowResult<Tensor, AnyhowError> {
     let mut cumulative_tensor: Tensor = option_cumulative_tensor.unwrap();
     let default_model: String = model_related_info.hugging_face_model_name.to_string();
     let default_revision: String = model_related_info.hugging_face_model_revision.to_string();
-    let MODEL_INTERNET: String = env::var("MY_ENV_VAR").unwrap_or("false".to_string());
+    let MODEL_INTERNET: String = env::var("MODEL_INTERNET").unwrap_or("false".to_string());
     let mut model_option: Option<BertModel> = None;
     let mut model_tokenizer: Option<Tokenizer> = None;
-
+    log::info!("MODEL_INTERNET {}", MODEL_INTERNET);
     if MODEL_INTERNET == "true" {
         logdebug!("use internet model");
         let (model, mut tokenizer, _) = embedding_common::build_model_and_tokenizer_from_internet(

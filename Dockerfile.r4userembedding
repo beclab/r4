@@ -22,7 +22,7 @@ RUN cargo build --release
 FROM  ubuntu:jammy
 
 # Import from builder.
-ENV MODEL_INTERNET = "true"
+ENV MODEL_INTERNET="true"
 
 WORKDIR /userembedding
 
