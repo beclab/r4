@@ -23,7 +23,7 @@ RUN  /userembedding/target/release/downloadmodel
 FROM  ubuntu:jammy
 
 # Import from builder.
-ENV MODEL_INTERNET = "false"
+ENV MODEL_INTERNET="false"
 
 
 WORKDIR /userembedding
