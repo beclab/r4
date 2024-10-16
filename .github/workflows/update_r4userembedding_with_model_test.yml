@@ -6,7 +6,7 @@ on:
         tags:
           description: 'Release Tags'
     branches:
-    - "main"
+      - "main"
 
 jobs:
     publish_dockerhub_amd64:
