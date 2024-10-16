@@ -41,41 +41,88 @@ pub struct BertModelFilePath {
 pub fn build_model_and_tokenizer_from_local(
     current_model_info_field: &ModelInfoField,
 ) -> AnyhowResult<(BertModel, Tokenizer)> {
-    let device = build_device(false)?;
+    let device = build_device(false).map_err(|e| {
+        tracing::error!("build device error {}", e);
+        AnyhowError::msg(e)
+    })?;
     let current_model_file_path = format!(
-        "/root/.cache/huggingface/{}.json",
+        "/userembedding/model/{}.json",
         current_model_info_field.model_name
     );
+    tracing::info!(
+        "current_model_file_path {}",
+        current_model_file_path.clone()
+    );
     let file_content = fs::read_to_string(current_model_file_path.clone()).map_err(|e| {
-        log::error!(
+        tracing::error!(
             "read file error {} current_model_file_path {}",
             e,
             current_model_file_path
         );
         AnyhowError::msg(e)
     })?;
+    tracing::info!("file_content {}", file_content);
     let data: BertModelFilePath = serde_json::from_str(&file_content).map_err(|e| {
-        log::error!("parse json error {}", e);
+        tracing::error!("parse json error {}", e);
         AnyhowError::msg(e)
     })?;
-    let config_filename = fs::canonicalize(data.config_filename)?;
-    let tokenizer_filename = fs::canonicalize(data.tokenizer_filename)?;
-    let weights_filename = fs::canonicalize(data.weights_filename)?;
-
-    logdebug!(
-        "[{}] [{}]  config_filename {} tokenizer_filename {} weights_filename {}",
-        file!(),
-        line!(),
-        config_filename.display(),
-        tokenizer_filename.display(),
-        weights_filename.display()
-    );
-
-    let config = std::fs::read_to_string(config_filename)?;
-    let config: Config = serde_json::from_str(&config)?;
-    let tokenizer = Tokenizer::from_file(tokenizer_filename).map_err(AnyhowError::msg)?;
-    let vb = unsafe { VarBuilder::from_mmaped_safetensors(&[weights_filename], DTYPE, &device)? };
-    let model = BertModel::load(vb, &config)?;
+    let config_filename = fs::canonicalize(data.config_filename.clone()).map_err(|e| {
+        tracing::error!(
+            "canonicalize error {} config_filename {}",
+            e,
+            data.config_filename.clone()
+        );
+        AnyhowError::msg(e)
+    })?;
+    let tokenizer_filename = fs::canonicalize(data.tokenizer_filename.clone()).map_err(|e| {
+        tracing::error!(
+            "canonicalize error {} tokenizer_filename {}",
+            e,
+            data.tokenizer_filename.clone()
+        );
+        AnyhowError::msg(e)
+    })?;
+    let weights_filename = fs::canonicalize(data.weights_filename.clone()).map_err(|e| {
+        tracing::error!(
+            "canonicalize error {} weights_filename {}",
+            e,
+            data.weights_filename.clone()
+        );
+        AnyhowError::msg(e)
+    })?;
+    let config = std::fs::read_to_string(config_filename.clone()).map_err(|e| {
+        tracing::error!("read config file error {} {}", e, config_filename.display());
+        AnyhowError::msg(e)
+    })?;
+    let config: Config = serde_json::from_str(&config).map(|config| {
+        tracing::info!("config {:?}", config);
+        config
+    })?;
+    let tokenizer = Tokenizer::from_file(tokenizer_filename.clone()).map_err(|e| {
+        tracing::error!(
+            "tokenizer from file error {} {}",
+            e,
+            tokenizer_filename.display()
+        );
+        AnyhowError::msg(e)
+    })?;
+    let vb = unsafe {
+        VarBuilder::from_mmaped_safetensors(&[weights_filename.clone()], DTYPE, &device).map_err(
+            |e| {
+                tracing::error!(
+                    "VarBuilder from mmaped safetensors error {} {}",
+                    e,
+                    weights_filename.display()
+                );
+                AnyhowError::msg(e)
+            },
+        )
+    }?;
+    let model = BertModel::load(vb, &config).map_err(|e| {
+        tracing::error!("load model error {}", e);
+        AnyhowError::msg(e)
+    })?;
+    tracing::info!("compelete build model and tokenizer from local");
     Ok((model, tokenizer))
 }
 
@@ -100,7 +147,7 @@ pub fn build_model_and_tokenizer_from_internet(
         tokenizer_filename: tokenizer_filename.display().to_string(),
         weights_filename: weights_filename.display().to_string(),
     };
-    logdebug!(
+    tracing::debug!(
         "[{}] [{}]  config_filename {} tokenizer_filename {} weights_filename {}",
         file!(),
         line!(),
@@ -153,7 +200,7 @@ pub fn parse_user_embedding(user_embedding: &String, embedding_dimension: usize)
                     empty_embedding_data.push(current_float);
                 }
                 Err(err) => {
-                    logerror!("convert user embedding fail {}", err.to_string());
+                    tracing::error!("convert user embedding fail {}", err.to_string());
                     parse_success = false;
                     break;
                 }
@@ -277,7 +324,7 @@ pub async fn retrieve_wise_library_impression_knowledge(
             &wise,
         )
         .await;
-        logdebug!(
+        tracing::debug!(
             "offset {} limit {} count {} current_batch_size {} wise",
             offset,
             batch_size,
@@ -305,7 +352,7 @@ pub async fn retrieve_wise_library_impression_knowledge(
             &library,
         )
         .await;
-        logdebug!(
+        tracing::debug!(
             "offset {} limit {} count {} current_batch_size {} library",
             offset,
             batch_size,
@@ -344,7 +391,7 @@ pub async fn retrieve_current_algorithm_impression_knowledge(
             &source_name,
         )
         .await;
-        logdebug!(
+        tracing::debug!(
             "offset {} limit {} count {} current_batch_size {}",
             offset,
             batch_size,
@@ -352,14 +399,14 @@ pub async fn retrieve_current_algorithm_impression_knowledge(
             temp_impression_list.len()
         );
         for current_impression in temp_impression_list {
-            logdebug!(
+            tracing::debug!(
                 "current impression id {} entry id {}",
                 current_impression.id,
                 current_impression.entry_id
             );
             if let Some(current_embedding) = current_impression.embedding {
                 if current_embedding.len() != embedding_dimension {
-                    logerror!(
+                    tracing::error!(
                         "current entry {} embedding dimension not equal {}",
                         current_embedding.len(),
                         embedding_dimension
@@ -373,7 +420,7 @@ pub async fn retrieve_current_algorithm_impression_knowledge(
                     .add(current_impression_embedding_tensor)
                     .expect("add tensor fail");
             }
-            logdebug!("add impression {} embedding success", current_impression.id);
+            tracing::debug!("add impression {} embedding success", current_impression.id);
         }
         offset = offset + batch_size;
         if offset > batch_size {
@@ -435,7 +482,7 @@ mod embeddingcommontest {
         let current_tensor = retrieve_current_algorithm_impression_knowledge(source_name, 384)
             .await
             .expect("add cumulative tensor fail");
-        logerror!("current_tensor {}", current_tensor);
+        tracing::error!("current_tensor {}", current_tensor);
     }
 
     #[tokio::test]
@@ -445,7 +492,7 @@ mod embeddingcommontest {
         let result = retrieve_wise_library_impression_knowledge()
             .await
             .expect("retrieve error");
-        logdebug!("size  {}", result.len());
+        tracing::debug!("size  {}", result.len());
     }
 
     #[test]

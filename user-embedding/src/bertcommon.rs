@@ -41,7 +41,7 @@ pub async fn calculate_single_entry_pure(
                             return Some(current_last_tensor);
                         }
                         Err(err) => {
-                            logerror!(
+                            tracing::error!(
                                 "get entry {} embedding zero dimension error {}",
                                 current_entry_id,
                                 err.to_string()
@@ -52,7 +52,7 @@ pub async fn calculate_single_entry_pure(
                     }
                 }
                 Err(err) => {
-                    logerror!(
+                    tracing::error!(
                         "calculate entry {} embedding error {}",
                         current_entry_id,
                         err.to_string()
@@ -61,11 +61,11 @@ pub async fn calculate_single_entry_pure(
                 }
             }
         } else {
-            logerror!("entry {} have not title", current_entry_id);
+            tracing::error!("entry {} have not title", current_entry_id);
             return None;
         }
     } else {
-        logerror!("entry {} not exist", current_entry_id);
+        tracing::error!("entry {} not exist", current_entry_id);
         return None;
     }
 }
@@ -98,9 +98,9 @@ async fn calculate_userembedding() -> AnyhowResult<Tensor, AnyhowError> {
     let MODEL_INTERNET: String = env::var("MODEL_INTERNET").unwrap_or("false".to_string());
     let mut model_option: Option<BertModel> = None;
     let mut model_tokenizer: Option<Tokenizer> = None;
-    log::info!("MODEL_INTERNET {}", MODEL_INTERNET);
+    tracing::info!("MODEL_INTERNET {}", MODEL_INTERNET);
     if MODEL_INTERNET == "true" {
-        logdebug!("use internet model");
+        tracing::debug!("use internet model");
         let (model, mut tokenizer, _) = embedding_common::build_model_and_tokenizer_from_internet(
             default_model,
             default_revision,
@@ -109,7 +109,7 @@ async fn calculate_userembedding() -> AnyhowResult<Tensor, AnyhowError> {
         model_option = Some(model);
         model_tokenizer = Some(tokenizer);
     } else {
-        logdebug!("use local model");
+        tracing::debug!("use local model");
         let (model, mut tokenizers) =
             embedding_common::build_model_and_tokenizer_from_local(model_related_info).unwrap();
         model_option = Some(model);
@@ -137,9 +137,9 @@ async fn calculate_userembedding() -> AnyhowResult<Tensor, AnyhowError> {
             calculate_single_entry_pure(current_entry_id, &model, current_tokenizer).await;
         if let Some(current_tensor) = current_tensor_option {
             cumulative_tensor = cumulative_tensor.add(&current_tensor)?;
-            logdebug!("add current_entry {}", current_entry_id);
+            tracing::debug!("add current_entry {}", current_entry_id);
         } else {
-            logerror!("current_entry_id {} calculate fail", current_entry_id);
+            tracing::error!("current_entry_id {} calculate fail", current_entry_id);
         }
     }
 
@@ -150,20 +150,20 @@ async fn calculate_userembedding() -> AnyhowResult<Tensor, AnyhowError> {
         )
         .await;
     if let Some(current_algorithm_tensor) = current_algorithm_tensor_option {
-        logdebug!(
+        tracing::debug!(
             "current algorithm existing embedding cumulative result {:?}",
             current_algorithm_tensor.to_vec1::<f32>().unwrap()
         );
         cumulative_tensor = cumulative_tensor.add(&current_algorithm_tensor)?;
     } else {
-        logerror!(
+        tracing::error!(
             "retrieve source {} embedding tensor fail ",
             current_source_name.clone()
         );
     }
 
     cumulative_tensor = normalize_l2(&cumulative_tensor, 0)?;
-    logdebug!(
+    tracing::debug!(
         "cumulative_tensor {:?}",
         cumulative_tensor.to_vec1::<f32>().unwrap()
     );
@@ -192,10 +192,10 @@ pub async fn execute_bertv2_user_embedding() {
                 .expect("normalize new user embedding fail");
             embedding_common::set_user_embedding_knowledgebase(&normalized_new_user_embedding)
                 .await;
-            logdebug!("set success for new user embedding");
+            tracing::debug!("set success for new user embedding");
         }
         Err(err) => {
-            logerror!("old and new user embedding add fail {},", err.to_string())
+            tracing::error!("old and new user embedding add fail {},", err.to_string())
         }
     }
 }
@@ -235,7 +235,7 @@ mod bertv2test {
             calculate_single_entry_pure(&current_entry_id, &model, current_tokenizer)
                 .await
                 .expect("get tensor fail");
-        logdebug!(
+        tracing::debug!(
             "current_tensor***************************** {}",
             current_tesnor
         )

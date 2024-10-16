@@ -14,7 +14,7 @@ pub fn init_tracing() {
         .with_line_number(true)
         .with_file(true)
         .init();
-    tracing::info!("init tracing log successfully");
+    tracing::error!("tracing initialized.");
 }
 pub fn init_logger() {
     let env: env_logger::Env<'_> =
