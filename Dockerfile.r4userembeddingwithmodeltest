@@ -10,24 +10,30 @@ RUN mkdir -p /userembedding && \
     apt install build-essential -y && \
     apt-get install libssl-dev -y && \
     apt-get install pkg-config -y 
-    
+
 ENV PATH="/root/.cargo/bin:${PATH}"
 WORKDIR /userembedding
 COPY user-embedding/src  /userembedding/src
 COPY user-embedding/Cargo.toml /userembedding/Cargo.toml
-RUN cargo build --release
+RUN cargo build --release 
+RUN  /userembedding/target/release/downloadmodel
 
 
 
 FROM  ubuntu:jammy
 
 # Import from builder.
+ENV MODEL_INTERNET="false"
 
 
 WORKDIR /userembedding
 
 # Copy our build
+COPY --from=builder /root/.cache/huggingface  /root/.cache/huggingface
 COPY --from=builder /userembedding/target/release/userembedding ./
+COPY --from=builder /userembedding/target/release/downloadmodel ./
+COPY --from=builder /userembedding/target/release/buildmodelfromlocal ./
 
 
-CMD ["/userembedding/userembedding"]
+# CMD ["/userembedding/userembedding"]
+ENTRYPOINT ["tail", "-f", "/dev/null"]

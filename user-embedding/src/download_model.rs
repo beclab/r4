@@ -51,6 +51,6 @@ fn main() {
     common::init_logger();
 
     if let Err(e) = download_models() {
-        eprintln!("Error downloading models: {}", e);
+        tracing::error!("Error downloading models: {}", e);
     }
 }
