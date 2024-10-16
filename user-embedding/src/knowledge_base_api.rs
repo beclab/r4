@@ -36,11 +36,11 @@ pub fn convert_from_web_json_to_impression(current_item: &serde_json::Value) -> 
         if let Some(current_impression_id_str) = current_impression_id_option {
             current_impression.id = String::from(current_impression_id_str);
         } else {
-            logerror!("current impression have no id");
+            tracing::error!("current impression have no id");
             return None;
         }
     } else {
-        logdebug!(
+        tracing::debug!(
             "current impression {} have no batch id ",
             current_impression.id
         );
@@ -53,14 +53,14 @@ pub fn convert_from_web_json_to_impression(current_item: &serde_json::Value) -> 
         if let Some(current_entry_id_str) = current_entry_id_option {
             current_impression.entry_id = String::from(current_entry_id_str);
         } else {
-            logerror!(
+            tracing::error!(
                 "current_impression {} have no entry id",
                 current_impression.id
             );
             return None;
         }
     } else {
-        logerror!(
+        tracing::error!(
             "current_impression {} have no entry id",
             current_impression.id
         );
@@ -74,14 +74,14 @@ pub fn convert_from_web_json_to_impression(current_item: &serde_json::Value) -> 
             current_impression.batch_id = Some(String::from(current_batch_id_str));
         } else {
             current_impression.batch_id = None;
-            logdebug!(
+            tracing::debug!(
                 "current impression {} have no batch id ",
                 current_impression.id
             )
         }
     } else {
         current_impression.batch_id = None;
-        logdebug!(
+        tracing::debug!(
             "current impression {} have no batch id ",
             current_impression.id
         )
@@ -93,14 +93,14 @@ pub fn convert_from_web_json_to_impression(current_item: &serde_json::Value) -> 
         if let Some(current_position_str) = current_position_option {
             current_impression.position = Some(String::from(current_position_str));
         } else {
-            logdebug!(
+            tracing::debug!(
                 "current impression {} have no position ",
                 current_impression.id
             )
         }
     } else {
         current_impression.position = None;
-        logdebug!(
+        tracing::debug!(
             "current impression {} have no position",
             current_impression.id
         )
@@ -113,14 +113,14 @@ pub fn convert_from_web_json_to_impression(current_item: &serde_json::Value) -> 
             current_impression.clicked = Some(current_clicked_bool)
         } else {
             current_impression.clicked = None;
-            logdebug!(
+            tracing::debug!(
                 "current impression {} have no clicked ",
                 current_impression.id
             )
         }
     } else {
         current_impression.clicked = None;
-        logdebug!(
+        tracing::debug!(
             "current impression {} have no clicked ",
             current_impression.id
         )
@@ -133,14 +133,14 @@ pub fn convert_from_web_json_to_impression(current_item: &serde_json::Value) -> 
             current_impression.stared = Some(current_stared_bool)
         } else {
             current_impression.stared = None;
-            logdebug!(
+            tracing::debug!(
                 "current impression {} have no stared ",
                 current_impression.id
             )
         }
     } else {
         current_impression.stared = None;
-        logdebug!(
+        tracing::debug!(
             "current impression {} have no stared ",
             current_impression.id
         )
@@ -154,14 +154,14 @@ pub fn convert_from_web_json_to_impression(current_item: &serde_json::Value) -> 
             current_impression.read_finish = Some(current_read_finish_bool)
         } else {
             current_impression.read_finish = None;
-            logdebug!(
+            tracing::debug!(
                 "current impression {} have no read_finish ",
                 current_impression.id
             )
         }
     } else {
         current_impression.stared = None;
-        logdebug!(
+        tracing::debug!(
             "current impression {} have no read_finish ",
             current_impression.id
         )
@@ -175,14 +175,14 @@ pub fn convert_from_web_json_to_impression(current_item: &serde_json::Value) -> 
             current_impression.read_time = Some(current_read_time_f64)
         } else {
             current_impression.read_time = None;
-            logdebug!(
+            tracing::debug!(
                 "current impression {} have no read_finish ",
                 current_impression.id
             )
         }
     } else {
         current_impression.read_time = None;
-        logdebug!(
+        tracing::debug!(
             "current impression {} have no read_finish ",
             current_impression.id
         )
@@ -204,7 +204,7 @@ pub fn convert_from_web_json_to_impression(current_item: &serde_json::Value) -> 
                         current_embedding_vec.push(convert_float_value);
                     } else {
                         flag = false;
-                        logdebug!(
+                        tracing::debug!(
                             "current impression {} embedding not float ",
                             current_impression.id
                         );
@@ -215,19 +215,19 @@ pub fn convert_from_web_json_to_impression(current_item: &serde_json::Value) -> 
                     current_impression.embedding = Some(current_embedding_vec);
                 }
             } else {
-                logdebug!(
+                tracing::debug!(
                     "current impression {} have no embedding ",
                     current_impression.id
                 )
             }
         } else {
-            logdebug!(
+            tracing::debug!(
                 "current impression {} have no embedding ",
                 current_impression.id
             )
         }
     } else {
-        logdebug!(
+        tracing::debug!(
             "current impression {} have no algorithm extra ",
             current_impression.id
         )
@@ -245,11 +245,11 @@ pub fn convert_from_web_json_to_entry(current_item: &serde_json::Value) -> Optio
         if let Some(current_entry_id_str) = current_entry_id_option {
             current_entry.id = String::from(current_entry_id_str);
         } else {
-            logerror!("current entry have no id");
+            tracing::error!("current entry have no id");
             return None;
         }
     } else {
-        logdebug!("current entry have no  id ");
+        tracing::debug!("current entry have no  id ");
         return None;
     }
 
@@ -259,10 +259,10 @@ pub fn convert_from_web_json_to_entry(current_item: &serde_json::Value) -> Optio
         if let Some(current_feed_id_str) = current_feed_id_option {
             current_entry.feed_id = Some(String::from(current_feed_id_str));
         } else {
-            logerror!("current entry {} have no feed id", current_entry.id);
+            tracing::error!("current entry {} have no feed id", current_entry.id);
         }
     } else {
-        logdebug!("current entry {} have no feed id", current_entry.id);
+        tracing::debug!("current entry {} have no feed id", current_entry.id);
     }
 
     let title_option = current_item.get(entry::MONGO_TITLE);
@@ -271,10 +271,10 @@ pub fn convert_from_web_json_to_entry(current_item: &serde_json::Value) -> Optio
         if let Some(current_title_str) = current_title_option {
             current_entry.titile = Some(String::from(current_title_str));
         } else {
-            logerror!("current entry {} have no title", current_entry.id);
+            tracing::error!("current entry {} have no title", current_entry.id);
         }
     } else {
-        logdebug!("current entry {} have no title", current_entry.id);
+        tracing::debug!("current entry {} have no title", current_entry.id);
     }
 
     let url_option: Option<&serde_json::Value> = current_item.get(entry::MONGO_URL);
@@ -283,10 +283,10 @@ pub fn convert_from_web_json_to_entry(current_item: &serde_json::Value) -> Optio
         if let Some(current_url_str) = current_url_option {
             current_entry.url = Some(String::from(current_url_str));
         } else {
-            logerror!("current entry {} have no url", current_entry.id);
+            tracing::error!("current entry {} have no url", current_entry.id);
         }
     } else {
-        logdebug!("current entry {} have no url", current_entry.id);
+        tracing::debug!("current entry {} have no url", current_entry.id);
     }
 
     let full_content_option: Option<&serde_json::Value> =
@@ -296,10 +296,10 @@ pub fn convert_from_web_json_to_entry(current_item: &serde_json::Value) -> Optio
         if let Some(current_full_content_str) = current_full_content_option {
             current_entry.full_content = Some(String::from(current_full_content_str));
         } else {
-            logerror!("current entry {} have no full content", current_entry.id);
+            tracing::error!("current entry {} have no full content", current_entry.id);
         }
     } else {
-        logdebug!("current entry {} have no full content", current_entry.id);
+        tracing::debug!("current entry {} have no full content", current_entry.id);
     }
 
     let raw_content_option: Option<&serde_json::Value> = current_item.get(entry::MONGO_RAW_CONTENT);
@@ -308,10 +308,10 @@ pub fn convert_from_web_json_to_entry(current_item: &serde_json::Value) -> Optio
         if let Some(current_raw_content_str) = current_raw_content_option {
             current_entry.raw_content = Some(String::from(current_raw_content_str));
         } else {
-            logerror!("current entry {} have no raw content", current_entry.id);
+            tracing::error!("current entry {} have no raw content", current_entry.id);
         }
     } else {
-        logdebug!("current entry {} have no raw content", current_entry.id);
+        tracing::debug!("current entry {} have no raw content", current_entry.id);
     }
 
     return Some(current_entry);
@@ -336,7 +336,7 @@ pub async fn get_all_impression(
             source_name,
         )
         .await;
-        logdebug!(
+        tracing::debug!(
             "offset {} limit {} count {} current_batch_size {}",
             offset,
             batch_size,
@@ -382,7 +382,7 @@ pub async fn get_entry_by_id(entry_id: &str) -> Option<entity::entry::Entry> {
         knowledge_base_prefix, ENTRY_API_SUFFIX, entry_id
     );
 
-    logdebug!("last url {}", url);
+    tracing::debug!("last url {}", url);
 
     let echo_json: serde_json::Value = reqwest::Client::new()
         .get(url)
@@ -393,7 +393,7 @@ pub async fn get_entry_by_id(entry_id: &str) -> Option<entity::entry::Entry> {
         .await
         .expect("parse result fail");
 
-    // logdebug!("get entry by id  result {:#?}",echo_json);
+    // tracing::debug!("get entry by id  result {:#?}",echo_json);
 
     let current_code: i64 = echo_json
         .get("code")
@@ -413,7 +413,7 @@ pub async fn get_entry_by_id(entry_id: &str) -> Option<entity::entry::Entry> {
         current_message_str = String::from("null");
     }
 
-    logdebug!(
+    tracing::debug!(
         "code {} current_message {}",
         current_code,
         current_message_str
@@ -466,7 +466,7 @@ pub async fn get_impression_pagination(
     if let Some(current_clicked) = clicked {
         url = format!("{}&clicked={}", url, current_clicked)
     }
-    logdebug!("last url {}", url);
+    tracing::debug!("last url {}", url);
     let echo_json: serde_json::Value = reqwest::Client::new()
         .get(url)
         .send()
@@ -476,7 +476,7 @@ pub async fn get_impression_pagination(
         .await
         .expect("parse result fail");
 
-    // logdebug!("get impression pagination result {:#?}",echo_json);
+    // tracing::debug!("get impression pagination result {:#?}",echo_json);
     let current_code: i64 = echo_json
         .get("code")
         .expect("code not exists")
@@ -495,7 +495,7 @@ pub async fn get_impression_pagination(
         current_message_str = String::from("null");
     }
 
-    logdebug!(
+    tracing::debug!(
         "code {} current_message {}",
         current_code,
         current_message_str
@@ -514,7 +514,7 @@ pub async fn get_impression_pagination(
         .expect("get items fail")
         .as_array()
         .expect("get item array fail");
-    logdebug!("item size {}", items.len());
+    tracing::debug!("item size {}", items.len());
     for current_item in items {
         let current_impression_option = convert_from_web_json_to_impression(current_item);
         if let Some(current_impression) = current_impression_option {
@@ -540,7 +540,7 @@ pub async fn get_user_embedding_str() -> (String, bool) {
         .json()
         .await
         .expect("parse result fail");
-    logdebug!("set user embedding result {:#?}", echo_json);
+    tracing::debug!("set user embedding result {:#?}", echo_json);
     let code = echo_json["code"].as_i64().expect("code not exist");
     if code != 0 {
         return (String::from(""), false);
@@ -561,15 +561,15 @@ pub async fn set_user_embedding_str_through_knowledge(
         "{}/{}/{}/user_embedding",
         knowledge_base_prefix, CONFIG_API_SUFFIX, source_name
     );
-    logdebug!("url {}", url);
+    tracing::debug!("url {}", url);
     let parse_result =
         embedding_common::parse_user_embedding(&user_embedding_str, user_embedding_dimension);
     if parse_result.1 == false {
-        logerror!("user embedding str is not valid, set in redis fail");
+        tracing::error!("user embedding str is not valid, set in redis fail");
         return false;
     }
 
-    logdebug!("user_embedding_str {}", user_embedding_str);
+    tracing::debug!("user_embedding_str {}", user_embedding_str);
     let echo_json: serde_json::Value = reqwest::Client::new()
         .post(url)
         .json(&serde_json::json!({
@@ -582,7 +582,7 @@ pub async fn set_user_embedding_str_through_knowledge(
         .await
         .expect("parse result fail");
 
-    logdebug!("set user embedding result {:#?}", echo_json);
+    tracing::debug!("set user embedding result {:#?}", echo_json);
 
     return true;
 }
@@ -623,7 +623,7 @@ mod knowledgebaseapitest {
             &String::from("bert_v2"),
         )
         .await;
-        logdebug!(
+        tracing::debug!(
             "impression_list size {} count {}",
             impression_list.len(),
             count
@@ -643,7 +643,7 @@ mod knowledgebaseapitest {
             &String::from("wise"),
         )
         .await;
-        logdebug!(
+        tracing::debug!(
             "impression_list size {} count {}",
             impression_list.len(),
             count

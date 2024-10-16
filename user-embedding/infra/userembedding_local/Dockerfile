@@ -2,7 +2,7 @@ FROM ubuntu:jammy As builder
 
 # RUN apk add openssl-dev musl-dev g++
 
-RUN mkdir -p /userembedding && \
+RUN mkdir -p /userembedding/model && \
     apt update && \
     apt install curl -y && \
     curl https://sh.rustup.rs -sSf | bash -s -- -y && \
@@ -27,12 +27,14 @@ ENV MODEL_INTERNET="false"
 
 
 WORKDIR /userembedding
+RUN mkdir -p /userembedding/model
 
 # Copy our build
-COPY --from=builder /root/.cache/huggingface  /root/.cache/huggingface
+COPY --from=builder /userembedding/model /userembedding/model
 COPY --from=builder /userembedding/target/release/userembedding ./
 COPY --from=builder /userembedding/target/release/downloadmodel ./
 COPY --from=builder /userembedding/target/release/buildmodelfromlocal ./
+
 
 
 # CMD ["/userembedding/userembedding"]
