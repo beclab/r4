@@ -2,11 +2,9 @@ name: Publish to Dockerhub ( userembeddingwithmodeltest )
 
 on:
     workflow_dispatch:
-      inputs:
-        tags:
-          description: 'Release Tags'
-    branches:
-      - "main"
+    push:
+        branches:
+            - "main"
 
 jobs:
     publish_dockerhub_amd64:
