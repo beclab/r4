@@ -46,12 +46,16 @@ pub fn build_model_and_tokenizer_from_local(
         "/root/.cache/huggingface/{}.json",
         current_model_info_field.model_name
     );
-    let file_content = fs::read_to_string(current_model_file_path).map_err(|e| {
-        logerror!("read file error {}", e);
+    let file_content = fs::read_to_string(current_model_file_path.clone()).map_err(|e| {
+        log::error!(
+            "read file error {} current_model_file_path {}",
+            e,
+            current_model_file_path
+        );
         AnyhowError::msg(e)
     })?;
     let data: BertModelFilePath = serde_json::from_str(&file_content).map_err(|e| {
-        logerror!("parse json error {}", e);
+        log::error!("parse json error {}", e);
         AnyhowError::msg(e)
     })?;
     let config_filename = fs::canonicalize(data.config_filename)?;

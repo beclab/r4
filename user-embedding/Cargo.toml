@@ -41,3 +41,9 @@ path = "src/userembedding.rs"
 [[bin]]
 name = "downloadmodel"
 path = "src/download_model.rs"
+
+[[bin]]
+name = "buildmodelfromlocal"
+path = "src/cmd/build_model_from_local.rs"
+
+
