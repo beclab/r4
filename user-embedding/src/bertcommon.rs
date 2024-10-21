@@ -137,7 +137,7 @@ async fn calculate_userembedding() -> AnyhowResult<Tensor, AnyhowError> {
             calculate_single_entry_pure(current_entry_id, &model, current_tokenizer).await;
         if let Some(current_tensor) = current_tensor_option {
             cumulative_tensor = cumulative_tensor.add(&current_tensor)?;
-            tracing::debug!("add current_entry {}", current_entry_id);
+            tracing::info!("add current_entry {}", current_entry_id);
         } else {
             tracing::error!("current_entry_id {} calculate fail", current_entry_id);
         }

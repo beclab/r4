@@ -13,6 +13,7 @@ pub fn init_tracing() {
     tracing_subscriber::fmt()
         .with_line_number(true)
         .with_file(true)
+        .with_max_level(tracing::Level::DEBUG)
         .init();
     tracing::error!("tracing initialized.");
 }
