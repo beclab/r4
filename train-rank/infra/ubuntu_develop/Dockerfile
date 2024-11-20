@@ -5,6 +5,7 @@ RUN mkdir -p /opt/rss-termius-v2-rank && \
 RUN apt-get update && \
     apt-get install build-essential -y && \
     apt-get install cmake -y && \
+    apt-get install libgflags-dev -y && \
     apt install git -y && \
     apt install curl -y && \
     apt install pkg-config -y && \
@@ -86,9 +87,9 @@ RUN cd /opt && \
     rm -r cppitertools-2.1
 
 RUN  apt update  && \
-  apt install python3  -y && \
-  apt install python3-pip  -y && \
-  pip install cpplint 
+    apt install python3  -y && \
+    apt install python3-pip  -y && \
+    pip install cpplint 
 
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]

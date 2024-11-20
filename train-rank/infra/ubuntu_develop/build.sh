@@ -10,6 +10,6 @@ DOCKER_FILE_PATH=$bertv2rank_dir/Dockerfile
 PREFIX=beclab
 
 
-docker  build --progress auto   \
+docker  build   \
     -f ${DOCKER_FILE_PATH} \
     -t ${PREFIX}/rank_develop $root_dir
