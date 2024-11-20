@@ -8,6 +8,12 @@ export MONGODB_FEED_COLL="feeds"
 export MONGODB_ENTRY_COLL="entries" 
 export LISTEN_ADDR="127.0.0.1:8080"
 export REDIS_HOST_DATA_DIRECTORY="/home/ubuntu/terminus_redis"
-export REDIS_ADDR="127.0.0.1:6381"
+export REDIS_ADDR="127.0.0.1:6379"
 export REDIS_PASSWORD="terminusrecommendredis123"
+export PG_PORT="5432"
+export PG_HOST="127.0.0.1"
+export PG_USERNAME="myuser"
+export PG_PASSWORD="mysecretpassword"
+
+export PG_DATABASE="mydatabase"
 docker-compose -f docker-compose-only-knowledge-base-api.yaml up -d

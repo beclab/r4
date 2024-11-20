@@ -30,7 +30,7 @@ services:
     command: /opt/bitnami/scripts/redis/run.sh --maxmemory 512MB
 
   knowledge_base_api:
-    image: aboveos/knowledge-base-api:v0.1.18 
+    image: aboveos/knowledge-base-api:v0.1.51 
     container_name: knowledge_base_api_server
     network_mode: host
     environment:

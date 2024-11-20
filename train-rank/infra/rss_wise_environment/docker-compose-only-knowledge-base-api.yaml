@@ -3,7 +3,7 @@ version: '4'
 services:
 
   knowledge_base_api:
-    image: aboveos/knowledge-base-api:v0.1.18  
+    image: beclab/knowledge-base-api:v0.1.51
     container_name: knowledge_base_api_server
     network_mode: host
     environment:
@@ -11,6 +11,11 @@ services:
       BACKEND_URL: ${BACKEND_URL}
       REDIS_ADDR: ${REDIS_ADDR}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+      PG_PORT: ${PG_PORT}
+      PG_USERNAME: ${PG_USERNAME}
+      PG_PASSWORD: ${PG_PASSWORD}
+      PG_DATABASE: ${PG_DATABASE}
+      PG_HOST: ${PG_HOST}
     ports:
       - '3010:3010'
 
@@ -22,7 +27,21 @@ services:
       - REDIS_PASSWORD=terminusrecommendredis123
       - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
     ports:
-      - '6381:6379'
+      - '6379:6379'
     volumes:
       - ${REDIS_HOST_DATA_DIRECTORY}:/bitnami/redis/data
     command: /opt/bitnami/scripts/redis/run.sh --maxmemory 512MB
+    network_mode: host
+
+  knowledge_postgres:
+    image: postgres
+    container_name: knowledge_postgres
+    network_mode: host
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: mydatabase
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
