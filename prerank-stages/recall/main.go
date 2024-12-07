@@ -145,6 +145,9 @@ func entryRecallCal(entryPath string, language string, maxNum int, LastRecallTim
 		//uncompressByte := common.DoZlibUnCompress(currentZlibFileByte)
 		var protoEntryList protobuf_entity.ListEntry
 		proto.Unmarshal(currentZlibFileByte, &protoEntryList)
+
+		totalEntryInFile := 0
+		totalEntryUseToCalculateInFile := 0
 		for _, protoEntry := range protoEntryList.Entries {
 			if protoEntry.Language != language {
 				continue
@@ -174,9 +177,12 @@ func entryRecallCal(entryPath string, language string, maxNum int, LastRecallTim
 				}
 				protoEntry.RecallPoint = float32(point)
 				rankEntries = adjustRecallResult(maxNum, protoEntry, rankEntries)
+				totalEntryUseToCalculateInFile++
 			}
 			rankEntriesMap[protoEntry.Url] = 1
+			totalEntryInFile++
 		}
+		common.Logger.Info("recall calculate package entry in file", zap.String("file name:", fileName), zap.Int("cal entry num:", totalEntryUseToCalculateInFile), zap.Int("total entry num:", totalEntryInFile))
 	}
 	return rankEntries, maxCreatedAt
 
@@ -250,6 +256,7 @@ func main() {
 					common.Logger.Error("file name error not timestamp", zap.String("file name", fileName))
 				}
 				if fileNameInt >= checkTimestamp {
+					common.Logger.Info("recall calculate package entry in fold", zap.String("fold name:", fileName))
 					entrysSavePath := filepath.Join(syncPath, fileName)
 					recallSaveResult, maxCreatedAt = entryRecallCal(entrysSavePath, language, maxNum, lastRecallTime, config.Embedding, recallSaveResult, existSaveMap, feedMap)
 					if allMaxCreatedAt < maxCreatedAt {
