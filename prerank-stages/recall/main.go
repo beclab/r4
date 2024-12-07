@@ -62,7 +62,7 @@ func loadRecallResult(language string, startTimeStamp int64, feedMap map[string]
 	common.Logger.Info("load saved recall data ", zap.Int("file size:", len(ptotoList.Entries)), zap.Int("check size:", len(rankEntries)))
 
 	sort.SliceStable(rankEntries, func(i, j int) bool {
-		return rankEntries[i].RecallPoint < rankEntries[j].RecallPoint
+		return rankEntries[i].RecallPoint >= rankEntries[j].RecallPoint
 	})
 	return rankEntries, existRankEntryMap, nil
 
