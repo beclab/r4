@@ -175,6 +175,9 @@ func entryRecallCal(entryPath string, language string, maxNum int, LastRecallTim
 					common.Logger.Error("coine cal Err", zap.String("file", filepath.Join(entryPath, file.Name())), zap.Error(coineErr))
 					continue
 				}
+				if point == float64(0) {
+					common.Logger.Error("recall point is zero!!!", zap.Any("entry embedding:", protoEntry.Embedding), zap.Any("user embedding:", userEmbedding))
+				}
 				protoEntry.RecallPoint = float32(point)
 				rankEntries = adjustRecallResult(maxNum, protoEntry, rankEntries)
 				totalEntryUseToCalculateInFile++
