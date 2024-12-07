@@ -65,6 +65,7 @@ func GetAlgorithmConfig() *model.AlgorithmConfig {
 		api.SetRedisConfig(source, "user_embedding", embeddingStr)
 	} else {
 		embeddingStr, _ := userEmbeddingConfig.(string)
+		common.Logger.Info("load user embedding", zap.String("sembedding str:", embeddingStr))
 		curOption.Embedding = common.StringToFloatArray(embeddingStr)
 	}
 	return &curOption
