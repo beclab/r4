@@ -20,66 +20,72 @@ using namespace web::http::client;
 
 DECLARE_string(recommend_source_name);
 
-namespace knowledgebase {
+namespace knowledgebase
+{
 
-class EntryCache {
-public:
-    static EntryCache& getInstance();
-    void init();
-    std::optional<Entry> getEntryById(const std::string& id);
-    void loadAllEntries();
+    class EntryCache
+    {
+    public:
+        static EntryCache &getInstance();
+        void init();
+        std::optional<Entry> getEntryById(const std::string &id);
+        void loadAllEntries();
 
-    void dumpStatistics();
+        void dumpStatistics();
+        long long getMinLastOpened() { return min_last_opened; }
+        long long getMaxLastOpened() { return max_last_opened; }
 
-private:
-    EntryCache();
-    std::unordered_map<std::string, Entry> cache;
-    int cache_miss;
-    int cache_hit;
-};
+    private:
+        EntryCache();
+        std::unordered_map<std::string, Entry> cache;
+        int cache_miss;
+        int cache_hit;
+        long long min_last_opened;
+        long long max_last_opened;
+    };
 
-static const char ALGORITHM_API_SUFFIX[] = "/knowledge/algorithm";
-static const char IMPRESSION_API_SUFFIX[] = "/knowledge/impression";
-static const char ENTRY_API_SUFFIX[] = "/knowledge/entry";
-static const char CONFIG_API_SUFFIX[] = "/knowledge/config";
-static const char LAST_RANK_TIME[] = "last_rank_time";
-static const char LAST_EXTRACTOR_TIME[] = "last_extractor_time";
+    static const char ALGORITHM_API_SUFFIX[] = "/knowledge/algorithm";
+    static const char IMPRESSION_API_SUFFIX[] = "/knowledge/impression";
+    static const char ENTRY_API_SUFFIX[] = "/knowledge/entry";
+    static const char CONFIG_API_SUFFIX[] = "/knowledge/config";
+    static const char LAST_RANK_TIME[] = "last_rank_time";
+    static const char LAST_EXTRACTOR_TIME[] = "last_extractor_time";
 
-bool updateAlgorithmScoreAndRanked(const std::string& entry_id,
-                                   float rank_score, bool ranked);
-bool updateAlgorithmScoreAndMetadata(
-    const std::unordered_map<std::string, ScoreWithMetadata>& algorithm_id_to_score_with_meta);
-bool rerank(const std::string& source);
-void getImpression(int limit, int offset, std::string source,
-                   std::vector<Impression>* impression_list, int* count);
-std::optional<Impression> convertFromWebJsonValueToImpression(
-    web::json::value current_item);
-std::optional<Algorithm> convertFromWebJsonValueToAlgorithm(
-    web::json::value current_item);
-std::optional<Entry> convertFromWebJsonValueToEntry(
-    web::json::value current_item);
-void getAllImpression(std::string source,
-                      std::vector<Impression>* impression_list, int* count);
-std::optional<Impression> GetImpressionById(const std::string& id);
-void getAlgorithmAccordingRanked(int limit, int offset, std::string source,
-                                 bool ranked,
-                                 std::vector<Algorithm>* algorithm_list,
-                                 int* count);
-void getAllAlgorithmAccordingRanked(std::string source,
-                                    std::vector<Algorithm>* algorithm_list,
-                                    bool ranked, int* count);
-std::optional<Algorithm> GetAlgorithmById(const std::string& id);
-std::optional<Entry> GetEntryById(const std::string& id);
-std::unordered_map<std::string, Entry> getEntries(const std::string& source);
-std::unordered_map<std::string, Entry> getEntries(const std::string& source);
-void getEntries(int limit, int offset, const std::string& source,
-                std::vector<Entry> *entry_list,  int *count);
-bool updateKnowledgeConfig(const std::string& source, const std::string& key,
-                           const web::json::value& value);
-bool updateLastRankTime(std::string source, int64_t last_rank_time);
-bool updateLastExtractorTime(std::string source, int64_t last_extractor_time);
-void convertStringTimestampToInt64(std::string str_timestamp,
-                                   int64_t* int64_timestamp);
-int64_t getLastRankTime(const std::string& source);
-int64_t getLastExtractorTime(const std::string& source);
-}  // namespace knowledgebase
+    bool updateAlgorithmScoreAndRanked(const std::string &entry_id,
+                                       float rank_score, bool ranked);
+    bool updateAlgorithmScoreAndMetadata(
+        const std::unordered_map<std::string, ScoreWithMetadata> &algorithm_id_to_score_with_meta);
+    bool rerank(const std::string &source);
+    void getImpression(int limit, int offset, std::string source,
+                       std::vector<Impression> *impression_list, int *count);
+    std::optional<Impression> convertFromWebJsonValueToImpression(
+        web::json::value current_item);
+    std::optional<Algorithm> convertFromWebJsonValueToAlgorithm(
+        web::json::value current_item);
+    std::optional<Entry> convertFromWebJsonValueToEntry(
+        web::json::value current_item);
+    void getAllImpression(std::string source,
+                          std::vector<Impression> *impression_list, int *count);
+    std::optional<Impression> GetImpressionById(const std::string &id);
+    void getAlgorithmAccordingRanked(int limit, int offset, std::string source,
+                                     bool ranked,
+                                     std::vector<Algorithm> *algorithm_list,
+                                     int *count);
+    void getAllAlgorithmAccordingRanked(std::string source,
+                                        std::vector<Algorithm> *algorithm_list,
+                                        bool ranked, int *count);
+    std::optional<Algorithm> GetAlgorithmById(const std::string &id);
+    std::optional<Entry> GetEntryById(const std::string &id);
+    std::unordered_map<std::string, Entry> getEntries(const std::string &source);
+    std::unordered_map<std::string, Entry> getEntries(const std::string &source);
+    void getEntries(int limit, int offset, const std::string &source,
+                    std::vector<Entry> *entry_list, int *count);
+    bool updateKnowledgeConfig(const std::string &source, const std::string &key,
+                               const web::json::value &value);
+    bool updateLastRankTime(std::string source, int64_t last_rank_time);
+    bool updateLastExtractorTime(std::string source, int64_t last_extractor_time);
+    void convertStringTimestampToInt64(std::string str_timestamp,
+                                       int64_t *int64_timestamp);
+    int64_t getLastRankTime(const std::string &source);
+    int64_t getLastExtractorTime(const std::string &source);
+} // namespace knowledgebase

@@ -189,6 +189,7 @@ add_executable(
   knowledge_api_test
   test/knowledge_api_test.cpp
   test/test_common.h
+  src/rssrank.h
 )
 
 target_link_libraries(

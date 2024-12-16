@@ -5,6 +5,7 @@
 #include "../src/common_tool.h"
 #include "../src/knowledgebase_api.h"
 #include "../src/entity/reco_metadata.h"
+#include "../src/rssrank.h"
 #include "test_common.h"
 
 TEST(KnowledgeApiTest, TestUpdateRankScore)
@@ -182,4 +183,17 @@ TEST(KnowledgeApiTest, TestGetAllAlgorithmAccordingRanked)
     algorithm_id_set.insert(current_impression.id);
   }
   std::cout << algorithm_id_set.size() << "  ****  " << count << std::endl;
+}
+
+TEST(RssRankTest, getImpressionForShortTermAndLongTermUserEmbeddingRank)
+{
+  // --gtest_filter=RssRankTest.getImpressionForShortTermAndLongTermUserEmbeddingRank
+  initDevelop();
+  init_log();
+  knowledgebase::EntryCache::getInstance().init();
+  std::vector<Impression> result = rssrank::getImpressionForShortTermAndLongTermUserEmbeddingRank();
+  for (auto current : result)
+  {
+    std::cout << "current_last_opened " << current.entry_last_opened << std::endl;
+  }
 }

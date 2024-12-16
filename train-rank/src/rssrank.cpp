@@ -127,6 +127,35 @@ namespace rssrank
 
   } // namespace
 
+  vector<Impression> getImpressionForShortTermAndLongTermUserEmbeddingRank()
+  {
+    // this method just need positive sampllle
+    vector<Impression> lr_impression = getImpressionsForLR();
+    knowledgebase::EntryCache cache = knowledgebase::EntryCache::getInstance();
+    long long min_last_opened = cache.getMinLastOpened();
+    long long max_last_opened = cache.getMaxLastOpened();
+    vector<Impression> positive;
+    for (auto &impression : lr_impression)
+    {
+      if (!impression.clicked)
+      {
+        continue;
+      }
+      auto entry = cache.getEntryById(impression.entry_id);
+      if (!entry.has_value())
+      {
+        LOG(ERROR) << "Entry " << impression.entry_id << " not found" << std::endl;
+        impression.entry_last_opened = 0;
+        continue;
+      }
+      impression.entry_last_opened = entry.value().last_opened;
+      positive.push_back(impression);
+    }
+    std::sort(positive.begin(), positive.end(), [](const Impression &a, const Impression &b)
+              { return a.entry_last_opened > b.entry_last_opened; });
+    return positive;
+  }
+
   std::string getRankModelPath(ModelPathType model_path_type)
   {
     const char *source_name = std::getenv(TERMINUS_RECOMMEND_SOURCE_NAME);

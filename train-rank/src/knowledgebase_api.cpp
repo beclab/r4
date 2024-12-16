@@ -76,6 +76,21 @@ namespace knowledgebase
   void EntryCache::loadAllEntries()
   {
     cache = getEntries(FLAGS_recommend_source_name);
+    long long min_last_opened = std::numeric_limits<long long>::max();
+    long long max_last_opened = 0;
+    for (const auto &entry : cache)
+    {
+      if (entry.second.last_opened != 0 && entry.second.last_opened < min_last_opened)
+      {
+        min_last_opened = entry.second.last_opened;
+      }
+      if (entry.second.last_opened > max_last_opened)
+      {
+        max_last_opened = entry.second.last_opened;
+      }
+    }
+    this->min_last_opened = min_last_opened;
+    this->max_last_opened = max_last_opened;
   }
 
   void EntryCache::dumpStatistics()
@@ -242,7 +257,7 @@ namespace knowledgebase
   std::optional<Entry> convertFromWebJsonValueToEntry(
       web::json::value current_item)
   {
-    std::cout << "************************ " << current_item << std::endl;
+    std::cout << "************************ " << current_item.at(ENTRY_ID) << std::endl;
     Entry temp_entry;
     if (current_item.is_null())
     {

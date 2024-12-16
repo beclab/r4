@@ -18,7 +18,8 @@ static const char IMPRESSION_MONGO_FIELD_SOURCE[] = "source";
 // SUB FIELD IMPRESSION_MONGO_FIELD_ALGORITHM_EXTRA
 static const char IMPRESSION_MONGO_FIELD_EMBEDDING[] = "embedding";
 
-struct Impression {
+struct Impression
+{
   bool stared;
   std::string batch_id;
   std::string position;
@@ -29,4 +30,5 @@ struct Impression {
   bool clicked;
   std::optional<std::vector<double>> embedding;
   std::string source;
+  long long entry_last_opened;
 };
