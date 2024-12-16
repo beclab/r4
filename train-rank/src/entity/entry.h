@@ -20,8 +20,10 @@ static const char ENTRY_URL[] = "url";
 static const char ENTRY_PURE_CONTENT[] = "pure_content";
 static const char ENTRY_TITLE[] = "title";
 static const char ENTRY_CREATED_AT[] = "created_at";
+static const char ENTRY_LAST_OPENED[] = "last_opened";
 
-struct Entry {
+struct Entry
+{
   std::string id;
   std::string file_type;
   bool readlater;
@@ -36,4 +38,5 @@ struct Entry {
   std::string pure_content;
   std::string title;
   boost::posix_time::ptime timestamp;
+  long long last_opened;
 };
