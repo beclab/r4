@@ -91,5 +91,14 @@ RUN  apt update  && \
     apt install python3-pip  -y && \
     pip install cpplint 
 
+ENV EIGEN3_INCLUDE_DIR=/usr/local/include/eigen3
+RUN cd /opt && \
+    curl -LJO https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz  \
+    && tar -xzf eigen-3.4.0.tar.gz  \
+    && cd eigen-3.4.0  && \
+    mkdir build  && \
+    cd build  && \
+    cmake ..  && \
+    make install 
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]

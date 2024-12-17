@@ -14,6 +14,8 @@ namespace fs = std::filesystem;
 #include <vector>
 
 #include <boost/date_time.hpp>
+#include <eigen3/Eigen/Dense>
+using namespace Eigen;
 
 #include "common_tool.h"
 #include "data_process.h"
@@ -120,12 +122,59 @@ namespace rssrank
         return 1.0;
       }
 
-      double result = 1.8 / (1.0 + std::exp(-86400.0 / diff)) - 0.8;
+      double result = 1.8 / (1.0 + std::exp(-86400.0 / diff)) - 0.8; // when diff->0,result->1.0; when diff->+infinite,result->0.1; when diff=86400,result=0.55
 
       return result;
     }
 
   } // namespace
+
+  double getTimeCoefficientForUnixTimestamp(long long timestamp)
+  {
+    auto now = boost::posix_time::second_clock::local_time();
+    auto diff = getTimeStampNow() - timestamp;
+
+    if (diff <= 0)
+    {
+      return 1.0;
+    }
+
+    double result = 1.8 / (1.0 + std::exp(-86400.0 / diff)) - 0.8; // when diff->0,result->1.0; when diff->+infinite,result->0.1; when diff=86400,result=0.55
+
+    return result;
+  }
+
+  vector<double> calcluateEmbedding(const vector<Impression> &impressions, bool with_weight)
+  {
+    if (impressions.empty())
+    {
+      return {};
+    }
+    int row = impressions.size();
+    int col = impressions[0].embedding.value().size();
+    MatrixXf embeddings(row, col);
+
+    // Fill these vectors
+    for (int i = 0; i < row; ++i)
+    {
+      for (int j = 0; j < col; ++j)
+      {
+        embeddings(i, j) = impressions[i].embedding.value()[j];
+      }
+    }
+    if (with_weight)
+    {
+      // Sum the vectors
+      for (int i = 0; i < row; ++i)
+      {
+        embeddings.row(i) = embeddings.row(i) * getSpecificImpressionScore(impressions[i]);
+      }
+    }
+    // Sum the vectors
+    VectorXf eig_vec = embeddings.colwise().sum();
+    eig_vec = eig_vec / eig_vec.norm();
+    return std::vector<double>(eig_vec.data(), eig_vec.data() + eig_vec.size());
+  }
 
   vector<Impression> getImpressionForShortTermAndLongTermUserEmbeddingRank()
   {
@@ -199,6 +248,24 @@ namespace rssrank
     }
   }
 
+  float getSpecificImpressionScoreForShortTermUserEmbedding(const Impression &current_impression)
+  {
+    float total_score = 0;
+    if (current_impression.clicked)
+    {
+      total_score = total_score + rssrank::short_term_user_embedding_clicked_weight;
+      if (current_impression.read_finish)
+      {
+        total_score = total_score + rssrank::short_term_user_embedding_read_finish_weight;
+      }
+      if (current_impression.stared)
+      {
+        total_score = total_score + rssrank::short_term_user_embedding_stared_weight;
+      }
+      total_score = total_score + rssrank::short_term_user_embedding_time_weight * getTimeCoefficientForUnixTimestamp(current_impression.entry_last_opened);
+    }
+    return total_score;
+  }
   float getSpecificImpressionScore(const Impression &current_impression)
   {
     // to do
@@ -864,6 +931,7 @@ namespace rssrank
   bool rankShortTermAndLongTermUserEmbedding()
   {
     knowledgebase::EntryCache::getInstance().init();
+    vector<Impression> impressions = getImpressionForShortTermAndLongTermUserEmbeddingRank();
 
     return true;
   }
