@@ -31,6 +31,11 @@ namespace rssrank
     static const float read_speed_weight = 0.3;
     static const float star_weight = 0.4;
 
+    static const float short_term_user_embedding_clicked_weight = 0.1;
+    static const float short_term_user_embedding_read_finish_weight = 0.3;
+    static const float short_term_user_embedding_stared_weight = 0.4;
+    static const float short_term_user_embedding_time_weight = 0.2;
+
     enum class ModelPathType
     {
         TRAINING,
@@ -83,5 +88,8 @@ namespace rssrank
                                        int test_rows, float *test_labels,
                                        BoosterHandle h_booster, float *biggest_auc);
     std::vector<Impression> getImpressionForShortTermAndLongTermUserEmbeddingRank();
+    std::vector<double> calcluateEmbedding(const std::vector<Impression> &impressions, bool with_weight);
+    double getTimeCoefficientForUnixTimestamp(long long timestamp);
+    float getSpecificImpressionScoreForShortTermUserEmbedding(const Impression &current_impression);
 
 } // namespace rssrank
