@@ -66,6 +66,7 @@ func GetAlgorithmConfig() *model.AlgorithmConfig {
 	} else {
 		embeddingStr, _ := userEmbeddingConfig.(string)
 		curOption.Embedding = common.StringToFloatArray(embeddingStr)
+		common.Logger.Info("load user embedding", zap.String("sembedding str:", embeddingStr), zap.Any("embeding val:", curOption.Embedding))
 	}
 	return &curOption
 

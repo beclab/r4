@@ -62,7 +62,7 @@ func loadRecallResult(language string, startTimeStamp int64, feedMap map[string]
 	common.Logger.Info("load saved recall data ", zap.Int("file size:", len(ptotoList.Entries)), zap.Int("check size:", len(rankEntries)))
 
 	sort.SliceStable(rankEntries, func(i, j int) bool {
-		return rankEntries[i].RecallPoint < rankEntries[j].RecallPoint
+		return rankEntries[i].RecallPoint >= rankEntries[j].RecallPoint
 	})
 	return rankEntries, existRankEntryMap, nil
 
@@ -145,6 +145,9 @@ func entryRecallCal(entryPath string, language string, maxNum int, LastRecallTim
 		//uncompressByte := common.DoZlibUnCompress(currentZlibFileByte)
 		var protoEntryList protobuf_entity.ListEntry
 		proto.Unmarshal(currentZlibFileByte, &protoEntryList)
+
+		totalEntryInFile := 0
+		totalEntryUseToCalculateInFile := 0
 		for _, protoEntry := range protoEntryList.Entries {
 			if protoEntry.Language != language {
 				continue
@@ -172,11 +175,17 @@ func entryRecallCal(entryPath string, language string, maxNum int, LastRecallTim
 					common.Logger.Error("coine cal Err", zap.String("file", filepath.Join(entryPath, file.Name())), zap.Error(coineErr))
 					continue
 				}
+				if point == float64(0) {
+					common.Logger.Error("recall point is zero!!!", zap.Any("entry embedding:", protoEntry.Embedding), zap.Any("user embedding:", userEmbedding))
+				}
 				protoEntry.RecallPoint = float32(point)
 				rankEntries = adjustRecallResult(maxNum, protoEntry, rankEntries)
+				totalEntryUseToCalculateInFile++
 			}
 			rankEntriesMap[protoEntry.Url] = 1
+			totalEntryInFile++
 		}
+		common.Logger.Info("recall calculate package entry in file", zap.String("file name:", fileName), zap.Int("cal entry num:", totalEntryUseToCalculateInFile), zap.Int("total entry num:", totalEntryInFile))
 	}
 	return rankEntries, maxCreatedAt
 
@@ -250,6 +259,7 @@ func main() {
 					common.Logger.Error("file name error not timestamp", zap.String("file name", fileName))
 				}
 				if fileNameInt >= checkTimestamp {
+					common.Logger.Info("recall calculate package entry in fold", zap.String("fold name:", fileName))
 					entrysSavePath := filepath.Join(syncPath, fileName)
 					recallSaveResult, maxCreatedAt = entryRecallCal(entrysSavePath, language, maxNum, lastRecallTime, config.Embedding, recallSaveResult, existSaveMap, feedMap)
 					if allMaxCreatedAt < maxCreatedAt {
