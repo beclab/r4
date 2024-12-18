@@ -1,3 +1,4 @@
+#include "common_tool.h"
 #include "knowledgebase_api.h"
 
 #include <cpprest/json.h>
@@ -6,6 +7,12 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <stdexcept>
+#include <cstdlib>
 
 #include "easylogging++.h"
 
@@ -847,6 +854,49 @@ namespace knowledgebase
     return last_extractor_time;
   }
 
+  vector<double> getLongTermUserEmbedding(const std::string &source)
+  {
+    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    std::string current_config_api_suffix =
+        std::string(CONFIG_API_SUFFIX) + "/" + source + "/" + LONG_TERM_USER_EMBEDDING;
+
+    LOG(DEBUG) << "current_config_api_suffix " << current_config_api_suffix
+               << std::endl;
+
+    uri_builder builder(U(current_config_api_suffix));
+
+    vector<double> long_term_user_embedding;
+    client.request(methods::GET, builder.to_string())
+        .then([](http_response response) -> pplx::task<web::json::value>
+              {
+        if (response.status_code() == status_codes::OK) {
+          return response.extract_json();
+        }
+        return pplx::task_from_result(web::json::value()); })
+        .then([&long_term_user_embedding](pplx::task<web::json::value> previousTask)
+              {
+        try {
+          web::json::value const &v = previousTask.get();
+          int code = v.at("code").as_integer();
+          std::string message = "null";
+          if (v.has_string_field("message")) {
+            message = v.at("message").as_string();
+          }
+          LOG(DEBUG) << "code " << code << " message " << message << std::endl;
+          if (v.has_string_field("data")) {
+            std::string embedding = v.at("data").as_string();
+            int embedding_dimension = getEnvInt(TERMINUS_RECOMMEND_EMBEDDING_DIMENSION, 384);
+
+            long_term_user_embedding = parse_embedding(embedding, embedding_dimension);
+       
+          }
+        } catch (http_exception const &e) {
+          LOG(ERROR) << "Error exception " << e.what() << std::endl;
+        } })
+        .wait();
+    return long_term_user_embedding;
+  }
+
   int64_t getLastRankTime(const std::string &source)
   {
     http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
@@ -888,6 +938,62 @@ namespace knowledgebase
         } })
         .wait();
     return last_rank_time;
+  }
+
+  std::vector<double> parse_embedding(const std::string &input, size_t embedding_dimension)
+  {
+    std::vector<double> embedding_data;
+    std::stringstream ss(input);
+    std::string token;
+    std::vector<std::string> split_result;
+
+    // Split the input string by semicolon
+    while (std::getline(ss, token, ';'))
+    {
+      split_result.push_back(token);
+    }
+
+    // Ensure there is at least one token, and the last token is a timestamp
+    if (split_result.size() <= 1)
+    {
+      return {}; // Not enough tokens (embedding + timestamp)
+    }
+
+    // The last element should be the timestamp, remove it
+    std::string timestamp_str = split_result.back();
+    split_result.pop_back();
+
+    // Validate that the last element is a valid timestamp (optional check)
+    try
+    {
+      std::stoll(timestamp_str); // Try to convert timestamp to long long
+    }
+    catch (const std::invalid_argument &)
+    {
+      return {}; // If the timestamp is not valid, return empty
+    }
+
+    // If the embedding dimension doesn't match, return empty
+    if (split_result.size() != embedding_dimension)
+    {
+      return {};
+    }
+
+    // Try to parse the embedding values as double
+    for (const auto &element : split_result)
+    {
+      try
+      {
+        double value = std::stod(element); // Convert string to double
+        embedding_data.push_back(value);
+      }
+      catch (const std::invalid_argument &)
+      {
+        return {}; // If any element is not a valid number, return empty
+      }
+    }
+
+    return embedding_data;
   }
 
   std::optional<Impression> GetImpressionById(const std::string &id)
@@ -1268,6 +1374,23 @@ namespace knowledgebase
     return updateKnowledgeConfig(source, LAST_RANK_TIME, current_value);
   }
 
+  bool updateLongTermUserEmbedding(std::string source,
+                                   const std::vector<double> &long_term_user_embedding)
+  {
+    std::string embedding_str;
+    for (const auto &element : long_term_user_embedding)
+    {
+      embedding_str += std::to_string(element) + ";";
+    }
+
+    // Append the current timestamp to the end of the string
+    embedding_str += std::to_string(std::time(nullptr));
+
+    web::json::value current_value;
+    current_value["value"] = web::json::value::string(embedding_str);
+    return updateKnowledgeConfig(source, LONG_TERM_USER_EMBEDDING, current_value);
+  }
+
   bool updateLastExtractorTime(std::string source, int64_t last_extractor_time)
   {
     web::json::value current_value;
@@ -1310,5 +1433,24 @@ namespace knowledgebase
         .wait();
 
     return true;
+  }
+
+  std::vector<double> init_user_embedding(size_t embedding_dimension)
+  {
+    // Create a random number generator (uniform distribution between 0 and 1)
+    std::random_device rd;
+    std::mt19937 gen(rd());                         // Mersenne Twister random number generator
+    std::uniform_real_distribution<> dis(0.0, 1.0); // Uniform distribution between 0 and 1
+
+    std::vector<double> random_data_array;
+    random_data_array.reserve(embedding_dimension);
+
+    // Fill the vector with random values between 0 and 1
+    for (size_t i = 0; i < embedding_dimension; ++i)
+    {
+      random_data_array.push_back(dis(gen));
+    }
+
+    return random_data_array;
   }
 } // namespace knowledgebase

@@ -85,6 +85,16 @@ RUN cd /opt && \
     rm  v2.1.tar.gz  && \
     rm -r cppitertools-2.1
 
+ENV EIGEN3_INCLUDE_DIR=/usr/local/include/eigen3
+RUN cd /opt && \
+    curl -LJO https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz  \
+    && tar -xzf eigen-3.4.0.tar.gz  \
+    && cd eigen-3.4.0  && \
+    mkdir build  && \
+    cd build  && \
+    cmake ..  && \
+    make install 
+
 ADD train-rank/src /opt/rss-terminus-v2-rank/src
 ADD train-rank/test /opt/rss-terminus-v2-rank/test
 COPY train-rank/CMakeLists.txt /opt/rss-terminus-v2-rank/CMakeLists.txt

@@ -228,3 +228,41 @@ TEST(RssRankTest, TestCalculateEmbeddingMultiple)
   EXPECT_FLOAT_EQ(result[1], 7.0);
   EXPECT_FLOAT_EQ(result[2], 9.0);
 }
+
+TEST(RssRankTest, TestParseEmbedding)
+{
+  //--gtest_filter=RssRankTest.TestParseEmbedding
+  std::string input = "1.2;1.3;1.4;1777233344"; // Example input
+  size_t embedding_dimension = 3;               // Example embedding dimension
+
+  std::vector<double> embedding = knowledgebase::parse_embedding(input, embedding_dimension);
+
+  if (embedding.empty())
+  {
+    std::cout << "Invalid input or format." << std::endl;
+  }
+  else
+  {
+    std::cout << "Parsed embedding: ";
+    for (double val : embedding)
+    {
+      std::cout << val << " ";
+    }
+    std::cout << std::endl;
+  }
+}
+
+TEST(RssRankTest, TestInitUserEmbedding)
+{
+  // --gtest_filter=RssRankTest.TestInitUserEmbedding
+  size_t embedding_dimension = 384; // Example embedding dimension
+
+  std::vector<double> user_embedding = knowledgebase::init_user_embedding(embedding_dimension);
+
+  std::cout << "User embedding: ";
+  for (double val : user_embedding)
+  {
+    std::cout << val << " ";
+  }
+  std::cout << std::endl;
+}
