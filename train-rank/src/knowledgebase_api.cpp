@@ -1384,7 +1384,7 @@ namespace knowledgebase
     }
 
     // Append the current timestamp to the end of the string
-    embedding_str += std::to_string(std::time(nullptr));
+    embedding_str += std::to_string(getTimeStampNow());
 
     web::json::value current_value;
     current_value["value"] = web::json::value::string(embedding_str);

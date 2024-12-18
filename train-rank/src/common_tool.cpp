@@ -132,15 +132,46 @@ int getEnvInt(const char *envVar, int defaultValue)
   return defaultValue;
 }
 
+int getEnvFloat(const char *envVar, float defaultValue)
+{
+  // Get the environment variable
+  const char *envValue = std::getenv(envVar);
+
+  // If the environment variable does not exist, return the default value
+  if (envValue == nullptr)
+  {
+    return defaultValue;
+  }
+
+  // Try to convert the environment variable value to an integer
+  try
+  {
+    return std::stof(envValue); // Use std::stoi to convert the string to an integer
+  }
+  catch (const std::invalid_argument &e)
+  {
+    // If the conversion fails (e.g., the environment variable value cannot be converted to an integer), return the default value
+    std::cerr << "Error: Invalid integer in environment variable '" << envVar << "'." << std::endl;
+  }
+  catch (const std::out_of_range &e)
+  {
+    // If the integer overflows, return the default value
+    std::cerr << "Error: Integer overflow in environment variable '" << envVar << "'." << std::endl;
+  }
+
+  // If an exception occurs, return the default value
+  return defaultValue;
+}
+
 void calculate_embedding()
 {
-  int n = 1000; // 假设我们有 1000 个 embedding，每个是大小为 128 的 vector
+  int n = 1000; // Assume we have 1000 embeddings, each is a vector of size 128
   int embedding_dim = 128;
 
-  // 创建一个 Eigen 矩阵来存储这些向量
+  // Create an Eigen matrix to store these vectors
   MatrixXf embeddings(n, embedding_dim);
 
-  // 填充这些向量
+  // Fill these vectors
   for (int i = 0; i < n; ++i)
   {
     for (int j = 0; j < embedding_dim; ++j)
@@ -149,9 +180,32 @@ void calculate_embedding()
     }
   }
 
-  // 将 n 个向量相加
+  // Sum the n vectors
   VectorXf result = embeddings.colwise().sum();
 
-  // 输出结果
+  // Output the result
   std::cout << "Sum of embeddings: " << result.transpose() << std::endl;
+}
+
+bool are_equal_double(double a, double b, double epsilon = 1e-5)
+{
+  return std::fabs(a - b) < epsilon;
+}
+
+double eigen_cosine_similarity(const VectorXd &A, const VectorXd &B)
+{
+  // Calculate dot product
+  double dot_product = A.dot(B);
+
+  // Calculate magnitudes
+  double magnitude_A = A.norm();
+  double magnitude_B = B.norm();
+
+  // Calculate cosine similarity
+  return dot_product / (magnitude_A * magnitude_B);
+}
+
+VectorXd vectorToEigentVectorXd(const std::vector<double> &vec)
+{
+  return Eigen::Map<const VectorXd>(vec.data(), vec.size());
 }

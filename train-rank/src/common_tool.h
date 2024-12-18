@@ -8,6 +8,9 @@
 #include <numeric>
 #include <string>
 #include <vector>
+
+#include <eigen3/Eigen/Dense>
+using namespace Eigen;
 using namespace std::chrono;
 
 // DECLARE_string(model_path_root);
@@ -18,10 +21,16 @@ static const char TERMINUS_RECOMMEND_SOURCE_NAME[] =
     "TERMINUS_RECOMMEND_SOURCE_NAME";
 static const char KNOWLEDGE_BASE_API_URL[] = "KNOWLEDGE_BASE_API_URL";
 static const char TERMINUS_RECOMMEND_EMBEDDING_NAME[] =
-    "TERMINUS_RECOMMEND_EMBEDDING_NAME";
+    "EMBEDDING_METHOD"; // because user embedding module use "EMBEDDING_METHOD" as env name, so here also use it
 static char RECOMMEND_MODEL_ROOT[] = "/opt/rank_model";
 static char TERMINUS_RECOMMEND_EMBEDDING_DIMENSION[] =
     "TERMINUS_RECOMMEND_EMBEDDING_DIMENSION";
+
+static char TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION[] =
+    "TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION"; // use how many impression to calculate short term user embedding
+
+static char TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE[] =
+    "TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE"; // use how many impression to calculate short term user embedding
 
 void init_log();
 
@@ -36,6 +45,8 @@ bool isConvertibleToInt(const std::string &str);
 std::string envOrBlank(const char *env);
 
 int getEnvInt(const char *envVar, int defaultValue);
+
+int getEnvFloat(const char *envVar, float defaultValue);
 
 template <class T1, class T2>
 double AUROC(const T1 label[], const T2 score[], int n)
@@ -153,3 +164,23 @@ void print2DVector(const std::vector<std::vector<T>> &vec)
 }
 
 void calculate_embedding();
+
+bool are_equal_double(double a, double b, double epsilon = 1e-5);
+
+template <typename T>
+std::vector<T> get_subvector(const std::vector<T> &input, int n)
+{
+  // Get the first n elements of the vector, if n is greater than the size of the vector, return the entire vector
+  if (input.size() <= n)
+  {
+    return input;
+  }
+  else
+  {
+    // Return the first n elements
+    return std::vector<T>(input.begin(), input.begin() + n);
+  }
+}
+
+double eigen_cosine_similarity(const VectorXd &A, const VectorXd &B);
+VectorXd vectorToEigentVectorXd(const std::vector<double> &vec);

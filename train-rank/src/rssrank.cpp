@@ -144,7 +144,7 @@ namespace rssrank
     return result;
   }
 
-  vector<double> calcluateEmbedding(const vector<Impression> &impressions, bool with_weight)
+  vector<double> calcluateUserShortTermEmbedding(const vector<Impression> &impressions, bool with_weight)
   {
     if (impressions.empty())
     {
@@ -906,8 +906,6 @@ namespace rssrank
   bool rankLR()
   {
     std::string current_srouce_name = envOrBlank("TERMINUS_RECOMMEND_SOURCE_NAME");
-    std::cout << "current_srouce_name " << current_srouce_name << std::endl;
-    std::cout << "FLAGS_recommend_source_name " << FLAGS_recommend_source_name << std::endl;
     if (FLAGS_recommend_source_name.size() == 0)
     {
       LOG(ERROR) << "recommend_source_name not provided." << std::endl;
@@ -930,8 +928,27 @@ namespace rssrank
 
   bool rankShortTermAndLongTermUserEmbedding()
   {
+    std::string current_srouce_name = envOrBlank("TERMINUS_RECOMMEND_SOURCE_NAME");
+    if (FLAGS_recommend_source_name.size() == 0)
+    {
+      LOG(ERROR) << "recommend_source_name not provided." << std::endl;
+      return false;
+    }
+    LOG(INFO) << "recommend_source_name " << FLAGS_recommend_source_name << std::endl;
+    int embedding_dimension = getCurrentEmbeddingDimension();
     knowledgebase::EntryCache::getInstance().init();
+
     vector<Impression> impressions = getImpressionForShortTermAndLongTermUserEmbeddingRank();
+    int short_number = getEnvInt(TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION, 10);
+    float long_term_weight = getEnvFloat(TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE, 0.3);
+    float short_term_weight = 1 - long_term_weight;
+    vector<Impression> short_term_impression = get_subvector(impressions, short_number);
+    vector<double> shore_term_embedding = calcluateUserShortTermEmbedding(short_term_impression, true);
+    if (shore_term_embedding.size() == 0)
+    {
+      shore_term_embedding = vector<double>(embedding_dimension, 0.0);
+    }
+    vector<double> long_term_imbedding = knowledgebase::getLongTermUserEmbedding(current_srouce_name);
 
     return true;
   }

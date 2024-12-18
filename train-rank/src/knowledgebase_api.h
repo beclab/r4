@@ -91,7 +91,7 @@ namespace knowledgebase
                                        int64_t *int64_timestamp);
     int64_t getLastRankTime(const std::string &source);
     int64_t getLastExtractorTime(const std::string &source);
-    std::vector<double> getLongTermUserEmbedding();
+    std::vector<double> getLongTermUserEmbedding(const std::string &source);
 
     std::vector<double> parse_embedding(const std::string &input, size_t embedding_dimension);
     std::vector<double> init_user_embedding(size_t embedding_dimension);

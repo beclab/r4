@@ -205,7 +205,7 @@ TEST(RssRankTest, TestCalculateEmbeddingMultipleReal)
   init_log();
   knowledgebase::EntryCache::getInstance().init();
   std::vector<Impression> result = rssrank::getImpressionForShortTermAndLongTermUserEmbeddingRank();
-  std::vector<double> embedding = rssrank::calcluateEmbedding(result, true);
+  std::vector<double> embedding = rssrank::calcluateUserShortTermEmbedding(result, true);
   for (auto current : embedding)
   {
     std::cout << current << " ";
@@ -222,7 +222,7 @@ TEST(RssRankTest, TestCalculateEmbeddingMultiple)
   impression1.embedding = std::vector<double>{1.0, 2.0, 3.0};
   impression2.embedding = std::vector<double>{4.0, 5.0, 6.0};
   std::vector<Impression> impressions = {impression1, impression2};
-  std::vector<double> result = rssrank::calcluateEmbedding(impressions, false);
+  std::vector<double> result = rssrank::calcluateUserShortTermEmbedding(impressions, false);
   ASSERT_EQ(result.size(), 3);
   EXPECT_FLOAT_EQ(result[0], 5.0);
   EXPECT_FLOAT_EQ(result[1], 7.0);
@@ -265,4 +265,27 @@ TEST(RssRankTest, TestInitUserEmbedding)
     std::cout << val << " ";
   }
   std::cout << std::endl;
+}
+
+TEST(RssRankTest, TestSetUserEmbedding)
+{
+  // --gtest_filter=RssRankTest.TestSetUserEmbedding
+  initDevelop();
+  init_log();
+  size_t embedding_dimension = 384; // Example embedding dimension
+
+  std::vector<double> user_embedding = knowledgebase::init_user_embedding(embedding_dimension);
+  std::string source = "r4techbiz";
+  knowledgebase::updateLongTermUserEmbedding(source, user_embedding);
+  std::vector<double> result = knowledgebase::getLongTermUserEmbedding(source);
+  bool equal = true;
+  for (int i = 0; i < result.size(); i++)
+  {
+    if (are_equal_double(result[i], user_embedding[i]) == false)
+    {
+      equal = false;
+      break;
+    }
+  }
+  std::cout << "eaul " << equal << std::endl;
 }
