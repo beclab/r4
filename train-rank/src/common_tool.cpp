@@ -215,3 +215,22 @@ double normalized_similarity_score_based_on_cosine_similarity(const VectorXd &A,
   double cosine_similarity = eigen_cosine_similarity(A, B);
   return (cosine_similarity + 1) / 2;
 }
+
+/**
+#include <mutex>
+#include <memory>
+#include <cpprest/http_client.h>
+
+using namespace web::http;
+using namespace web::http::client;
+
+std::unique_ptr<http_client> client_instance;
+std::once_flag client_once_flag;
+
+http_client &get_http_client_instance()
+{
+  std::call_once(client_once_flag, []()
+                 { client_instance.reset(new http_client(U(std::getenv("KNOWLEDGE_BASE_API_URL")))); });
+  return *client_instance;
+}
+*/
