@@ -75,6 +75,10 @@ namespace knowledgebase
     void getAllAlgorithmAccordingRanked(std::string source,
                                         std::vector<Algorithm> *algorithm_list,
                                         bool ranked, int *count);
+    void getAlgorithmAccordingImpression(int limit, int offset, std::string source,
+                                         int impression,
+                                         std::vector<Algorithm> *algorithm_list,
+                                         int *count);
     std::optional<Algorithm> GetAlgorithmById(const std::string &id);
     std::optional<Entry> GetEntryById(const std::string &id);
     std::unordered_map<std::string, Entry> getEntries(const std::string &source);

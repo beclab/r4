@@ -264,7 +264,7 @@ namespace knowledgebase
   std::optional<Entry> convertFromWebJsonValueToEntry(
       web::json::value current_item)
   {
-    std::cout << "************************ " << current_item.at(ENTRY_ID) << std::endl;
+    // std::cout << "************************ " << current_item << std::endl;
     Entry temp_entry;
     if (current_item.is_null())
     {
@@ -289,7 +289,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_FILE_TYPE
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_string_field(ENTRY_LANGUAGE))
@@ -300,7 +300,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_LANGUAGE
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_string_field(ENTRY_URL))
@@ -310,7 +310,7 @@ namespace knowledgebase
     else
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_URL << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     /**
@@ -330,7 +330,7 @@ namespace knowledgebase
     else
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_TITLE << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_READ_LATER))
@@ -341,7 +341,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_READ_LATER
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_CRAWLER))
@@ -352,7 +352,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_CRAWLER
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_STARRED))
@@ -363,7 +363,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_STARRED
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_DISABLED))
@@ -374,7 +374,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_DISABLED
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_SAVED))
@@ -384,7 +384,7 @@ namespace knowledgebase
     else
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_SAVED << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_UNREAD))
@@ -395,7 +395,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_UNREAD
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_EXTRACT))
@@ -406,7 +406,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_EXTRACT
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_string_field(ENTRY_CREATED_AT))
@@ -418,7 +418,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_CREATED_AT
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
     if (current_item.has_integer_field(ENTRY_LAST_OPENED))
     {
@@ -428,7 +428,18 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_LAST_OPENED
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
+    }
+
+    if (current_item.has_integer_field(ENTRY_PUBLISHED_AT))
+    {
+      temp_entry.published_at = current_item.at(ENTRY_PUBLISHED_AT).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "current web json value have no " << ENTRY_PUBLISHED_AT
+                 << std::endl;
+      // return std::nullopt;
     }
 
     return std::make_optional(temp_entry);
@@ -1123,7 +1134,7 @@ namespace knowledgebase
     entry_list->clear();
     http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
     std::string current_suffix =
-        std::string(ENTRY_API_SUFFIX) + "?offset=" + std::to_string(offset) + "&limit=" + std::to_string(limit) + "&source=" + source + "&extract=true" + "&fields=id,file_type,language,url,title,readlater,crawler,starred,disabled,saved,unread,extract,created_at,last_opened";
+        std::string(ENTRY_API_SUFFIX) + "?offset=" + std::to_string(offset) + "&limit=" + std::to_string(limit) + "&source=" + source + "&extract=true" + "&fields=id,file_type,language,url,title,readlater,crawler,starred,disabled,saved,unread,extract,created_at,last_opened,published_at";
     LOG(DEBUG) << "current_suffix " << current_suffix
                << std::endl;
 
@@ -1367,6 +1378,64 @@ namespace knowledgebase
         .wait();
   }
 
+  void getAlgorithmAccordingImpression(int limit, int offset, std::string source,
+                                       int impression,
+                                       std::vector<Algorithm> *algorithm_list,
+                                       int *count)
+  {
+
+    algorithm_list->clear();
+    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    std::string current_algorithm_api_suffix =
+        std::string(ALGORITHM_API_SUFFIX) + "?offset=" + std::to_string(offset) +
+        "&limit=" + std::to_string(limit) + "&source=" + source +
+        "&impression=" + std::to_string(impression);
+    LOG(DEBUG) << "current_algorithm_api_suffix " << current_algorithm_api_suffix
+               << std::endl;
+
+    uri_builder builder(U(current_algorithm_api_suffix));
+
+    client.request(methods::GET, builder.to_string())
+        .then([](http_response response) -> pplx::task<web::json::value>
+              {
+        if (response.status_code() == status_codes::OK) {
+          return response.extract_json();
+        }
+        return pplx::task_from_result(web::json::value()); })
+        .then([&algorithm_list,
+               &count](pplx::task<web::json::value> previousTask)
+              {
+        try {
+          web::json::value const &temp = previousTask.get();
+          web::json::value v = temp.at("data");
+          int code = v.at("code").as_integer();
+          // std::cout << v.to_string() << std::endl;
+          *count = v.at("data").at("count").as_integer();
+          std::string message = "null";
+          if (v.has_string_field("message")) {
+            message = v.at("message").as_string();
+          }
+          LOG(DEBUG) << "code " << code << " message " << message << " count "
+                     << *count << std::endl;
+          if (code == 0) {
+            web::json::array list_item = v.at("data").at("items").as_array();
+            for (web::json::value current_item : list_item) {
+              std::optional<Algorithm> current_impression_option =
+                  convertFromWebJsonValueToAlgorithm(current_item);
+              if (current_impression_option != std::nullopt) {
+                auto current_temp = current_impression_option.value();
+                algorithm_list->push_back(current_temp);
+              }
+            }
+          }
+
+          // print_results(v);
+          // LOG(DEBUG) << "**v**" << v.to_string() << std::endl;
+        } catch (http_exception const &e) {
+          LOG(ERROR) << "Error exception " << e.what() << std::endl;
+        } })
+        .wait();
+  }
   bool updateLastRankTime(std::string source, int64_t last_rank_time)
   {
     web::json::value current_value;

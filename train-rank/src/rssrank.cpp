@@ -129,10 +129,11 @@ namespace rssrank
 
   } // namespace
 
-  double getTimeCoefficientForUnixTimestamp(long long timestamp)
+  double getTimeCoefficientForUnixTimestamp(long long target_timestamp, long long current_timestamp)
   {
+
     auto now = boost::posix_time::second_clock::local_time();
-    auto diff = getTimeStampNow() - timestamp;
+    auto diff = current_timestamp - target_timestamp;
 
     if (diff <= 0)
     {
@@ -262,7 +263,7 @@ namespace rssrank
       {
         total_score = total_score + rssrank::short_term_user_embedding_stared_weight;
       }
-      total_score = total_score + rssrank::short_term_user_embedding_time_weight * getTimeCoefficientForUnixTimestamp(current_impression.entry_last_opened);
+      total_score = total_score + rssrank::short_term_user_embedding_time_weight * getTimeCoefficientForUnixTimestamp(current_impression.entry_last_opened, getTimeStampNow());
     }
     return total_score;
   }
@@ -283,6 +284,88 @@ namespace rssrank
       }
     }
     return total_score;
+  }
+
+  std::unordered_map<std::string, std::string> getNotImpressionedAlgorithmToEntry()
+  {
+    const int batch_size = 100;
+    int offset = 0;
+    const char *source_name = std::getenv("TERMINUS_RECOMMEND_SOURCE_NAME");
+    std::unordered_map<std::string, std::string> algorithm_id_to_entry_id;
+    // Load unranked items
+    while (true)
+    {
+      std::vector<Algorithm> temp_algorithm;
+      int count = 0;
+      knowledgebase::getAlgorithmAccordingImpression(batch_size, offset, source_name,
+                                                     0, &temp_algorithm, &count);
+      LOG(DEBUG) << "offset " << offset << " limit " << batch_size << " count "
+                 << count;
+      for (Algorithm current : temp_algorithm)
+      {
+        if (current.embedding == std::nullopt)
+        {
+          LOG(ERROR) << "current algorithm " << current.id << " have no embedding"
+                     << std::endl;
+          continue;
+        }
+        if (current.embedding.value().size() != getCurrentEmbeddingDimension())
+        {
+          LOG(ERROR) << "current algorithm " << current.id << " embedding size "
+                     << current.embedding.value().size()
+                     << " is not equal embedding dimension " << std::endl;
+          continue;
+        }
+        algorithm_id_to_entry_id.emplace(
+            std::make_pair(current.id, current.entry));
+      }
+      offset = offset + batch_size;
+      if (offset >= count)
+      {
+        break;
+      }
+    }
+    offset = 0;
+    // Load ranked items
+    /**
+    while (true)
+    {
+      std::vector<Algorithm> temp_algorithm;
+      int count = 0;
+      knowledgebase::getAlgorithmAccordingRanked(batch_size, offset, source_name,
+                                                 true, &temp_algorithm, &count);
+      LOG(DEBUG) << "offset " << offset << " limit " << batch_size << " count "
+                 << count;
+      for (Algorithm current : temp_algorithm)
+      {
+        if (current.embedding == std::nullopt)
+        {
+          LOG(ERROR) << "current algorithm " << current.id << " have no embedding"
+                     << std::endl;
+          continue;
+        }
+        if (current.embedding.value().size() != getCurrentEmbeddingDimension())
+        {
+          LOG(ERROR) << "current algorithm " << current.id << " embedding size "
+                     << current.embedding.value().size()
+                     << " is not equal embedding dimension " << std::endl;
+          continue;
+        }
+        if (current.impression > 0)
+        {
+          continue;
+        }
+        algorithm_id_to_entry_id.emplace(
+            std::make_pair(current.id, current.entry));
+      }
+      offset = offset + batch_size;
+      if (offset >= count)
+      {
+        break;
+      }
+    }
+    */
+    return algorithm_id_to_entry_id;
   }
 
   std::unordered_map<std::string, std::string> getNotRankedAlgorithmToEntry()
@@ -326,6 +409,7 @@ namespace rssrank
     }
     offset = 0;
     // Load ranked items
+    /**
     while (true)
     {
       std::vector<Algorithm> temp_algorithm;
@@ -362,6 +446,7 @@ namespace rssrank
         break;
       }
     }
+    */
     return algorithm_id_to_entry_id;
   }
 
@@ -941,14 +1026,74 @@ namespace rssrank
     vector<Impression> impressions = getImpressionForShortTermAndLongTermUserEmbeddingRank();
     int short_number = getEnvInt(TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION, 10);
     float long_term_weight = getEnvFloat(TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE, 0.3);
-    float short_term_weight = 1 - long_term_weight;
+    float short_term_weight = 1 - long_term_weight; // long_term_weight + short_term_weight = 1
+    float article_time_weight = getEnvFloat(TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE, 0.5);
+
     vector<Impression> short_term_impression = get_subvector(impressions, short_number);
-    vector<double> shore_term_embedding = calcluateUserShortTermEmbedding(short_term_impression, true);
-    if (shore_term_embedding.size() == 0)
+    vector<double> short_term_embedding = calcluateUserShortTermEmbedding(short_term_impression, true);
+    if (short_term_embedding.size() == 0)
     {
-      shore_term_embedding = vector<double>(embedding_dimension, 0.0);
+      short_term_embedding = vector<double>(embedding_dimension, 0.0);
     }
-    vector<double> long_term_imbedding = knowledgebase::getLongTermUserEmbedding(current_srouce_name);
+    VectorXd short_term_vectorxd = vectorToEigentVectorXd(short_term_embedding);
+
+    vector<double> long_term_embedding = knowledgebase::getLongTermUserEmbedding(current_srouce_name);
+    VectorXd long_term_vectorxd = vectorToEigentVectorXd(long_term_embedding);
+    std::unordered_map<std::string, std::string> not_impressioned_algorithm_to_entry =
+        getNotImpressionedAlgorithmToEntry(); // This is actually algorithm_id_to_entry_id, the current logic does not distinguish between ranked and unranked, it is all algorithms under a certain source
+    LOG(INFO) << "not_impressioned_algorithm_to_entry size "
+              << not_impressioned_algorithm_to_entry.size() << std::endl;
+    std::vector<std::string> need_reinfer_algorithm_entry;
+    std::unordered_map<std::string, ScoreWithMetadata> id_to_score_with_meta;
+    long long current_time = getTimeStampNow();
+    for (const auto &current_item : not_impressioned_algorithm_to_entry)
+    {
+      std::optional<Entry> temp_entry =
+          knowledgebase::EntryCache::getInstance().getEntryById(current_item.second);
+      if (temp_entry == std::nullopt)
+      {
+        LOG(ERROR) << "entry [" << current_item.second
+                   << "] not exist, algorithm [" << current_item.first << "]"
+                   << std::endl;
+        continue;
+      }
+      if (!temp_entry.value().extract)
+      {
+        LOG(ERROR) << "entry [" << current_item.second
+                   << "] not extract, algorithm [" << current_item.first << "]"
+                   << std::endl;
+        continue;
+      }
+      std::optional<Algorithm> current_algorithm =
+          knowledgebase::GetAlgorithmById(current_item.first);
+      if (current_algorithm == std::nullopt)
+      {
+        LOG(ERROR) << "Algorithm item not found, id = " << current_item.first << std::endl;
+        continue;
+      }
+      if (current_algorithm.value().embedding == std::nullopt)
+      {
+        LOG(ERROR) << "Algorithm item no embbeding found, id = " << current_item.first << std::endl;
+        continue;
+      }
+      vector<double> current_article_embedding = current_algorithm.value().embedding.value();
+      VectorXd current_article_vectorxd = vectorToEigentVectorXd(current_article_embedding);
+      double short_term_similarity_score = normalized_similarity_score_based_on_cosine_similarity(current_article_vectorxd, short_term_vectorxd);
+      double long_term_similarity_score = normalized_similarity_score_based_on_cosine_similarity(current_article_vectorxd, long_term_vectorxd);
+      double similarity_score = short_term_weight * short_term_similarity_score +
+                                long_term_weight * long_term_similarity_score;
+      double time_score = 0;
+      if (temp_entry.value().published_at != 0)
+      {
+        time_score = getTimeCoefficientForUnixTimestamp(temp_entry.value().published_at, current_time);
+      }
+      else
+      {
+        time_score = getTimeCoefficient(temp_entry.value().timestamp);
+      }
+      double score = similarity_score * (1 - article_time_weight) + article_time_weight * time_score;
+      LOG(INFO) << "current_item [" << temp_entry.value().title << "] score [" << score << "]" << std::endl;
+    }
 
     return true;
   }
@@ -1060,6 +1205,7 @@ namespace rssrank
       auto reason = feature_extractors[0]->getReason(current_algorithm.value());
       id_to_score_with_meta.emplace(current_item.first, buildScoreWithMeta(score, reason.reason));
     }
+
     LOG(INFO) << "id_to_score_with_meta size " << id_to_score_with_meta.size() << std::endl;
     knowledgebase::EntryCache::getInstance().dumpStatistics();
     if (FLAGS_verbose)

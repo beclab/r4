@@ -29,8 +29,14 @@ static char TERMINUS_RECOMMEND_EMBEDDING_DIMENSION[] =
 static char TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION[] =
     "TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION"; // use how many impression to calculate short term user embedding
 
+static char TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION[] =
+    "TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION"; // use how many impression to calculate short term user embedding
+
 static char TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE[] =
-    "TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE"; // use how many impression to calculate short term user embedding
+    "TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE"; // The proportion of the cosine distance between the long-term user vector and the article when calculating the rank score, compared to the cosine distance between the short-term user vector and the article
+
+static char TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE[] =
+    "TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE"; // The time weight of the article when calculating the rank score, compared to the cosine distance between the user vector and the article
 
 void init_log();
 
@@ -182,5 +188,7 @@ std::vector<T> get_subvector(const std::vector<T> &input, int n)
   }
 }
 
-double eigen_cosine_similarity(const VectorXd &A, const VectorXd &B);
+double eigen_cosine_similarity(const VectorXd &A, const VectorXd &B); // this score between -1 and 1, the higher the score, the more similar the two vectors are
+
+double normalized_similarity_score_based_on_cosine_similarity(const VectorXd &A, const VectorXd &B); // this score between 0 and 1, the higher the score, the more similar the two vectors are
 VectorXd vectorToEigentVectorXd(const std::vector<double> &vec);

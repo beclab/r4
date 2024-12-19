@@ -209,3 +209,9 @@ VectorXd vectorToEigentVectorXd(const std::vector<double> &vec)
 {
   return Eigen::Map<const VectorXd>(vec.data(), vec.size());
 }
+
+double normalized_similarity_score_based_on_cosine_similarity(const VectorXd &A, const VectorXd &B)
+{
+  double cosine_similarity = eigen_cosine_similarity(A, B);
+  return (cosine_similarity + 1) / 2;
+}

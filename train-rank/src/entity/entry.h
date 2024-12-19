@@ -21,6 +21,7 @@ static const char ENTRY_PURE_CONTENT[] = "pure_content";
 static const char ENTRY_TITLE[] = "title";
 static const char ENTRY_CREATED_AT[] = "created_at";
 static const char ENTRY_LAST_OPENED[] = "last_opened";
+static const char ENTRY_PUBLISHED_AT[] = "published_at";
 
 struct Entry
 {
@@ -38,5 +39,6 @@ struct Entry
   std::string pure_content;
   std::string title;
   boost::posix_time::ptime timestamp;
+  long long published_at;
   long long last_opened;
 };
