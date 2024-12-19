@@ -51,7 +51,10 @@ add_library(rankcommon STATIC src/data_process.cpp
                               src/lr/logistic_regression.cpp
                               src/lr/feature_extractor.cpp
                               src/lr/model_serializer.cpp
-                              src/entity/reco_metadata.cpp)
+                              src/entity/reco_metadata.cpp
+                              src/http_single_client.h
+                              src/http_single_client.cpp
+                              )
                               
 add_dependencies(rankcommon gen_git_info)
 

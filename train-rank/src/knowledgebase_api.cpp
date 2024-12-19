@@ -17,6 +17,7 @@
 #include "easylogging++.h"
 
 #include <boost/date_time.hpp>
+#include "http_single_client.h"
 
 using namespace web::json;
 
@@ -110,7 +111,9 @@ namespace knowledgebase
   {
     // LOG(DEBUG) << "algorithm url " <<
     // concat_prefix_and_suffix_get_url(algorithm_api_suffix) << std::endl;
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
 
     web::json::value algorithm_list;
 
@@ -194,7 +197,9 @@ namespace knowledgebase
   {
     // LOG(DEBUG) << "algorithm url " <<
     // concat_prefix_and_suffix_get_url(algorithm_api_suffix) << std::endl;
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    http_client &client = *current_client;
 
     web::json::value current_algorithm;
     current_algorithm["id"] = web::json::value::string(entry_id);
@@ -231,7 +236,9 @@ namespace knowledgebase
 
   bool rerank(const std::string &source)
   {
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
 
     uri_builder builder(U("knowledge/algorithm/reRank/" + source));
 
@@ -755,7 +762,9 @@ namespace knowledgebase
       }
       */
     impression_list->clear();
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_impression_api_suffix =
         std::string(IMPRESSION_API_SUFFIX) + "?offset=" + std::to_string(offset) +
         "&limit=" + std::to_string(limit) + "&source=" + source;
@@ -824,7 +833,9 @@ namespace knowledgebase
 
   int64_t getLastExtractorTime(const std::string &source)
   {
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_config_api_suffix =
         std::string(CONFIG_API_SUFFIX) + "/" + source + "/" + LAST_EXTRACTOR_TIME;
 
@@ -867,7 +878,9 @@ namespace knowledgebase
 
   vector<double> getLongTermUserEmbedding(const std::string &source)
   {
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_config_api_suffix =
         std::string(CONFIG_API_SUFFIX) + "/" + source + "/" + LONG_TERM_USER_EMBEDDING;
 
@@ -910,7 +923,9 @@ namespace knowledgebase
 
   int64_t getLastRankTime(const std::string &source)
   {
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_config_api_suffix =
         std::string(CONFIG_API_SUFFIX) + "/" + source + "/" + LAST_RANK_TIME;
 
@@ -1028,7 +1043,9 @@ namespace knowledgebase
         }
         }
      */
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_impression_api_suffix =
         std::string(IMPRESSION_API_SUFFIX) + "/" + id;
 
@@ -1071,7 +1088,9 @@ namespace knowledgebase
 
   std::optional<Entry> GetEntryById(const std::string &id)
   {
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_entry_api_suffix =
         std::string(ENTRY_API_SUFFIX) + "/" + id;
 
@@ -1132,7 +1151,9 @@ namespace knowledgebase
                   std::vector<Entry> *entry_list, int *count)
   {
     entry_list->clear();
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_suffix =
         std::string(ENTRY_API_SUFFIX) + "?offset=" + std::to_string(offset) + "&limit=" + std::to_string(limit) + "&source=" + source + "&extract=true" + "&fields=id,file_type,language,url,title,readlater,crawler,starred,disabled,saved,unread,extract,created_at,last_opened,published_at";
     LOG(DEBUG) << "current_suffix " << current_suffix
@@ -1206,7 +1227,9 @@ namespace knowledgebase
         0.1035594791173935,
         0.07692128419876099,
      */
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_algorithm_api_suffix =
         std::string(ALGORITHM_API_SUFFIX) + "/" + id;
 
@@ -1321,7 +1344,9 @@ namespace knowledgebase
                   -0.027788635343313217,
       */
     algorithm_list->clear();
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string temp_ranked = "false";
     if (ranked)
     {
@@ -1385,7 +1410,10 @@ namespace knowledgebase
   {
 
     algorithm_list->clear();
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    std::cout << "current_client " << current_client << std::endl;
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_algorithm_api_suffix =
         std::string(ALGORITHM_API_SUFFIX) + "?offset=" + std::to_string(offset) +
         "&limit=" + std::to_string(limit) + "&source=" + source +
@@ -1470,8 +1498,9 @@ namespace knowledgebase
   bool updateKnowledgeConfig(const std::string &source, const std::string &key,
                              const web::json::value &value)
   {
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
-
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     LOG(DEBUG) << "update source [" << source << "] key [" << key << "] "
                << value.to_string() << std::endl;
 

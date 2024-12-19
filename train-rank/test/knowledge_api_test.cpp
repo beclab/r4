@@ -199,6 +199,11 @@ TEST(KnowledgeApiTest, TestGetAlgorithmAccordingImpression)
   {
     std::cout << current.id << " " << current.impression << std::endl;
   }
+  for (int i = 0; i < 10; i++)
+  {
+    knowledgebase::getAlgorithmAccordingImpression(10, 0, source, 1,
+                                                   &algorithm_list, &count);
+  }
 }
 
 TEST(KnowledgeApiTest, getNotImpressionedAlgorithmToEntry)
