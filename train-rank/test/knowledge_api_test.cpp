@@ -392,6 +392,17 @@ TEST(FaissSearchTest, findMostSimilar)
   // Check if FAISS index is created and populated
   std::vector<float> query = {1.0f, 0.0f, 0.0f};
   auto [index, distance] = search.findMostSimilarArticle(query);
+  std::cout << "Most similar article: " << index << " Distance: " << distance << std::endl;
   assert(index == 0);                // The most similar article should be the first one
   assert(std::abs(distance) < 1e-6); // Distance should be 0
+
+  query = {0.5f, 0.5f, 0.0f};
+  auto [index2, distance2] = search.findMostSimilarArticle(query);
+  std::cout << "Most similar article: " << index2 << " Distance: " << distance2 << std::endl;
+  assert(index2 == 3); // The most similar article should be the last one
+
+  query = {0.5f, 0.5f, 0.5f};
+  auto [index3, distance3] = search.findMostSimilarArticle(query);
+  std::cout << "Most similar article: " << index3 << " Distance: " << distance3 << std::endl;
+  assert(index3 == 3); // The most similar article should be the last one
 }

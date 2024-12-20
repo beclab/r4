@@ -1,7 +1,7 @@
 #include "faiss_article_search.h"
 #include <vector>
+#include <iostream>
 using namespace std;
-using namespace faiss;
 
 void FAISSArticleSearch::normalizeVectors(std::vector<float> &vec)
 {
@@ -20,6 +20,18 @@ void FAISSArticleSearch::normalizeVectors(std::vector<float> &vec)
     }
 }
 
+void printVector(const std::vector<std::vector<float>> &vec)
+{
+    for (const auto &row : vec)
+    {
+        for (float value : row)
+        {
+            std::cout << value << " ";
+        }
+        std::cout << std::endl;
+    }
+}
+
 FAISSArticleSearch::FAISSArticleSearch(std::vector<std::vector<float>> &vectors)
 {
     d = vectors[0].size(); // Get the dimension of the vectors
@@ -29,7 +41,7 @@ FAISSArticleSearch::FAISSArticleSearch(std::vector<std::vector<float>> &vectors)
     {
         normalizeVectors(vec); // Normalize
     }
-
+    printVector(vectors);
     // Convert 2D vectors to a format acceptable by FAISS
     std::vector<float> flatVectors(nb * d);
     for (int i = 0; i < nb; ++i)
@@ -39,6 +51,8 @@ FAISSArticleSearch::FAISSArticleSearch(std::vector<std::vector<float>> &vectors)
             flatVectors[i * d + j] = vectors[i][j];
         }
     }
+
+    // faiss::normalize_L2(nb, d, flatVectors.data());
 
     // Create FAISS index
     index = new faiss::IndexFlatL2(d); // Use Euclidean distance (L2 distance)
@@ -59,7 +73,7 @@ std::pair<int, float> FAISSArticleSearch::findMostSimilarArticle(const std::vect
     std::vector<faiss::idx_t> labels(k); // Store article indices
 
     // Query the FAISS index
-    // index->search(1, normalizedQuery.data(), k, distances.data(), labels.data());
+    index->search(1, normalizedQuery.data(), k, distances.data(), labels.data());
 
     // Return the nearest article index and distance (cosine distance is equivalent to Euclidean distance)
     return {labels[0], distances[0]};
