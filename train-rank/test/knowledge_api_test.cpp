@@ -6,6 +6,7 @@
 #include "../src/knowledgebase_api.h"
 #include "../src/entity/reco_metadata.h"
 #include "../src/rssrank.h"
+#include "../src/faiss_article_search.h"
 #include "test_common.h"
 
 TEST(KnowledgeApiTest, TestUpdateRankScore)
@@ -374,4 +375,23 @@ TEST(RssRankTest, rankShortTermAndLongTermUserEmbedding)
   initDevelop();
   init_log();
   rssrank::rankShortTermAndLongTermUserEmbedding();
+}
+
+TEST(FaissSearchTest, findMostSimilar)
+{
+  // --gtest_filter=FaissSearchTest.findMostSimilar
+
+  std::vector<std::vector<float>> articles = {
+      {1.0f, 0.0f, 0.0f},
+      {0.0f, 1.0f, 0.0f},
+      {0.0f, 0.0f, 1.0f},
+      {0.5f, 0.5f, 0.0f}};
+  FAISSArticleSearch search(articles);
+  // Create FAISSArticleSearch object
+
+  // Check if FAISS index is created and populated
+  std::vector<float> query = {1.0f, 0.0f, 0.0f};
+  auto [index, distance] = search.findMostSimilarArticle(query);
+  assert(index == 0);                // The most similar article should be the first one
+  assert(std::abs(distance) < 1e-6); // Distance should be 0
 }

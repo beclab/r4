@@ -59,7 +59,7 @@ std::pair<int, float> FAISSArticleSearch::findMostSimilarArticle(const std::vect
     std::vector<faiss::idx_t> labels(k); // Store article indices
 
     // Query the FAISS index
-    index->search(1, normalizedQuery.data(), k, distances.data(), labels.data());
+    // index->search(1, normalizedQuery.data(), k, distances.data(), labels.data());
 
     // Return the nearest article index and distance (cosine distance is equivalent to Euclidean distance)
     return {labels[0], distances[0]};

@@ -101,6 +101,24 @@ RUN cd /opt && \
     cmake ..  && \
     make install 
 
+RUN cd /opt && \
+    curl -LJO https://github.com/OpenMathLib/OpenBLAS/archive/refs/tags/v0.3.28.tar.gz  && \
+    tar -xvzf OpenBLAS-0.3.28.tar.gz  && \
+    cd OpenBLAS-0.3.28  && \
+    make -j$(nproc) && \
+    make PREFIX=/usr/local install
+
+RUN cd /opt && \
+    apt-get install -y gfortran && \
+    curl -LJO https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.12.0.tar.gz  && \
+    tar -xvzf lapack-3.12.0.tar.gz  && \
+    cd lapack-3.12.0  && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make blas lapack && \
+    make install
+
 RUN apt install wget -y && \
     wget https://cmake.org/files/v3.25/cmake-3.25.2-linux-x86_64.sh && \
     bash cmake-3.25.2-linux-x86_64.sh --prefix=/usr/local --skip-license
@@ -111,11 +129,9 @@ RUN cd /opt && \
     cd faiss-1.9.0 && \
     mkdir build  && \
     cd build  && \
-    apt install libopenblas-dev -y && \
-    apt install liblapack-dev -y && \
-    cmake .. -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_PYTHON=OFF -DBUILD_TESTING=OFF && \
+    cmake .. -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_PYTHON=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON && \
     make -j$(nproc) && \
     make install 
-    
+
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]
