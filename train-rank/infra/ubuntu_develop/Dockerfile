@@ -101,4 +101,21 @@ RUN cd /opt && \
     cmake ..  && \
     make install 
 
+RUN apt install wget -y && \
+    wget https://cmake.org/files/v3.25/cmake-3.25.2-linux-x86_64.sh && \
+    bash cmake-3.25.2-linux-x86_64.sh --prefix=/usr/local --skip-license
+
+RUN cd /opt && \
+    curl -LJO https://codeload.github.com/facebookresearch/faiss/tar.gz/refs/tags/v1.9.0  && \
+    tar -xvzf faiss-1.9.0.tar.gz  && \
+    cd faiss-1.9.0 && \
+    mkdir build  && \
+    cd build  && \
+    apt install libopenblas-dev -y && \
+    apt install liblapack-dev -y && \
+    cmake .. -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_PYTHON=OFF -DBUILD_TESTING=OFF && \
+    make -j$(nproc) && \
+    make install 
+    
+
 ENTRYPOINT ["tail", "-f", "/dev/null"]

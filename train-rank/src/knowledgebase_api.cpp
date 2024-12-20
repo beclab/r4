@@ -1,3 +1,4 @@
+#include "common_tool.h"
 #include "knowledgebase_api.h"
 
 #include <cpprest/json.h>
@@ -6,10 +7,17 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <stdexcept>
+#include <cstdlib>
 
 #include "easylogging++.h"
 
 #include <boost/date_time.hpp>
+#include "http_single_client.h"
 
 using namespace web::json;
 
@@ -103,7 +111,9 @@ namespace knowledgebase
   {
     // LOG(DEBUG) << "algorithm url " <<
     // concat_prefix_and_suffix_get_url(algorithm_api_suffix) << std::endl;
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
 
     web::json::value algorithm_list;
 
@@ -187,7 +197,9 @@ namespace knowledgebase
   {
     // LOG(DEBUG) << "algorithm url " <<
     // concat_prefix_and_suffix_get_url(algorithm_api_suffix) << std::endl;
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    http_client &client = *current_client;
 
     web::json::value current_algorithm;
     current_algorithm["id"] = web::json::value::string(entry_id);
@@ -224,7 +236,9 @@ namespace knowledgebase
 
   bool rerank(const std::string &source)
   {
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
 
     uri_builder builder(U("knowledge/algorithm/reRank/" + source));
 
@@ -257,7 +271,7 @@ namespace knowledgebase
   std::optional<Entry> convertFromWebJsonValueToEntry(
       web::json::value current_item)
   {
-    std::cout << "************************ " << current_item.at(ENTRY_ID) << std::endl;
+    // std::cout << "************************ " << current_item << std::endl;
     Entry temp_entry;
     if (current_item.is_null())
     {
@@ -282,7 +296,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_FILE_TYPE
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_string_field(ENTRY_LANGUAGE))
@@ -293,7 +307,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_LANGUAGE
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_string_field(ENTRY_URL))
@@ -303,7 +317,7 @@ namespace knowledgebase
     else
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_URL << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     /**
@@ -323,7 +337,7 @@ namespace knowledgebase
     else
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_TITLE << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_READ_LATER))
@@ -334,7 +348,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_READ_LATER
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_CRAWLER))
@@ -345,7 +359,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_CRAWLER
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_STARRED))
@@ -356,7 +370,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_STARRED
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_DISABLED))
@@ -367,7 +381,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_DISABLED
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_SAVED))
@@ -377,7 +391,7 @@ namespace knowledgebase
     else
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_SAVED << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_UNREAD))
@@ -388,7 +402,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_UNREAD
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_boolean_field(ENTRY_EXTRACT))
@@ -399,7 +413,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_EXTRACT
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
 
     if (current_item.has_string_field(ENTRY_CREATED_AT))
@@ -411,7 +425,7 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_CREATED_AT
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
     }
     if (current_item.has_integer_field(ENTRY_LAST_OPENED))
     {
@@ -421,7 +435,18 @@ namespace knowledgebase
     {
       LOG(ERROR) << "current web json value have no " << ENTRY_LAST_OPENED
                  << std::endl;
-      return std::nullopt;
+      // return std::nullopt;
+    }
+
+    if (current_item.has_integer_field(ENTRY_PUBLISHED_AT))
+    {
+      temp_entry.published_at = current_item.at(ENTRY_PUBLISHED_AT).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "current web json value have no " << ENTRY_PUBLISHED_AT
+                 << std::endl;
+      // return std::nullopt;
     }
 
     return std::make_optional(temp_entry);
@@ -737,7 +762,9 @@ namespace knowledgebase
       }
       */
     impression_list->clear();
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_impression_api_suffix =
         std::string(IMPRESSION_API_SUFFIX) + "?offset=" + std::to_string(offset) +
         "&limit=" + std::to_string(limit) + "&source=" + source;
@@ -806,7 +833,9 @@ namespace knowledgebase
 
   int64_t getLastExtractorTime(const std::string &source)
   {
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_config_api_suffix =
         std::string(CONFIG_API_SUFFIX) + "/" + source + "/" + LAST_EXTRACTOR_TIME;
 
@@ -847,9 +876,56 @@ namespace knowledgebase
     return last_extractor_time;
   }
 
+  vector<double> getLongTermUserEmbedding(const std::string &source)
+  {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
+    std::string current_config_api_suffix =
+        std::string(CONFIG_API_SUFFIX) + "/" + source + "/" + LONG_TERM_USER_EMBEDDING;
+
+    LOG(DEBUG) << "current_config_api_suffix " << current_config_api_suffix
+               << std::endl;
+
+    uri_builder builder(U(current_config_api_suffix));
+
+    vector<double> long_term_user_embedding;
+    client.request(methods::GET, builder.to_string())
+        .then([](http_response response) -> pplx::task<web::json::value>
+              {
+        if (response.status_code() == status_codes::OK) {
+          return response.extract_json();
+        }
+        return pplx::task_from_result(web::json::value()); })
+        .then([&long_term_user_embedding](pplx::task<web::json::value> previousTask)
+              {
+        try {
+          web::json::value const &v = previousTask.get();
+          int code = v.at("code").as_integer();
+          std::string message = "null";
+          if (v.has_string_field("message")) {
+            message = v.at("message").as_string();
+          }
+          LOG(DEBUG) << "code " << code << " message " << message << std::endl;
+          if (v.has_string_field("data")) {
+            std::string embedding = v.at("data").as_string();
+            int embedding_dimension = getEnvInt(TERMINUS_RECOMMEND_EMBEDDING_DIMENSION, 384);
+
+            long_term_user_embedding = parse_embedding(embedding, embedding_dimension);
+       
+          }
+        } catch (http_exception const &e) {
+          LOG(ERROR) << "Error exception " << e.what() << std::endl;
+        } })
+        .wait();
+    return long_term_user_embedding;
+  }
+
   int64_t getLastRankTime(const std::string &source)
   {
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_config_api_suffix =
         std::string(CONFIG_API_SUFFIX) + "/" + source + "/" + LAST_RANK_TIME;
 
@@ -890,6 +966,62 @@ namespace knowledgebase
     return last_rank_time;
   }
 
+  std::vector<double> parse_embedding(const std::string &input, size_t embedding_dimension)
+  {
+    std::vector<double> embedding_data;
+    std::stringstream ss(input);
+    std::string token;
+    std::vector<std::string> split_result;
+
+    // Split the input string by semicolon
+    while (std::getline(ss, token, ';'))
+    {
+      split_result.push_back(token);
+    }
+
+    // Ensure there is at least one token, and the last token is a timestamp
+    if (split_result.size() <= 1)
+    {
+      return {}; // Not enough tokens (embedding + timestamp)
+    }
+
+    // The last element should be the timestamp, remove it
+    std::string timestamp_str = split_result.back();
+    split_result.pop_back();
+
+    // Validate that the last element is a valid timestamp (optional check)
+    try
+    {
+      std::stoll(timestamp_str); // Try to convert timestamp to long long
+    }
+    catch (const std::invalid_argument &)
+    {
+      return {}; // If the timestamp is not valid, return empty
+    }
+
+    // If the embedding dimension doesn't match, return empty
+    if (split_result.size() != embedding_dimension)
+    {
+      return {};
+    }
+
+    // Try to parse the embedding values as double
+    for (const auto &element : split_result)
+    {
+      try
+      {
+        double value = std::stod(element); // Convert string to double
+        embedding_data.push_back(value);
+      }
+      catch (const std::invalid_argument &)
+      {
+        return {}; // If any element is not a valid number, return empty
+      }
+    }
+
+    return embedding_data;
+  }
+
   std::optional<Impression> GetImpressionById(const std::string &id)
   {
     /**
@@ -911,7 +1043,9 @@ namespace knowledgebase
         }
         }
      */
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_impression_api_suffix =
         std::string(IMPRESSION_API_SUFFIX) + "/" + id;
 
@@ -954,7 +1088,9 @@ namespace knowledgebase
 
   std::optional<Entry> GetEntryById(const std::string &id)
   {
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_entry_api_suffix =
         std::string(ENTRY_API_SUFFIX) + "/" + id;
 
@@ -1015,9 +1151,11 @@ namespace knowledgebase
                   std::vector<Entry> *entry_list, int *count)
   {
     entry_list->clear();
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_suffix =
-        std::string(ENTRY_API_SUFFIX) + "?offset=" + std::to_string(offset) + "&limit=" + std::to_string(limit) + "&source=" + source + "&extract=true" + "&fields=id,file_type,language,url,title,readlater,crawler,starred,disabled,saved,unread,extract,created_at,last_opened";
+        std::string(ENTRY_API_SUFFIX) + "?offset=" + std::to_string(offset) + "&limit=" + std::to_string(limit) + "&source=" + source + "&extract=true" + "&fields=id,file_type,language,url,title,readlater,crawler,starred,disabled,saved,unread,extract,created_at,last_opened,published_at";
     LOG(DEBUG) << "current_suffix " << current_suffix
                << std::endl;
 
@@ -1089,7 +1227,9 @@ namespace knowledgebase
         0.1035594791173935,
         0.07692128419876099,
      */
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string current_algorithm_api_suffix =
         std::string(ALGORITHM_API_SUFFIX) + "/" + id;
 
@@ -1204,7 +1344,9 @@ namespace knowledgebase
                   -0.027788635343313217,
       */
     algorithm_list->clear();
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     std::string temp_ranked = "false";
     if (ranked)
     {
@@ -1261,11 +1403,89 @@ namespace knowledgebase
         .wait();
   }
 
+  void getAlgorithmAccordingImpression(int limit, int offset, std::string source,
+                                       int impression,
+                                       std::vector<Algorithm> *algorithm_list,
+                                       int *count)
+  {
+
+    algorithm_list->clear();
+    http_client *current_client = HttpClientSingleton::get_instance();
+    std::cout << "current_client " << current_client << std::endl;
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
+    std::string current_algorithm_api_suffix =
+        std::string(ALGORITHM_API_SUFFIX) + "?offset=" + std::to_string(offset) +
+        "&limit=" + std::to_string(limit) + "&source=" + source +
+        "&impression=" + std::to_string(impression);
+    LOG(DEBUG) << "current_algorithm_api_suffix " << current_algorithm_api_suffix
+               << std::endl;
+
+    uri_builder builder(U(current_algorithm_api_suffix));
+
+    client.request(methods::GET, builder.to_string())
+        .then([](http_response response) -> pplx::task<web::json::value>
+              {
+        if (response.status_code() == status_codes::OK) {
+          return response.extract_json();
+        }
+        return pplx::task_from_result(web::json::value()); })
+        .then([&algorithm_list,
+               &count](pplx::task<web::json::value> previousTask)
+              {
+        try {
+          web::json::value const &temp = previousTask.get();
+          web::json::value v = temp.at("data");
+          int code = v.at("code").as_integer();
+          // std::cout << v.to_string() << std::endl;
+          *count = v.at("data").at("count").as_integer();
+          std::string message = "null";
+          if (v.has_string_field("message")) {
+            message = v.at("message").as_string();
+          }
+          LOG(DEBUG) << "code " << code << " message " << message << " count "
+                     << *count << std::endl;
+          if (code == 0) {
+            web::json::array list_item = v.at("data").at("items").as_array();
+            for (web::json::value current_item : list_item) {
+              std::optional<Algorithm> current_impression_option =
+                  convertFromWebJsonValueToAlgorithm(current_item);
+              if (current_impression_option != std::nullopt) {
+                auto current_temp = current_impression_option.value();
+                algorithm_list->push_back(current_temp);
+              }
+            }
+          }
+
+          // print_results(v);
+          // LOG(DEBUG) << "**v**" << v.to_string() << std::endl;
+        } catch (http_exception const &e) {
+          LOG(ERROR) << "Error exception " << e.what() << std::endl;
+        } })
+        .wait();
+  }
   bool updateLastRankTime(std::string source, int64_t last_rank_time)
   {
     web::json::value current_value;
     current_value["value"] = web::json::value::number(last_rank_time);
     return updateKnowledgeConfig(source, LAST_RANK_TIME, current_value);
+  }
+
+  bool updateLongTermUserEmbedding(std::string source,
+                                   const std::vector<double> &long_term_user_embedding)
+  {
+    std::string embedding_str;
+    for (const auto &element : long_term_user_embedding)
+    {
+      embedding_str += std::to_string(element) + ";";
+    }
+
+    // Append the current timestamp to the end of the string
+    embedding_str += std::to_string(getTimeStampNow());
+
+    web::json::value current_value;
+    current_value["value"] = web::json::value::string(embedding_str);
+    return updateKnowledgeConfig(source, LONG_TERM_USER_EMBEDDING, current_value);
   }
 
   bool updateLastExtractorTime(std::string source, int64_t last_extractor_time)
@@ -1278,8 +1498,9 @@ namespace knowledgebase
   bool updateKnowledgeConfig(const std::string &source, const std::string &key,
                              const web::json::value &value)
   {
-    http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
-
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
     LOG(DEBUG) << "update source [" << source << "] key [" << key << "] "
                << value.to_string() << std::endl;
 
@@ -1310,5 +1531,24 @@ namespace knowledgebase
         .wait();
 
     return true;
+  }
+
+  std::vector<double> init_user_embedding(size_t embedding_dimension)
+  {
+    // Create a random number generator (uniform distribution between 0 and 1)
+    std::random_device rd;
+    std::mt19937 gen(rd());                         // Mersenne Twister random number generator
+    std::uniform_real_distribution<> dis(0.0, 1.0); // Uniform distribution between 0 and 1
+
+    std::vector<double> random_data_array;
+    random_data_array.reserve(embedding_dimension);
+
+    // Fill the vector with random values between 0 and 1
+    for (size_t i = 0; i < embedding_dimension; ++i)
+    {
+      random_data_array.push_back(dis(gen));
+    }
+
+    return random_data_array;
   }
 } // namespace knowledgebase

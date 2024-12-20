@@ -50,6 +50,7 @@ namespace knowledgebase
     static const char CONFIG_API_SUFFIX[] = "/knowledge/config";
     static const char LAST_RANK_TIME[] = "last_rank_time";
     static const char LAST_EXTRACTOR_TIME[] = "last_extractor_time";
+    static const char LONG_TERM_USER_EMBEDDING[] = "user_embedding";
 
     bool updateAlgorithmScoreAndRanked(const std::string &entry_id,
                                        float rank_score, bool ranked);
@@ -74,6 +75,10 @@ namespace knowledgebase
     void getAllAlgorithmAccordingRanked(std::string source,
                                         std::vector<Algorithm> *algorithm_list,
                                         bool ranked, int *count);
+    void getAlgorithmAccordingImpression(int limit, int offset, std::string source,
+                                         int impression,
+                                         std::vector<Algorithm> *algorithm_list,
+                                         int *count);
     std::optional<Algorithm> GetAlgorithmById(const std::string &id);
     std::optional<Entry> GetEntryById(const std::string &id);
     std::unordered_map<std::string, Entry> getEntries(const std::string &source);
@@ -83,9 +88,15 @@ namespace knowledgebase
     bool updateKnowledgeConfig(const std::string &source, const std::string &key,
                                const web::json::value &value);
     bool updateLastRankTime(std::string source, int64_t last_rank_time);
+    bool updateLongTermUserEmbedding(std::string source,
+                                     const std::vector<double> &long_term_user_embedding);
     bool updateLastExtractorTime(std::string source, int64_t last_extractor_time);
     void convertStringTimestampToInt64(std::string str_timestamp,
                                        int64_t *int64_timestamp);
     int64_t getLastRankTime(const std::string &source);
     int64_t getLastExtractorTime(const std::string &source);
+    std::vector<double> getLongTermUserEmbedding(const std::string &source);
+
+    std::vector<double> parse_embedding(const std::string &input, size_t embedding_dimension);
+    std::vector<double> init_user_embedding(size_t embedding_dimension);
 } // namespace knowledgebase

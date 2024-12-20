@@ -185,6 +185,66 @@ TEST(KnowledgeApiTest, TestGetAllAlgorithmAccordingRanked)
   std::cout << algorithm_id_set.size() << "  ****  " << count << std::endl;
 }
 
+TEST(KnowledgeApiTest, TestGetAlgorithmAccordingImpression)
+{
+  // --gtest_filter=KnowledgeApiTest.TestGetAlgorithmAccordingImpression
+  initDevelop();
+  init_log();
+  std::vector<Algorithm> algorithm_list;
+  int count;
+  std::string source = "r4techbiz";
+  knowledgebase::getAlgorithmAccordingImpression(10, 0, source, 1,
+                                                 &algorithm_list, &count);
+  for (auto current : algorithm_list)
+  {
+    std::cout << current.id << " " << current.impression << std::endl;
+  }
+  for (int i = 0; i < 10; i++)
+  {
+    knowledgebase::getAlgorithmAccordingImpression(10, 0, source, 1,
+                                                   &algorithm_list, &count);
+  }
+}
+
+TEST(KnowledgeApiTest, getNotImpressionedAlgorithmToEntry)
+{
+  // --gtest_filter=KnowledgeApiTest.getNotImpressionedAlgorithmToEntry
+  initDevelop();
+  init_log();
+  std::unordered_map<std::string, std::string> not_impressioned_algorithm_to_entry =
+      rssrank::getNotImpressionedAlgorithmToEntry();
+  std::cout << not_impressioned_algorithm_to_entry.size() << std::endl;
+}
+
+TEST(KnowledgeApiTest, TestGetEntries)
+{
+  // --gtest_filter=KnowledgeApiTest.TestGetEntries
+  initDevelop();
+  init_log();
+  std::vector<Entry> entry_list;
+  int count;
+  std::string source = "r4techbiz";
+  knowledgebase::getEntries(10, 2, source, &entry_list, &count);
+  std::cout << entry_list.size() << " " << count << std::endl;
+  for (auto current : entry_list)
+  {
+    std::cout << current.url << " " << current.title << " " << current.published_at << std::endl;
+  }
+}
+
+TEST(KnowledgeApiTest, TestGetNotRankedAlgorithmToEntry)
+{
+  // --gtest_filter=KnowledgeApiTest.TestGetNotRankedAlgorithmToEntry
+  initDevelop();
+  init_log();
+  std::unordered_map<std::string, std::string> not_ranked_algorithm_to_entry =
+      rssrank::getNotRankedAlgorithmToEntry();
+  for (auto current : not_ranked_algorithm_to_entry)
+  {
+    std::cout << current.first << " " << current.second << std::endl;
+  }
+}
+
 TEST(RssRankTest, getImpressionForShortTermAndLongTermUserEmbeddingRank)
 {
   // --gtest_filter=RssRankTest.getImpressionForShortTermAndLongTermUserEmbeddingRank
@@ -205,7 +265,7 @@ TEST(RssRankTest, TestCalculateEmbeddingMultipleReal)
   init_log();
   knowledgebase::EntryCache::getInstance().init();
   std::vector<Impression> result = rssrank::getImpressionForShortTermAndLongTermUserEmbeddingRank();
-  std::vector<double> embedding = rssrank::calcluateEmbedding(result, true);
+  std::vector<double> embedding = rssrank::calcluateUserShortTermEmbedding(result, true);
   for (auto current : embedding)
   {
     std::cout << current << " ";
@@ -222,9 +282,96 @@ TEST(RssRankTest, TestCalculateEmbeddingMultiple)
   impression1.embedding = std::vector<double>{1.0, 2.0, 3.0};
   impression2.embedding = std::vector<double>{4.0, 5.0, 6.0};
   std::vector<Impression> impressions = {impression1, impression2};
-  std::vector<double> result = rssrank::calcluateEmbedding(impressions, false);
+  std::vector<double> result = rssrank::calcluateUserShortTermEmbedding(impressions, false);
   ASSERT_EQ(result.size(), 3);
   EXPECT_FLOAT_EQ(result[0], 5.0);
   EXPECT_FLOAT_EQ(result[1], 7.0);
   EXPECT_FLOAT_EQ(result[2], 9.0);
+}
+
+TEST(RssRankTest, TestParseEmbedding)
+{
+  //--gtest_filter=RssRankTest.TestParseEmbedding
+  std::string input = "1.2;1.3;1.4;1777233344"; // Example input
+  size_t embedding_dimension = 3;               // Example embedding dimension
+
+  std::vector<double> embedding = knowledgebase::parse_embedding(input, embedding_dimension);
+
+  if (embedding.empty())
+  {
+    std::cout << "Invalid input or format." << std::endl;
+  }
+  else
+  {
+    std::cout << "Parsed embedding: ";
+    for (double val : embedding)
+    {
+      std::cout << val << " ";
+    }
+    std::cout << std::endl;
+  }
+}
+
+TEST(RssRankTest, TestInitUserEmbedding)
+{
+  // --gtest_filter=RssRankTest.TestInitUserEmbedding
+  size_t embedding_dimension = 384; // Example embedding dimension
+
+  std::vector<double> user_embedding = knowledgebase::init_user_embedding(embedding_dimension);
+
+  std::cout << "User embedding: ";
+  for (double val : user_embedding)
+  {
+    std::cout << val << " ";
+  }
+  std::cout << std::endl;
+}
+
+TEST(RssRankTest, TestSetUserEmbedding)
+{
+  // --gtest_filter=RssRankTest.TestSetUserEmbedding
+  initDevelop();
+  init_log();
+  size_t embedding_dimension = 384; // Example embedding dimension
+
+  std::vector<double> user_embedding = knowledgebase::init_user_embedding(embedding_dimension);
+  std::string source = "r4techbiz";
+  knowledgebase::updateLongTermUserEmbedding(source, user_embedding);
+  std::vector<double> result = knowledgebase::getLongTermUserEmbedding(source);
+  bool equal = true;
+  for (int i = 0; i < result.size(); i++)
+  {
+    if (are_equal_double(result[i], user_embedding[i]) == false)
+    {
+      equal = false;
+      break;
+    }
+  }
+  std::cout << "eaul " << equal << std::endl;
+}
+
+TEST(RssRankTest, getTimeCoefficientForUnixTimestamp)
+{
+  // --gtest_filter=RssRankTest.getTimeCoefficientForUnixTimestamp
+  initDevelop();
+  init_log();
+  int64_t timestamp = 1711080225; // Example timestamp
+  double time_coefficient = rssrank::getTimeCoefficientForUnixTimestamp(timestamp, timestamp);
+  std::cout << "Time coefficient: " << time_coefficient << std::endl;
+  double time_coefficient2 = rssrank::getTimeCoefficientForUnixTimestamp(timestamp, timestamp + 24 * 60 * 60);
+  std::cout << "Time coefficient: " << time_coefficient2 << std::endl;
+  double time_coefficient3 = rssrank::getTimeCoefficientForUnixTimestamp(timestamp, timestamp + 24 * 60 * 60 * 7);
+  std::cout << "Time coefficient: " << time_coefficient3 << std::endl;
+  double time_coefficient4 = rssrank::getTimeCoefficientForUnixTimestamp(timestamp, timestamp + 24 * 60 * 60 * 30);
+  std::cout << "Time coefficient: " << time_coefficient4 << std::endl;
+  double time_coefficient5 = rssrank::getTimeCoefficientForUnixTimestamp(timestamp, timestamp + 24 * 60 * 60 * 365);
+  std::cout << "Time coefficient: " << time_coefficient5 << std::endl;
+}
+
+TEST(RssRankTest, rankShortTermAndLongTermUserEmbedding)
+{
+  // --gtest_filter=RssRankTest.rankShortTermAndLongTermUserEmbedding
+  initDevelop();
+  init_log();
+  rssrank::rankShortTermAndLongTermUserEmbedding();
 }
