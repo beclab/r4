@@ -1093,7 +1093,7 @@ namespace rssrank
       }
       double score = similarity_score * (1 - article_time_weight) + article_time_weight * time_score;
       LOG(INFO) << "current_item [" << temp_entry.value().title << "] score [" << score << "]" << std::endl;
-    }
+        }
 
     return true;
   }

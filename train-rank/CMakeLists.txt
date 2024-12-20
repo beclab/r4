@@ -54,6 +54,8 @@ add_library(rankcommon STATIC src/data_process.cpp
                               src/entity/reco_metadata.cpp
                               src/http_single_client.h
                               src/http_single_client.cpp
+                              src/faiss_article_search.h
+                              src/faiss_article_search.cpp
                               )
                               
 add_dependencies(rankcommon gen_git_info)
