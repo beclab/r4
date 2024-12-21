@@ -284,6 +284,45 @@ TEST(RssRankTest, TestCalculateEmbeddingMultipleReal)
   std::cout << "total2 " << total2 << std::endl;
 }
 
+TEST(RssRankTest, TestFaissSearch)
+{
+  // --gtest_filter=RssRankTest.TestFaissSearch
+  initDevelop();
+  init_log();
+  knowledgebase::EntryCache::getInstance().init();
+  std::vector<Impression> impression_list = rssrank::getImpressionForShortTermAndLongTermUserEmbeddingRank();
+  FAISSArticleSearch search(impression_list);
+  std::unordered_map<std::string, std::string> algorithm_id_to_entry_id = rssrank::getNotImpressionedAlgorithmToEntry();
+  for (const auto &current_item : algorithm_id_to_entry_id)
+  {
+    std::optional<Entry> temp_entry = knowledgebase::EntryCache::getInstance().getEntryById(current_item.second);
+    if (temp_entry == std::nullopt)
+    {
+      LOG(ERROR) << "entry [" << current_item.second << "] not exist, algorithm [" << current_item.first << "]" << std::endl;
+      continue;
+    }
+    if (!temp_entry.value().extract)
+    {
+      LOG(ERROR) << "entry [" << current_item.second << "] not extract, algorithm [" << current_item.first << "]" << std::endl;
+      continue;
+    }
+    std::optional<Algorithm> current_algorithm = knowledgebase::GetAlgorithmById(current_item.first);
+    if (current_algorithm == std::nullopt)
+    {
+      LOG(ERROR) << "Algorithm item not found, id = " << current_item.first << std::endl;
+      continue;
+    }
+    if (current_algorithm.value().embedding == std::nullopt)
+    {
+      LOG(ERROR) << "Algorithm item no embbeding found, id = " << current_item.first << std::endl;
+      continue;
+    }
+    std::pair<int, double> result = search.findMostSimilarArticle(current_algorithm.value().embedding.value());
+    Entry similared_entry = knowledgebase::EntryCache::getInstance().getEntryById(impression_list[result.first].entry_id).value();
+    std::cout << "current_item [" << temp_entry.value().title << "] most similar [" << similared_entry.title << "]" << std::endl;
+  }
+}
+
 TEST(RssRankTest, TestCalculateEmbeddingMultiple)
 {
   // --gtest_filter=RssRankTest.TestCalculateEmbeddingMultiple

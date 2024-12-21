@@ -1,3 +1,4 @@
+#include "faiss_article_search.h"
 #include "rssrank.h"
 
 #include <xgboost/c_api.h>
@@ -1040,6 +1041,7 @@ namespace rssrank
 
   bool rankShortTermAndLongTermUserEmbedding()
   {
+    long long current_rank_time = getTimeStampNow();
     std::string current_srouce_name = envOrBlank("TERMINUS_RECOMMEND_SOURCE_NAME");
     if (FLAGS_recommend_source_name.size() == 0)
     {
@@ -1073,7 +1075,8 @@ namespace rssrank
     }
     VectorXd short_term_vectorxd = vectorToEigentVectorXd(short_term_embedding);
 
-    vector<double> long_term_embedding = knowledgebase::getLongTermUserEmbedding(current_srouce_name);
+    // vector<double> long_term_embedding = knowledgebase::getLongTermUserEmbedding(current_srouce_name);
+    vector<double> long_term_embedding = calcluateUserLongTermEmbedding(clicked_impressions);
     VectorXd long_term_vectorxd = vectorToEigentVectorXd(long_term_embedding);
 
     std::unordered_map<std::string, std::string> not_impressioned_algorithm_to_entry =
@@ -1083,7 +1086,7 @@ namespace rssrank
     std::vector<std::string> need_reinfer_algorithm_entry;
     std::unordered_map<std::string, ScoreWithMetadata> id_to_score_with_meta;
     long long current_time = getTimeStampNow();
-
+    FAISSArticleSearch search(clicked_impressions);
     for (const auto &current_item : not_impressioned_algorithm_to_entry)
     {
       std::optional<Entry> temp_entry =
@@ -1131,6 +1134,22 @@ namespace rssrank
       }
       double score = similarity_score * (1 - article_time_weight) + article_time_weight * time_score;
       LOG(INFO) << "current_item [" << temp_entry.value().title << "] score [" << score << "]" << std::endl;
+      std::pair<int, float> row_id_to_distance = search.findMostSimilarArticle(current_algorithm.value().embedding.value());
+      std::string most_similar_article_id = clicked_impressions[row_id_to_distance.first].id;
+      id_to_score_with_meta.emplace(current_item.first, buildScoreWithMeta(score, most_similar_article_id, current_rank_time, ScoreEnum::SCORE_DISTANCE_ARTICLE_WITH_SHORT_AND_LONG_TERM_USER_EMBEDDING_PLUS_PUBLISHED_TIME));
+    }
+
+    if (FLAGS_verbose)
+    {
+      for (const auto &pr : id_to_score_with_meta)
+      {
+        LOG(INFO) << pr.first << "->" << pr.second << std::endl;
+      }
+    }
+    if (FLAGS_upload_score)
+    {
+      knowledgebase::updateAlgorithmScoreAndMetadata(id_to_score_with_meta);
+      knowledgebase::updateLastRankTime(FLAGS_recommend_source_name, getTimeStampNow());
     }
 
     return true;
