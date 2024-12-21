@@ -26,6 +26,7 @@ static char RECOMMEND_MODEL_ROOT[] = "/opt/rank_model";
 static char TERMINUS_RECOMMEND_EMBEDDING_DIMENSION[] =
     "TERMINUS_RECOMMEND_EMBEDDING_DIMENSION";
 
+// user adjust parameter
 static char TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION[] =
     "TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION"; // use how many impression to calculate short term user embedding
 
@@ -38,6 +39,8 @@ static char TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE[] =
 static char TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE[] =
     "TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE"; // The time weight of the article when calculating the rank score, compared to the cosine distance between the user vector and the article
 
+static char TERMINUS_RECOMMEND_COLD_START_ARTICLE_CLICKED_NUMBER_THRESHOLD[] =
+    "TERMINUS_RECOMMEND_COLD_START_ARTICLE_CLICKED_NUMBER_THRESHOLD"; // If the number of clicked articles is less than or equal this value, do not use the recommendation algorithm. Since they are all in one category, sort by time for cold start.
 void init_log();
 
 void printVector(const std::vector<std::string> &a);

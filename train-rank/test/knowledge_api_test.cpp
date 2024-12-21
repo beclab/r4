@@ -267,10 +267,21 @@ TEST(RssRankTest, TestCalculateEmbeddingMultipleReal)
   knowledgebase::EntryCache::getInstance().init();
   std::vector<Impression> result = rssrank::getImpressionForShortTermAndLongTermUserEmbeddingRank();
   std::vector<double> embedding = rssrank::calcluateUserShortTermEmbedding(result, true);
+  double total = 0;
   for (auto current : embedding)
   {
     std::cout << current << " ";
+    total += current * current;
   }
+  std::cout << "total " << total << std::endl;
+  std::vector<double> embedding2 = rssrank::calcluateUserLongTermEmbedding(result);
+  double total2 = 0;
+  for (auto current : embedding2)
+  {
+    std::cout << current << " ";
+    total2 += current * current;
+  }
+  std::cout << "total2 " << total2 << std::endl;
 }
 
 TEST(RssRankTest, TestCalculateEmbeddingMultiple)

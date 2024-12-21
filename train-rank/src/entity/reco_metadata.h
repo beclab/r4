@@ -59,4 +59,34 @@ struct ScoreWithMetadata
 };
 
 std::ostream &operator<<(std::ostream &os, const ScoreWithMetadata &score_with_meta);
+
+struct RecommendTraceLongTermUserEmbedding
+{
+    string source;
+    long long last_rank_time;
+    vector<double> long_term_user_embedding;
+    vector<int> impression_id_used_to_calculate_embedding;
+};
+
+struct RecommendTraceShortTermUserEmbedding
+{
+    string source;
+    long long last_rank_time;
+    vector<double> short_term_user_embedding;
+    vector<int> impression_id_used_to_calculate_embedding;
+};
+//
+struct RecommendTraceInfo
+{
+    string source;
+    long long rank_time; // represent the time when the rank is executed
+    ScoreEnum score_enum;
+    long long long_term_user_embedding_time;  // represent the time when the long term user embedding is calculated
+    long long short_term_user_embedding_time; // represent the time when the short term user embedding is calculated
+    vector<int> not_impressioned_algorithm_id;
+    vector<int> added_not_impressioned_algorithm_id; // compare with last rank time, 能证明recall的效果, recall新增的文章
+    vector<int> impressioned_id;
+    vector<int> added_impressioned_id;                      // compare with last rank time, 能证明rank效果
+    vector<pair<int, double>> ranked_algorithm_id_to_score; // 最后rank,从高到低分数
+};
 #endif // RECO_METADATA_H

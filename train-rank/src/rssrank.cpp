@@ -179,6 +179,30 @@ namespace rssrank
     return std::vector<double>(eig_vec.data(), eig_vec.data() + eig_vec.size());
   }
 
+  vector<double> calcluateUserLongTermEmbedding(const vector<Impression> &impressions)
+  {
+    if (impressions.empty())
+    {
+      return {};
+    }
+    int row = impressions.size();
+    int col = impressions[0].embedding.value().size();
+    MatrixXf embeddings(row, col);
+
+    // Fill these vectors
+    for (int i = 0; i < row; ++i)
+    {
+      for (int j = 0; j < col; ++j)
+      {
+        embeddings(i, j) = impressions[i].embedding.value()[j];
+      }
+    }
+    // Sum the vectors
+    VectorXf eig_vec = embeddings.colwise().sum();
+    eig_vec = eig_vec / eig_vec.norm();
+    return std::vector<double>(eig_vec.data(), eig_vec.data() + eig_vec.size());
+  }
+
   vector<Impression> getImpressionForShortTermAndLongTermUserEmbeddingRank()
   {
     // this method just need positive sampllle
@@ -1024,11 +1048,16 @@ namespace rssrank
     }
     LOG(INFO) << "recommend_source_name " << FLAGS_recommend_source_name << std::endl;
     int embedding_dimension = getCurrentEmbeddingDimension();
+    int cold_start_article_clicked_number = getEnvInt(TERMINUS_RECOMMEND_COLD_START_ARTICLE_CLICKED_NUMBER_THRESHOLD, 10);
     knowledgebase::EntryCache::getInstance().init();
 
     vector<Impression> clicked_impressions = getImpressionForShortTermAndLongTermUserEmbeddingRank();
-
     // TODO: If the number of clicked articles is less than 10, do not use the recommendation algorithm. Since they are all in one category, sort by time for cold start.
+    if (clicked_impressions.size() < cold_start_article_clicked_number)
+    {
+      LOG(INFO) << "clicked_impressions size " << clicked_impressions.size() << " less than " << cold_start_article_clicked_number << std::endl;
+      return false;
+    }
 
     int short_number = getEnvInt(TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION, 10);
     float long_term_weight = getEnvFloat(TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE, 0.3);
