@@ -178,8 +178,9 @@ namespace knowledgebase
       current_algorithm[ALGORITHM_MONGO_FIELD_ID] = web::json::value::string(current_item.first);
       current_algorithm[ALGORITHM_MONGO_FIELD_SCORE] = web::json::value::number(current_item.second.score);
       current_algorithm[ALGORITHM_MONGO_FIELD_RANKED] = web::json::value::boolean(true);
-      current_algorithm[ALGORITHM_MONGO_FIELD_SCORE_RANK_TIME] = web::json::value::number(current_item.second.score_rank_time);
-      current_algorithm[ALGORITHM_MONGO_FIELD_SCORE_RANK_METHOD] = web::json::value::string(ScoreEnumToString(current_item.second.score_enum));
+      int64_t current_time = current_item.second.score_rank_time;
+      current_algorithm[ALGORITHM_MONGO_FIELD_SCORE_RANK_TIME] = web::json::value::number(current_time);
+      current_algorithm[ALGORITHM_MONGO_FIELD_SCORE_RANK_METHOD] = web::json::value::string(current_item.second.score_rank_method);
       auto &extra = current_algorithm["extra"] = web::json::value();
       // TODO(haochengwang): Keyword as a reason here
       if (current_item.second.rankExecuted)
