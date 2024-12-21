@@ -458,3 +458,10 @@ TEST(FaissSearchTest, findMostSimilar)
   std::cout << "Most similar article: " << index3 << " Distance: " << distance3 << std::endl;
   assert(index3 == 3); // The most similar article should be the last one
 }
+
+TEST(RssRankTest,RankShortTermAndLongTermUserEmbedding) {
+  // --gtest_filter=RssRankTest.RankShortTermAndLongTermUserEmbedding
+  initDevelop();
+  init_log();
+  rssrank::rankShortTermAndLongTermUserEmbedding();
+}

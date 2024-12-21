@@ -99,4 +99,6 @@ namespace knowledgebase
 
     std::vector<double> parse_embedding(const std::string &input, size_t embedding_dimension);
     std::vector<double> init_user_embedding(size_t embedding_dimension);
+    std::vector<std::pair<std::string, float>> rankScoreMetadata(const std::unordered_map<std::string, ScoreWithMetadata> &algorithm_id_to_score_with_meta);
+
 } // namespace knowledgebase

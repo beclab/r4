@@ -34,7 +34,7 @@ using std::vector;
 
 DEFINE_string(model_path_root, envOrBlank("MODEL_PATH_ROOT"), "Model path root");
 DEFINE_string(recommend_source_name, envOrBlank("TERMINUS_RECOMMEND_SOURCE_NAME"), "Terminus recommend source name");
-DEFINE_bool(upload_score, true, "Whether upload score to knowledge");
+DEFINE_bool(upload_score, false, "Whether upload score to knowledge");
 DEFINE_bool(verbose, true, "Whether output all the details");
 
 // Get all the databases from a given client.
@@ -1141,13 +1141,16 @@ namespace rssrank
 
     if (FLAGS_verbose)
     {
-      for (const auto &pr : id_to_score_with_meta)
+      std::vector<std::pair<std::string, float>> sorted_algorithm_to_score = knowledgebase::rankScoreMetadata(id_to_score_with_meta);
+      for (const auto &pr : sorted_algorithm_to_score)
       {
-        LOG(INFO) << pr.first << "->" << pr.second << std::endl;
+        LOG(INFO) << "Algorithm [" << pr.first << "] score [" << pr.second << "]" << std::endl;
       }
+      std::cout << "max " << sorted_algorithm_to_score[0].second << " min " << sorted_algorithm_to_score[sorted_algorithm_to_score.size() - 1].second << std::endl;
     }
     if (FLAGS_upload_score)
     {
+      LOG(INFO) << "score with metadata update to knowledge " << std::endl;
       knowledgebase::updateAlgorithmScoreAndMetadata(id_to_score_with_meta);
       knowledgebase::updateLastRankTime(FLAGS_recommend_source_name, getTimeStampNow());
     }
