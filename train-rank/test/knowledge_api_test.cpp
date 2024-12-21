@@ -23,8 +23,8 @@ TEST(KnowledgeApiTest, TestUpdateAlgorithmRankedScored)
   initDevelop();
   init_log();
   std::unordered_map<std::string, ScoreWithMetadata> entry_id_to_score;
-  entry_id_to_score["656d09e6a2e46f241f9a7b89"] = ScoreWithMetadata(0.25);
-  entry_id_to_score["656d09e6a2e46f241f9a7b8a"] = ScoreWithMetadata(0.5);
+  entry_id_to_score["656d09e6a2e46f241f9a7b89"] = ScoreWithMetadata(0.25, getTimeStampNow(), ScoreEnum::SCORE_UNKNOWN);
+  entry_id_to_score["656d09e6a2e46f241f9a7b8a"] = ScoreWithMetadata(0.5, getTimeStampNow(), ScoreEnum::SCORE_UNKNOWN);
   knowledgebase::updateAlgorithmScoreAndMetadata(entry_id_to_score);
 }
 
@@ -387,6 +387,8 @@ TEST(FaissSearchTest, findMostSimilar)
       {0.0f, 0.0f, 1.0f},
       {0.5f, 0.5f, 0.0f}};
   FAISSArticleSearch search(articles);
+  articles.clear();
+  articles.shrink_to_fit(); // Clear the articles vector
   // Create FAISSArticleSearch object
 
   // Check if FAISS index is created and populated

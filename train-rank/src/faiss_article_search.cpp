@@ -41,7 +41,7 @@ FAISSArticleSearch::FAISSArticleSearch(std::vector<std::vector<float>> &vectors)
     {
         normalizeVectors(vec); // Normalize
     }
-    printVector(vectors);
+    // printVector(vectors);
     // Convert 2D vectors to a format acceptable by FAISS
     std::vector<float> flatVectors(nb * d);
     for (int i = 0; i < nb; ++i)

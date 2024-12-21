@@ -88,11 +88,13 @@ namespace rssrank
       return impressions;
     }
 
-    ScoreWithMetadata buildScoreWithMeta(double score, const std::string &entry_id)
+    ScoreWithMetadata buildScoreWithMeta(double score, const std::string &entry_id, long long score_rank_time, ScoreEnum score_enum)
     {
       ScoreWithMetadata result;
       result.score = score;
       result.rankExecuted = true;
+      result.score_rank_time = score_rank_time;
+      result.score_rank_method = scoreEnumToString[score_enum];
       RecoReasonArticle article;
       article.id = entry_id;
       auto entry = knowledgebase::EntryCache::getInstance().getEntryById(entry_id);
@@ -460,6 +462,7 @@ namespace rssrank
 
     auto get_scores = [&](bool ranked)
     {
+      long long current_rank_time = getTimeStampNow();
       int offset = 0;
       while (true)
       {
@@ -493,7 +496,7 @@ namespace rssrank
             }
 
             algorithm_entry_id_to_score_with_meta[current.id] =
-                ScoreWithMetadata(current.prerank_score.value() * getTimeCoefficient(temp_entry.value().timestamp));
+                ScoreWithMetadata(current.prerank_score.value() * getTimeCoefficient(temp_entry.value().timestamp), current_rank_time, ScoreEnum::SCORE_PRERANK_SCORE_AND_CREATED_TIME);
           }
         }
         offset = offset + batch_size;
@@ -1023,14 +1026,18 @@ namespace rssrank
     int embedding_dimension = getCurrentEmbeddingDimension();
     knowledgebase::EntryCache::getInstance().init();
 
-    vector<Impression> impressions = getImpressionForShortTermAndLongTermUserEmbeddingRank();
+    vector<Impression> clicked_impressions = getImpressionForShortTermAndLongTermUserEmbeddingRank();
+
+    // TODO: If the number of clicked articles is less than 10, do not use the recommendation algorithm. Since they are all in one category, sort by time for cold start.
+
     int short_number = getEnvInt(TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION, 10);
     float long_term_weight = getEnvFloat(TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE, 0.3);
     float short_term_weight = 1 - long_term_weight; // long_term_weight + short_term_weight = 1
     float article_time_weight = getEnvFloat(TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE, 0.5);
 
-    vector<Impression> short_term_impression = get_subvector(impressions, short_number);
+    vector<Impression> short_term_impression = get_subvector(clicked_impressions, short_number);
     vector<double> short_term_embedding = calcluateUserShortTermEmbedding(short_term_impression, true);
+    // todo after calculate shore term embedding, clear short_term_impression
     if (short_term_embedding.size() == 0)
     {
       short_term_embedding = vector<double>(embedding_dimension, 0.0);
@@ -1039,6 +1046,7 @@ namespace rssrank
 
     vector<double> long_term_embedding = knowledgebase::getLongTermUserEmbedding(current_srouce_name);
     VectorXd long_term_vectorxd = vectorToEigentVectorXd(long_term_embedding);
+
     std::unordered_map<std::string, std::string> not_impressioned_algorithm_to_entry =
         getNotImpressionedAlgorithmToEntry(); // This is actually algorithm_id_to_entry_id, the current logic does not distinguish between ranked and unranked, it is all algorithms under a certain source
     LOG(INFO) << "not_impressioned_algorithm_to_entry size "
@@ -1046,6 +1054,7 @@ namespace rssrank
     std::vector<std::string> need_reinfer_algorithm_entry;
     std::unordered_map<std::string, ScoreWithMetadata> id_to_score_with_meta;
     long long current_time = getTimeStampNow();
+
     for (const auto &current_item : not_impressioned_algorithm_to_entry)
     {
       std::optional<Entry> temp_entry =
@@ -1093,13 +1102,14 @@ namespace rssrank
       }
       double score = similarity_score * (1 - article_time_weight) + article_time_weight * time_score;
       LOG(INFO) << "current_item [" << temp_entry.value().title << "] score [" << score << "]" << std::endl;
-        }
+    }
 
     return true;
   }
 
   bool doRank()
   {
+    long long current_rank_time = getTimeStampNow();
     std::unique_ptr<lr::LogisticRegression> logistic_regression;
     if (FLAGS_model_path_root.size() != 0)
     {
@@ -1203,7 +1213,7 @@ namespace rssrank
         LOG(INFO) << "Score: " << score << endl;
       }
       auto reason = feature_extractors[0]->getReason(current_algorithm.value());
-      id_to_score_with_meta.emplace(current_item.first, buildScoreWithMeta(score, reason.reason));
+      id_to_score_with_meta.emplace(current_item.first, buildScoreWithMeta(score, reason.reason, current_rank_time, ScoreEnum::SCORE_LOGISTIC_REGRESSION_AND_CREATED_TIME));
     }
 
     LOG(INFO) << "id_to_score_with_meta size " << id_to_score_with_meta.size() << std::endl;
