@@ -34,7 +34,7 @@ using std::vector;
 
 DEFINE_string(model_path_root, envOrBlank("MODEL_PATH_ROOT"), "Model path root");
 DEFINE_string(recommend_source_name, envOrBlank("TERMINUS_RECOMMEND_SOURCE_NAME"), "Terminus recommend source name");
-DEFINE_bool(upload_score, false, "Whether upload score to knowledge");
+DEFINE_bool(upload_score, true, "Whether upload score to knowledge");
 DEFINE_bool(verbose, true, "Whether output all the details");
 
 // Get all the databases from a given client.
@@ -317,7 +317,7 @@ namespace rssrank
   {
     const int batch_size = 100;
     int offset = 0;
-    const char *source_name = std::getenv("TERMINUS_RECOMMEND_SOURCE_NAME");
+    const char *source_name = std::getenv(TERMINUS_RECOMMEND_SOURCE_NAME);
     std::unordered_map<std::string, std::string> algorithm_id_to_entry_id;
     // Load unranked items
     while (true)
@@ -1039,6 +1039,68 @@ namespace rssrank
     return true;
   }
 
+  bool rankByTimeForColdStart()
+  {
+    long long current_rank_time = getTimeStampNow();
+    std::unordered_map<std::string, std::string> not_impressioned_algorithm_to_entry =
+        getNotImpressionedAlgorithmToEntry();
+    std::unordered_map<std::string, ScoreWithMetadata> id_to_score_with_meta;
+    for (const auto &current_item : not_impressioned_algorithm_to_entry)
+    {
+      std::optional<Entry> temp_entry =
+          knowledgebase::EntryCache::getInstance().getEntryById(current_item.second);
+      if (temp_entry == std::nullopt)
+      {
+        LOG(ERROR) << "entry [" << current_item.second
+                   << "] not exist, algorithm [" << current_item.first << "]"
+                   << std::endl;
+        continue;
+      }
+      if (!temp_entry.value().extract)
+      {
+        LOG(ERROR) << "entry [" << current_item.second
+                   << "] not extract, algorithm [" << current_item.first << "]"
+                   << std::endl;
+        continue;
+      }
+      std::optional<Algorithm> current_algorithm =
+          knowledgebase::GetAlgorithmById(current_item.first);
+      if (current_algorithm == std::nullopt)
+      {
+        LOG(ERROR) << "Algorithm item not found, id = " << current_item.first << std::endl;
+        continue;
+      }
+
+      double time_score = 0;
+      if (temp_entry.value().published_at != 0)
+      {
+        time_score = getTimeCoefficientForUnixTimestamp(temp_entry.value().published_at, current_rank_time);
+      }
+      else
+      {
+        time_score = getTimeCoefficient(temp_entry.value().timestamp);
+      }
+      id_to_score_with_meta.emplace(current_item.first, buildScoreWithMeta(time_score, "", current_rank_time, ScoreEnum::SCORE_PUBLISHED_AT_TIME));
+    }
+
+    if (FLAGS_verbose)
+    {
+      std::vector<std::pair<std::string, float>> sorted_algorithm_to_score = knowledgebase::rankScoreMetadata(id_to_score_with_meta);
+      for (const auto &pr : sorted_algorithm_to_score)
+      {
+        LOG(INFO) << "Algorithm [" << pr.first << "] score [" << pr.second << "]" << std::endl;
+      }
+      std::cout << "max " << sorted_algorithm_to_score[0].second << " min " << sorted_algorithm_to_score[sorted_algorithm_to_score.size() - 1].second << std::endl;
+    }
+    if (FLAGS_upload_score)
+    {
+      LOG(INFO) << "score with metadata update to knowledge " << std::endl;
+      knowledgebase::updateAlgorithmScoreAndMetadataWithScoreOrder(id_to_score_with_meta);
+      knowledgebase::updateLastRankTime(FLAGS_recommend_source_name, current_rank_time);
+    }
+    return true;
+  }
+
   bool rankShortTermAndLongTermUserEmbedding()
   {
     long long current_rank_time = getTimeStampNow();
@@ -1046,6 +1108,7 @@ namespace rssrank
     if (FLAGS_recommend_source_name.size() == 0)
     {
       LOG(ERROR) << "recommend_source_name not provided." << std::endl;
+
       return false;
     }
     LOG(INFO) << "recommend_source_name " << FLAGS_recommend_source_name << std::endl;
@@ -1058,7 +1121,8 @@ namespace rssrank
     if (clicked_impressions.size() < cold_start_article_clicked_number)
     {
       LOG(INFO) << "clicked_impressions size " << clicked_impressions.size() << " less than " << cold_start_article_clicked_number << std::endl;
-      return false;
+      rankByTimeForColdStart();
+      return true;
     }
 
     int short_number = getEnvInt(TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION, 10);

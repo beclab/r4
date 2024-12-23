@@ -513,3 +513,11 @@ TEST(RssRankTest, RankShortTermAndLongTermUserEmbedding)
   init_log();
   rssrank::rankShortTermAndLongTermUserEmbedding();
 }
+
+TEST(RssRankTest, rankByTimeForColdStart)
+{
+  // --gtest_filter=RssRankTest.rankByTimeForColdStart
+  initDevelop();
+  init_log();
+  rssrank::rankByTimeForColdStart();
+}

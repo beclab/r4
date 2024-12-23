@@ -95,4 +95,6 @@ namespace rssrank
     std::unordered_map<std::string, std::string> getNotImpressionedAlgorithmToEntry();
     vector<double> calcluateUserLongTermEmbedding(const vector<Impression> &impressions);
 
+    bool rankByTimeForColdStart();
+
 } // namespace rssrank
