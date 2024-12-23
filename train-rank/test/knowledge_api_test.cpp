@@ -28,6 +28,53 @@ TEST(KnowledgeApiTest, TestUpdateAlgorithmRankedScored)
   knowledgebase::updateAlgorithmScoreAndMetadata(entry_id_to_score);
 }
 
+TEST(KnowledgeApiTest, updateAlgorithmScoreAndMetadataWithScoreOrder)
+{
+  // --gtest_filter=KnowledgeApiTest.updateAlgorithmScoreAndMetadataWithScoreOrder
+  initDevelop();
+  init_log();
+  std::unordered_map<std::string, std::string> algorithm_id_to_entry_id =
+      rssrank::getNotImpressionedAlgorithmToEntry();
+  std::cout << "algorithm_id_to_entry_id size " << algorithm_id_to_entry_id.size() << std::endl;
+  int index = 1;
+  std::vector<std::string> modified_algorithm_list;
+  for (auto item : algorithm_id_to_entry_id)
+  {
+    std::cout << item.first << " " << item.second << std::endl;
+    if (index >= 3)
+    {
+      break;
+    }
+    index++;
+    modified_algorithm_list.push_back(item.first);
+  }
+  std::cout << "modified_algorithm_list size " << modified_algorithm_list.size() << std::endl;
+
+  std::unordered_map<std::string, ScoreWithMetadata> algorithm_id_to_score;
+  long long current_time = getTimeStampNow();
+  int sequence_index = 3;
+  for (auto item : modified_algorithm_list)
+  {
+    std::cout << "algorithm_id updated" << item << std::endl;
+    algorithm_id_to_score[item] = ScoreWithMetadata(0.71, current_time, ScoreEnum::SCORE_UNKNOWN);
+    algorithm_id_to_score[item].score_rank_sequence = sequence_index;
+    std::cout << "999999999999999999999 algorithm_id_to_score[item].score_rank_sequence " << algorithm_id_to_score[item].score_rank_sequence << std::endl;
+    sequence_index = sequence_index + 1;
+  }
+  knowledgebase::updateAlgorithmScoreAndMetadataWithScoreOrder(algorithm_id_to_score);
+  int previous_sequence = -1;
+  for (auto item : algorithm_id_to_score)
+  {
+    Algorithm new_get_algorithm = knowledgebase::GetAlgorithmById(item.first).value();
+    EXPECT_EQ(new_get_algorithm.ranked, true);
+    EXPECT_FLOAT_EQ(new_get_algorithm.score, 0.71);
+    std::cout << "new_get_algorithm.score_rank_sequence " << new_get_algorithm.score_rank_sequence << " original sequnce " << item.second.score_rank_sequence << std::endl;
+    EXPECT_GT(new_get_algorithm.score_rank_sequence, previous_sequence);
+    previous_sequence = new_get_algorithm.score_rank_sequence;
+    // EXPECT_EQ(new_get_algorithm.score_rank_sequence, item.second.score_rank_sequence);
+  }
+}
+
 TEST(KnowledgeApiTest, TestRerank)
 {
   // --gtest_filter=KnowledgeApiTest.TestRerank
@@ -459,7 +506,8 @@ TEST(FaissSearchTest, findMostSimilar)
   assert(index3 == 3); // The most similar article should be the last one
 }
 
-TEST(RssRankTest,RankShortTermAndLongTermUserEmbedding) {
+TEST(RssRankTest, RankShortTermAndLongTermUserEmbedding)
+{
   // --gtest_filter=RssRankTest.RankShortTermAndLongTermUserEmbedding
   initDevelop();
   init_log();

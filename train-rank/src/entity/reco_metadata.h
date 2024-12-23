@@ -42,6 +42,7 @@ struct ScoreWithMetadata
     bool rankExecuted;
     RecoReason reason;
     long long score_rank_time;
+    int score_rank_sequence;
     std::string score_rank_method;
 
     ScoreWithMetadata() {}

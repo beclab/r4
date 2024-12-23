@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <eigen3/Eigen/Dense>
+#include <random>
 using namespace Eigen;
 
 // using namespace std;
@@ -214,6 +215,17 @@ double normalized_similarity_score_based_on_cosine_similarity(const VectorXd &A,
 {
   double cosine_similarity = eigen_cosine_similarity(A, B);
   return (cosine_similarity + 1) / 2;
+}
+
+float randomFloatBetweenZeroAndOne()
+{
+  // Create a random number generator (uniform distribution between 0 and 1)
+  std::random_device rd;
+  std::mt19937 gen(rd());                         // Mersenne Twister random number generator
+  std::uniform_real_distribution<> dis(0.0, 1.0); // Uniform distribution between 0 and 1
+
+  // Generate a random number between 0 and 1
+  return dis(gen);
 }
 
 /**

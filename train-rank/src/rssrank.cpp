@@ -1151,7 +1151,7 @@ namespace rssrank
     if (FLAGS_upload_score)
     {
       LOG(INFO) << "score with metadata update to knowledge " << std::endl;
-      knowledgebase::updateAlgorithmScoreAndMetadata(id_to_score_with_meta);
+      knowledgebase::updateAlgorithmScoreAndMetadataWithScoreOrder(id_to_score_with_meta);
       knowledgebase::updateLastRankTime(FLAGS_recommend_source_name, getTimeStampNow());
     }
 

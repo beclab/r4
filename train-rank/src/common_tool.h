@@ -195,7 +195,8 @@ double eigen_cosine_similarity(const VectorXd &A, const VectorXd &B); // this sc
 
 double normalized_similarity_score_based_on_cosine_similarity(const VectorXd &A, const VectorXd &B); // this score between 0 and 1, the higher the score, the more similar the two vectors are
 VectorXd vectorToEigentVectorXd(const std::vector<double> &vec);
-
+float randomFloatBetweenZeroAndOne();
+double stringToDouble(const std::string &str);
 /**
  *
 http_client &get_http_client_instance()

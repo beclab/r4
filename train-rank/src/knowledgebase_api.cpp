@@ -171,6 +171,7 @@ namespace knowledgebase
     };
 
     size_t index = 0, batch_limit = 100;
+    int sequence_index = 0;
     for (const auto &current_algorithm_id_score_pair : ordered_algorithmed_id)
     {
       std::pair<std::string, ScoreWithMetadata> current_item = *algorithm_id_to_score_with_meta.find(current_algorithm_id_score_pair.first);
@@ -181,6 +182,7 @@ namespace knowledgebase
       int64_t current_time = current_item.second.score_rank_time;
       current_algorithm[ALGORITHM_MONGO_FIELD_SCORE_RANK_TIME] = web::json::value::number(current_time);
       current_algorithm[ALGORITHM_MONGO_FIELD_SCORE_RANK_METHOD] = web::json::value::string(current_item.second.score_rank_method);
+      current_algorithm[ALGORITHM_MONGO_FIELD_SCORE_RANK_SEQUENCE] = web::json::value::number(sequence_index);
       auto &extra = current_algorithm["extra"] = web::json::value();
       // TODO(haochengwang): Keyword as a reason here
       if (current_item.second.rankExecuted)
@@ -203,6 +205,7 @@ namespace knowledgebase
         index = 0;
         algorithm_list = web::json::value();
       }
+      sequence_index++;
     }
 
     if (index > 0)
@@ -649,6 +652,17 @@ namespace knowledgebase
       LOG(ERROR) << "current web json value have no "
                  << ALGORITHM_MONGO_FIELD_SOURCE << std::endl;
     }
+    if (current_item.has_integer_field(ALGORITHM_MONGO_FIELD_SCORE_RANK_SEQUENCE))
+    {
+      temp_algorithm.score_rank_sequence =
+          current_item.at(ALGORITHM_MONGO_FIELD_SCORE_RANK_SEQUENCE).as_integer();
+    }
+    else
+    {
+      temp_algorithm.score_rank_sequence = 0;
+      LOG(ERROR) << "current web json value have no "
+                 << ALGORITHM_MONGO_FIELD_SCORE_RANK_SEQUENCE << std::endl;
+    }
 
     if (current_item.has_integer_field(ALGORITHM_MONGO_FIELD_IMPRESSION))
     {
@@ -662,10 +676,14 @@ namespace knowledgebase
                  << ALGORITHM_MONGO_FIELD_IMPRESSION << std::endl;
     }
 
-    if (current_item.has_double_field(ALGORITHM_MONGO_FIELD_SCORE) || current_item.has_integer_field(ALGORITHM_MONGO_FIELD_SCORE))
+    if (current_item.has_double_field(ALGORITHM_MONGO_FIELD_SCORE) || current_item.has_integer_field(ALGORITHM_MONGO_FIELD_SCORE) || current_item.has_number_field(ALGORITHM_MONGO_FIELD_SCORE))
     {
       temp_algorithm.score =
           current_item.at(ALGORITHM_MONGO_FIELD_SCORE).as_double();
+    }
+    else if (current_item.has_string_field(ALGORITHM_MONGO_FIELD_SCORE))
+    {
+      temp_algorithm.score = stringToDouble(current_item.at(ALGORITHM_MONGO_FIELD_SCORE).as_string());
     }
     else
     {
@@ -684,6 +702,32 @@ namespace knowledgebase
       temp_algorithm.ranked = false;
       LOG(ERROR) << "current web json value have no "
                  << ALGORITHM_MONGO_FIELD_RANKED << std::endl;
+    }
+
+    if (current_item
+            .has_number_field(ALGORITHM_MONGO_FIELD_SCORE_RANK_TIME))
+    {
+      int current_score_rank_time = current_item.at(ALGORITHM_MONGO_FIELD_SCORE_RANK_TIME).as_integer();
+      temp_algorithm.score_rank_time = std::make_optional(current_score_rank_time);
+    }
+    else
+    {
+      temp_algorithm.score_rank_time = std::nullopt;
+      LOG(DEBUG) << "temp_algorithm " << temp_algorithm.id << " have no "
+                 << ALGORITHM_MONGO_FIELD_SCORE_RANK_TIME << std::endl;
+    }
+
+    if (current_item.has_string_field(ALGORITHM_MONGO_FIELD_SCORE_RANK_METHOD))
+    {
+      std::string score_rank_method =
+          current_item.at(ALGORITHM_MONGO_FIELD_SCORE_RANK_METHOD).as_string();
+      temp_algorithm.score_rank_method = std::make_optional(score_rank_method);
+    }
+    else
+    {
+      temp_algorithm.score_rank_method = "";
+      LOG(DEBUG) << "temp_algorithm " << temp_algorithm.id << " have no "
+                 << ALGORITHM_MONGO_FIELD_SCORE_RANK_METHOD << std::endl;
     }
 
     return std::make_optional(temp_algorithm);
