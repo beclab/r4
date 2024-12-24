@@ -91,6 +91,8 @@ target_link_libraries(
   openblas
   lapack
   faiss
+  ssl
+  crypto
 )
 
 add_executable(
@@ -179,12 +181,13 @@ target_link_libraries(
   # ${LIBBSONCXX_LIBRARIES}
   cpprestsdk::cpprest
   boost_system
-  crypto
   ssl
+  crypto
   gflags
   openblas
   lapack
   faiss
+  
 )
 
 
@@ -202,6 +205,8 @@ target_link_libraries(
   libgmock_main.a  
   libgtest.a
   rankcommon
+  ssl
+  crypto
 )
 
 add_executable(
@@ -226,8 +231,8 @@ target_link_libraries(
 #${LIBBSONCXX_LIBRARIES}
 cpprestsdk::cpprest
  boost_system
- crypto
  ssl
+ crypto
  gflags
  )
 

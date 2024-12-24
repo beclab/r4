@@ -164,3 +164,54 @@ TEST(CosineSimilarityTest, EmptyVector)
   // If empty vectors are allowed, the result might be NaN, or you need to modify the function to throw an exception
   EXPECT_TRUE(std::isnan(result)); // Here we assume we return NaN
 }
+
+TEST(ArrayToStringTest, ConvertsArrayToStringCorrectly)
+{
+  // --gtest_filter=ArrayToStringTest.ConvertsArrayToStringCorrectly
+  std::vector<int> arr = {1, 2, 3, 6, 8, 9};
+  std::string result = arrayToString(arr);
+  EXPECT_EQ(result, "1-3;6;8-9");
+}
+
+TEST(ArrayToStringTest, HandlesEmptyArray)
+{
+  // --gtest_filter=ArrayToStringTest.HandlesEmptyArray
+  std::vector<int> arr = {};
+  std::string result = arrayToString(arr);
+  EXPECT_EQ(result, "");
+}
+
+TEST(ArrayToStringTest, HandlesSingleElementArray)
+{
+  // --gtest_filter=ArrayToStringTest.HandlesSingleElementArray
+  std::vector<int> arr = {5};
+  std::string result = arrayToString(arr);
+  EXPECT_EQ(result, "5");
+}
+
+TEST(StringToArrayTest, ConvertsStringToArrayCorrectly)
+{
+  // --gtest_filter=StringToArrayTest.ConvertsStringToArrayCorrectly
+  std::string str = "1-3;6;8-9";
+  std::vector<int> result = stringToArray(str);
+  std::vector<int> expected = {1, 2, 3, 6, 8, 9};
+  EXPECT_EQ(result, expected);
+}
+
+TEST(StringToArrayTest, HandlesEmptyString)
+{
+  // --gtest_filter=StringToArrayTest.HandlesEmptyString
+  std::string str = "";
+  std::vector<int> result = stringToArray(str);
+  std::vector<int> expected = {};
+  EXPECT_EQ(result, expected);
+}
+
+TEST(StringToArrayTest, HandlesSingleElementString)
+{
+  // --gtest_filter=StringToArrayTest.HandlesSingleElementString
+  std::string str = "5";
+  std::vector<int> result = stringToArray(str);
+  std::vector<int> expected = {5};
+  EXPECT_EQ(result, expected);
+}

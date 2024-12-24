@@ -1,8 +1,11 @@
 #include <chrono>
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <eigen3/Eigen/Dense>
 #include <random>
+#include <openssl/sha.h>
+
 using namespace Eigen;
 
 // using namespace std;
@@ -228,21 +231,98 @@ float randomFloatBetweenZeroAndOne()
   return dis(gen);
 }
 
-/**
-#include <mutex>
-#include <memory>
-#include <cpprest/http_client.h>
-
-using namespace web::http;
-using namespace web::http::client;
-
-std::unique_ptr<http_client> client_instance;
-std::once_flag client_once_flag;
-
-http_client &get_http_client_instance()
+std::string generateSHA256Hash(const std::vector<double> &vec, const std::string &impression_id)
 {
-  std::call_once(client_once_flag, []()
-                 { client_instance.reset(new http_client(U(std::getenv("KNOWLEDGE_BASE_API_URL")))); });
-  return *client_instance;
+  // Convert vector<double> to string
+  std::string combined_str;
+  for (const double &val : vec)
+  {
+    combined_str += std::to_string(val) + ",";
+  }
+  combined_str += impression_id;
+
+  // Use OpenSSL to compute SHA-256 hash
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, combined_str.c_str(), combined_str.size());
+  SHA256_Final(hash, &sha256);
+
+  // Convert hash value to hexadecimal string
+  std::string hash_hex;
+  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+  {
+    char buf[3];
+    snprintf(buf, sizeof(buf), "%02x", hash[i]);
+    hash_hex += buf;
+  }
+
+  return hash_hex;
 }
-*/
+
+std::string arrayToString(const std::vector<int> &arr)
+{
+  if (arr.empty())
+    return "";
+
+  std::ostringstream oss;
+  int start = arr[0], end = arr[0];
+
+  for (size_t i = 1; i < arr.size(); ++i)
+  {
+    if (arr[i] == end + 1)
+    {
+      end = arr[i];
+    }
+    else
+    {
+      if (start == end)
+      {
+        oss << start << ";";
+      }
+      else
+      {
+        oss << start << "-" << end << ";";
+      }
+      start = end = arr[i];
+    }
+  }
+
+  if (start == end)
+  {
+    oss << start;
+  }
+  else
+  {
+    oss << start << "-" << end;
+  }
+
+  return oss.str();
+}
+
+std::vector<int> stringToArray(const std::string &str)
+{
+  std::vector<int> result;
+  std::istringstream iss(str);
+  std::string token;
+
+  while (std::getline(iss, token, ';'))
+  {
+    size_t dashPos = token.find('-');
+    if (dashPos == std::string::npos)
+    {
+      result.push_back(std::stoi(token));
+    }
+    else
+    {
+      int start = std::stoi(token.substr(0, dashPos));
+      int end = std::stoi(token.substr(dashPos + 1));
+      for (int i = start; i <= end; ++i)
+      {
+        result.push_back(i);
+      }
+    }
+  }
+
+  return result;
+}
