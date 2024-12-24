@@ -271,3 +271,23 @@ bool ConfigureTrainTestRation(
   }
   return true;
 }
+
+double stringToDouble(const std::string &str)
+{
+  try
+  {
+    // Use std::stod to convert string to double
+    return std::stod(str);
+  }
+  catch (const std::invalid_argument &e)
+  {
+    // If the string cannot be converted to a number, return 0
+    std::cerr << "Invalid number format: " << str << std::endl;
+  }
+  catch (const std::out_of_range &e)
+  {
+    // If the number is out of the range of double, return 0
+    std::cerr << "Number out of range: " << str << std::endl;
+  }
+  return 0.0; // Return default value 0
+}

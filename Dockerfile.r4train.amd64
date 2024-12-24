@@ -96,6 +96,24 @@ RUN cd /opt && \
     cmake ..  && \
     make install 
 
+RUN cd /opt && \
+    curl -LJO https://github.com/OpenMathLib/OpenBLAS/archive/refs/tags/v0.3.28.tar.gz  && \
+    tar -xvzf OpenBLAS-0.3.28.tar.gz  && \
+    cd OpenBLAS-0.3.28  && \
+    make -j$(nproc) && \
+    make PREFIX=/usr/local install
+
+RUN cd /opt && \
+    apt-get install -y gfortran && \
+    curl -LJO https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.12.0.tar.gz  && \
+    tar -xvzf lapack-3.12.0.tar.gz  && \
+    cd lapack-3.12.0  && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make blas lapack && \
+    make install
+
 RUN apt install wget -y && \
     wget https://cmake.org/files/v3.25/cmake-3.25.2-linux-x86_64.sh && \
     bash cmake-3.25.2-linux-x86_64.sh --prefix=/usr/local --skip-license
@@ -106,9 +124,7 @@ RUN cd /opt && \
     cd faiss-1.9.0 && \
     mkdir build  && \
     cd build  && \
-    apt install libopenblas-dev -y && \
-    apt install liblapack-dev -y && \
-    cmake .. -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_PYTHON=OFF -DBUILD_TESTING=OFF && \
+    cmake .. -DFAISS_ENABLE_GPU=OFF -DFAISS_ENABLE_PYTHON=OFF -DBUILD_TESTING=OFF -DBUILD_SHARED_LIBS=ON && \
     make -j$(nproc) && \
     make install 
 
@@ -144,6 +160,14 @@ COPY --from=builder /usr/lib/x86_64-linux-gnu/libicuuc.so.70  /usr/lib/x86_64-li
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libicudata.so.70 /usr/lib/x86_64-linux-gnu/libicudata.so.70
 COPY --from=builder /usr/lib/x86_64-linux-gnu/libgflags.so.2.2 /usr/lib/x86_64-linux-gnu/libgflags.so.2.2
 #COPY --from=builder /usr/lib/x86_64-linux-gnu/libgflags_nothreads.so.2.2 /usr/lib/x86_64-linux-gnu/libgflags_nothreads.so.2.2
+
+COPY --from=builder /usr/local/lib/libfaiss.so /usr/local/lib/libfaiss.so
+COPY --from=builder /usr/local/lib/libblas.a /usr/local/lib/libblas.a
+COPY --from=builder /usr/local/lib/libopenblas.a /usr/local/lib/libopenblas.a
+COPY --from=builder /usr/local/lib/libopenblas.so /usr/local/lib/libopenblas.so
+COPY --from=builder /usr/local/lib/libopenblas.so.0 /usr/local/lib/libopenblas.so.0
+COPY --from=builder /usr/local/lib/libopenblas_cooperlakep-r0.3.28.a /usr/local/lib/libopenblas_cooperlakep-r0.3.28.a
+COPY --from=builder /usr/local/lib/libopenblas_cooperlakep-r0.3.28.so /usr/local/lib/libopenblas_cooperlakep-r0.3.28.so
 
 RUN mkdir /opt/rank_model/
 CMD ["/usr/local/bin/bertv2train"]

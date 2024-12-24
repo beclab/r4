@@ -4,6 +4,7 @@
 #include <faiss/IndexFlat.h>
 #include <vector>
 #include <cmath>
+#include "entity/impression.h"
 
 class FAISSArticleSearch
 {
@@ -19,6 +20,8 @@ private:
 public:
     // Constructor, accepts a 2D vector (article vector library)
     FAISSArticleSearch(std::vector<std::vector<float>> &vectors);
+    std::pair<int, float> findMostSimilarArticle(const std::vector<double> &queryVec);
+    FAISSArticleSearch(const std::vector<Impression> &impressions);
 
     // Query method, returns the row number and cosine distance of the most similar article to the given article vector
     std::pair<int, float> findMostSimilarArticle(const std::vector<float> &queryVec);

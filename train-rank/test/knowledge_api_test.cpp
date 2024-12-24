@@ -6,6 +6,7 @@
 #include "../src/knowledgebase_api.h"
 #include "../src/entity/reco_metadata.h"
 #include "../src/rssrank.h"
+#include "../src/faiss_article_search.h"
 #include "test_common.h"
 
 TEST(KnowledgeApiTest, TestUpdateRankScore)
@@ -22,9 +23,56 @@ TEST(KnowledgeApiTest, TestUpdateAlgorithmRankedScored)
   initDevelop();
   init_log();
   std::unordered_map<std::string, ScoreWithMetadata> entry_id_to_score;
-  entry_id_to_score["656d09e6a2e46f241f9a7b89"] = ScoreWithMetadata(0.25);
-  entry_id_to_score["656d09e6a2e46f241f9a7b8a"] = ScoreWithMetadata(0.5);
+  entry_id_to_score["656d09e6a2e46f241f9a7b89"] = ScoreWithMetadata(0.25, getTimeStampNow(), ScoreEnum::SCORE_UNKNOWN);
+  entry_id_to_score["656d09e6a2e46f241f9a7b8a"] = ScoreWithMetadata(0.5, getTimeStampNow(), ScoreEnum::SCORE_UNKNOWN);
   knowledgebase::updateAlgorithmScoreAndMetadata(entry_id_to_score);
+}
+
+TEST(KnowledgeApiTest, updateAlgorithmScoreAndMetadataWithScoreOrder)
+{
+  // --gtest_filter=KnowledgeApiTest.updateAlgorithmScoreAndMetadataWithScoreOrder
+  initDevelop();
+  init_log();
+  std::unordered_map<std::string, std::string> algorithm_id_to_entry_id =
+      rssrank::getNotImpressionedAlgorithmToEntry();
+  std::cout << "algorithm_id_to_entry_id size " << algorithm_id_to_entry_id.size() << std::endl;
+  int index = 1;
+  std::vector<std::string> modified_algorithm_list;
+  for (auto item : algorithm_id_to_entry_id)
+  {
+    std::cout << item.first << " " << item.second << std::endl;
+    if (index >= 3)
+    {
+      break;
+    }
+    index++;
+    modified_algorithm_list.push_back(item.first);
+  }
+  std::cout << "modified_algorithm_list size " << modified_algorithm_list.size() << std::endl;
+
+  std::unordered_map<std::string, ScoreWithMetadata> algorithm_id_to_score;
+  long long current_time = getTimeStampNow();
+  int sequence_index = 3;
+  for (auto item : modified_algorithm_list)
+  {
+    std::cout << "algorithm_id updated" << item << std::endl;
+    algorithm_id_to_score[item] = ScoreWithMetadata(0.71, current_time, ScoreEnum::SCORE_UNKNOWN);
+    algorithm_id_to_score[item].score_rank_sequence = sequence_index;
+    std::cout << "999999999999999999999 algorithm_id_to_score[item].score_rank_sequence " << algorithm_id_to_score[item].score_rank_sequence << std::endl;
+    sequence_index = sequence_index + 1;
+  }
+  knowledgebase::updateAlgorithmScoreAndMetadataWithScoreOrder(algorithm_id_to_score);
+  int previous_sequence = -1;
+  for (auto item : algorithm_id_to_score)
+  {
+    Algorithm new_get_algorithm = knowledgebase::GetAlgorithmById(item.first).value();
+    EXPECT_EQ(new_get_algorithm.ranked, true);
+    EXPECT_FLOAT_EQ(new_get_algorithm.score, 0.71);
+    std::cout << "new_get_algorithm.score_rank_sequence " << new_get_algorithm.score_rank_sequence << " original sequnce " << item.second.score_rank_sequence << std::endl;
+    EXPECT_GT(new_get_algorithm.score_rank_sequence, previous_sequence);
+    previous_sequence = new_get_algorithm.score_rank_sequence;
+    // EXPECT_EQ(new_get_algorithm.score_rank_sequence, item.second.score_rank_sequence);
+  }
 }
 
 TEST(KnowledgeApiTest, TestRerank)
@@ -266,9 +314,59 @@ TEST(RssRankTest, TestCalculateEmbeddingMultipleReal)
   knowledgebase::EntryCache::getInstance().init();
   std::vector<Impression> result = rssrank::getImpressionForShortTermAndLongTermUserEmbeddingRank();
   std::vector<double> embedding = rssrank::calcluateUserShortTermEmbedding(result, true);
+  double total = 0;
   for (auto current : embedding)
   {
     std::cout << current << " ";
+    total += current * current;
+  }
+  std::cout << "total " << total << std::endl;
+  std::vector<double> embedding2 = rssrank::calcluateUserLongTermEmbedding(result);
+  double total2 = 0;
+  for (auto current : embedding2)
+  {
+    std::cout << current << " ";
+    total2 += current * current;
+  }
+  std::cout << "total2 " << total2 << std::endl;
+}
+
+TEST(RssRankTest, TestFaissSearch)
+{
+  // --gtest_filter=RssRankTest.TestFaissSearch
+  initDevelop();
+  init_log();
+  knowledgebase::EntryCache::getInstance().init();
+  std::vector<Impression> impression_list = rssrank::getImpressionForShortTermAndLongTermUserEmbeddingRank();
+  FAISSArticleSearch search(impression_list);
+  std::unordered_map<std::string, std::string> algorithm_id_to_entry_id = rssrank::getNotImpressionedAlgorithmToEntry();
+  for (const auto &current_item : algorithm_id_to_entry_id)
+  {
+    std::optional<Entry> temp_entry = knowledgebase::EntryCache::getInstance().getEntryById(current_item.second);
+    if (temp_entry == std::nullopt)
+    {
+      LOG(ERROR) << "entry [" << current_item.second << "] not exist, algorithm [" << current_item.first << "]" << std::endl;
+      continue;
+    }
+    if (!temp_entry.value().extract)
+    {
+      LOG(ERROR) << "entry [" << current_item.second << "] not extract, algorithm [" << current_item.first << "]" << std::endl;
+      continue;
+    }
+    std::optional<Algorithm> current_algorithm = knowledgebase::GetAlgorithmById(current_item.first);
+    if (current_algorithm == std::nullopt)
+    {
+      LOG(ERROR) << "Algorithm item not found, id = " << current_item.first << std::endl;
+      continue;
+    }
+    if (current_algorithm.value().embedding == std::nullopt)
+    {
+      LOG(ERROR) << "Algorithm item no embbeding found, id = " << current_item.first << std::endl;
+      continue;
+    }
+    std::pair<int, double> result = search.findMostSimilarArticle(current_algorithm.value().embedding.value());
+    Entry similared_entry = knowledgebase::EntryCache::getInstance().getEntryById(impression_list[result.first].entry_id).value();
+    std::cout << "current_item [" << temp_entry.value().title << "] most similar [" << similared_entry.title << "]" << std::endl;
   }
 }
 
@@ -374,4 +472,52 @@ TEST(RssRankTest, rankShortTermAndLongTermUserEmbedding)
   initDevelop();
   init_log();
   rssrank::rankShortTermAndLongTermUserEmbedding();
+}
+
+TEST(FaissSearchTest, findMostSimilar)
+{
+  // --gtest_filter=FaissSearchTest.findMostSimilar
+
+  std::vector<std::vector<float>> articles = {
+      {1.0f, 0.0f, 0.0f},
+      {0.0f, 1.0f, 0.0f},
+      {0.0f, 0.0f, 1.0f},
+      {0.5f, 0.5f, 0.0f}};
+  FAISSArticleSearch search(articles);
+  articles.clear();
+  articles.shrink_to_fit(); // Clear the articles vector
+  // Create FAISSArticleSearch object
+
+  // Check if FAISS index is created and populated
+  std::vector<float> query = {1.0f, 0.0f, 0.0f};
+  auto [index, distance] = search.findMostSimilarArticle(query);
+  std::cout << "Most similar article: " << index << " Distance: " << distance << std::endl;
+  assert(index == 0);                // The most similar article should be the first one
+  assert(std::abs(distance) < 1e-6); // Distance should be 0
+
+  query = {0.5f, 0.5f, 0.0f};
+  auto [index2, distance2] = search.findMostSimilarArticle(query);
+  std::cout << "Most similar article: " << index2 << " Distance: " << distance2 << std::endl;
+  assert(index2 == 3); // The most similar article should be the last one
+
+  query = {0.5f, 0.5f, 0.5f};
+  auto [index3, distance3] = search.findMostSimilarArticle(query);
+  std::cout << "Most similar article: " << index3 << " Distance: " << distance3 << std::endl;
+  assert(index3 == 3); // The most similar article should be the last one
+}
+
+TEST(RssRankTest, RankShortTermAndLongTermUserEmbedding)
+{
+  // --gtest_filter=RssRankTest.RankShortTermAndLongTermUserEmbedding
+  initDevelop();
+  init_log();
+  rssrank::rankShortTermAndLongTermUserEmbedding();
+}
+
+TEST(RssRankTest, rankByTimeForColdStart)
+{
+  // --gtest_filter=RssRankTest.rankByTimeForColdStart
+  initDevelop();
+  init_log();
+  rssrank::rankByTimeForColdStart();
 }

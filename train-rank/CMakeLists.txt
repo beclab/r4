@@ -13,13 +13,8 @@ project(ranktrain)
 # include_directories("/usr/local/lib")
 
 include_directories("/usr/local/include")
-include_directories("/opt/homebrew/opt/cpprestsdk/include")
-include_directories("/opt/homebrew/opt/boost/include")
-include_directories("/opt/homebrew/Cellar/openssl@3/3.3.1/include")
 link_directories("/usr/local/lib")
-link_directories("/opt/homebrew/opt/openssl/lib/")
-link_directories("/opt/homebrew/opt/boost/lib/")
-link_directories("/opt/homebrew/opt/llvm/lib/c++/")
+
 
 # Add a custom command that produces version.cpp, plus
 # a dummy output that's not actually produced, in order
@@ -93,6 +88,11 @@ target_link_libraries(
   libgmock_main.a  
   libgtest.a
   rankcommon
+  openblas
+  lapack
+  faiss
+  ssl
+  crypto
 )
 
 add_executable(
@@ -118,6 +118,9 @@ cpprestsdk::cpprest
  crypto
  ssl
  gflags
+ openblas
+ lapack
+ faiss
  )
 
 
@@ -137,7 +140,11 @@ cpprestsdk::cpprest
  boost_system
  crypto
  ssl
- gflags
+ gflags  
+ openblas
+ lapack
+ faiss
+
  )
 
 add_executable(
@@ -156,6 +163,9 @@ target_link_libraries(
   crypto
   ssl
   gflags
+  openblas
+  lapack
+  faiss
 )
 
 add_executable(
@@ -171,9 +181,13 @@ target_link_libraries(
   # ${LIBBSONCXX_LIBRARIES}
   cpprestsdk::cpprest
   boost_system
-  crypto
   ssl
+  crypto
   gflags
+  openblas
+  lapack
+  faiss
+  
 )
 
 
@@ -183,11 +197,16 @@ target_link_libraries(
  )
  target_link_libraries(
   common_test
+  openblas
+  lapack
+  faiss
   libgtest_main.a
   libgmock.a  
   libgmock_main.a  
   libgtest.a
   rankcommon
+  ssl
+  crypto
 )
 
 add_executable(
@@ -205,12 +224,15 @@ target_link_libraries(
   libgtest.a
   rankcommon
   xgboost::xgboost 
+  openblas
+  lapack
+  faiss
  # ${LIBMONGOCXX_LIBRARIES}
 #${LIBBSONCXX_LIBRARIES}
 cpprestsdk::cpprest
  boost_system
- crypto
  ssl
+ crypto
  gflags
  )
 

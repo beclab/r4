@@ -93,5 +93,8 @@ namespace rssrank
     float getSpecificImpressionScoreForShortTermUserEmbedding(const Impression &current_impression);
     bool rankShortTermAndLongTermUserEmbedding();
     std::unordered_map<std::string, std::string> getNotImpressionedAlgorithmToEntry();
+    vector<double> calcluateUserLongTermEmbedding(const vector<Impression> &impressions);
+
+    bool rankByTimeForColdStart();
 
 } // namespace rssrank
