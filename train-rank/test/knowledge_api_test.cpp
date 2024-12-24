@@ -90,7 +90,11 @@ TEST(KnowledgeApiTest, TestGetImpression)
   init_log();
   std::vector<Impression> impression_list;
   int count;
-  knowledgebase::getImpression(10, 10, "bert_v2", &impression_list, &count);
+  knowledgebase::getImpression(10, 10, "r4techbiz", &impression_list, &count);
+  for (auto current_impression : impression_list)
+  {
+    std::cout << current_impression.id << " " << current_impression.source << " " << current_impression.integer_id << std::endl;
+  }
   std::cout << impression_list.size() << " " << count << std::endl;
 }
 
@@ -245,12 +249,7 @@ TEST(KnowledgeApiTest, TestGetAlgorithmAccordingImpression)
                                                  &algorithm_list, &count);
   for (auto current : algorithm_list)
   {
-    std::cout << current.id << " " << current.impression << std::endl;
-  }
-  for (int i = 0; i < 10; i++)
-  {
-    knowledgebase::getAlgorithmAccordingImpression(10, 0, source, 1,
-                                                   &algorithm_list, &count);
+    std::cout << current.id << " " << current.impression << " " << current.integer_id << std::endl;
   }
 }
 
@@ -276,7 +275,7 @@ TEST(KnowledgeApiTest, TestGetEntries)
   std::cout << entry_list.size() << " " << count << std::endl;
   for (auto current : entry_list)
   {
-    std::cout << current.url << " " << current.title << " " << current.published_at << std::endl;
+    std::cout << current.url << " " << current.title << " " << current.published_at << " " << current.integer_id << std::endl;
   }
 }
 

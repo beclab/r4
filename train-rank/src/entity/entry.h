@@ -22,6 +22,7 @@ static const char ENTRY_TITLE[] = "title";
 static const char ENTRY_CREATED_AT[] = "created_at";
 static const char ENTRY_LAST_OPENED[] = "last_opened";
 static const char ENTRY_PUBLISHED_AT[] = "published_at";
+static const char ENTRY_INTEGER_ID[] = "integer_id";
 
 struct Entry
 {
@@ -41,4 +42,5 @@ struct Entry
   boost::posix_time::ptime timestamp;
   long long published_at;
   long long last_opened;
+  long long integer_id;
 };

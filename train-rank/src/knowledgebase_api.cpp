@@ -558,6 +558,15 @@ namespace knowledgebase
                  << std::endl;
       // return std::nullopt;
     }
+    if (current_item.has_integer_field(ENTRY_INTEGER_ID))
+    {
+      temp_entry.integer_id = current_item.at(ENTRY_INTEGER_ID).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "current web json value have no " << ENTRY_INTEGER_ID
+                 << std::endl;
+    }
 
     return std::make_optional(temp_entry);
   }
@@ -592,6 +601,16 @@ namespace knowledgebase
       LOG(ERROR) << "current web json value have no "
                  << ALGORITHM_MONGO_FIELD_ENTRY << std::endl;
       return std::nullopt;
+    }
+
+    if (current_item.has_integer_field(ALGORITHM_MONGO_FIELD_INTEGER_ID))
+    {
+      temp_algorithm.integer_id = current_item.at(ALGORITHM_MONGO_FIELD_INTEGER_ID).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "current web json value have no " << ALGORITHM_MONGO_FIELD_INTEGER_ID << std::endl;
+      temp_algorithm.integer_id = 0;
     }
 
     if (current_item.has_object_field(ALGORITHM_MONGO_FIELD_EXTRA))
@@ -751,6 +770,17 @@ namespace knowledgebase
       LOG(ERROR) << "current web json value have no " << IMPRESSION_MONGO_FIELD_ID
                  << std::endl;
       return std::nullopt;
+    }
+
+    if (current_item.has_integer_field(IMPRESSION_INTEGER_ID))
+    {
+      temp_impression.integer_id = current_item.at(IMPRESSION_INTEGER_ID).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "current web json value have no " << IMPRESSION_INTEGER_ID
+                 << std::endl;
+      temp_impression.integer_id = 0;
     }
 
     if (current_item.has_string_field(IMPRESSION_MONGO_FIELD_ENTRY_ID))
@@ -1306,7 +1336,7 @@ namespace knowledgebase
     // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
     http_client &client = *current_client;
     std::string current_suffix =
-        std::string(ENTRY_API_SUFFIX) + "?offset=" + std::to_string(offset) + "&limit=" + std::to_string(limit) + "&source=" + source + "&extract=true" + "&fields=id,file_type,language,url,title,readlater,crawler,starred,disabled,saved,unread,extract,created_at,last_opened,published_at";
+        std::string(ENTRY_API_SUFFIX) + "?offset=" + std::to_string(offset) + "&limit=" + std::to_string(limit) + "&source=" + source + "&extract=true" + "&fields=id,file_type,language,url,title,readlater,crawler,starred,disabled,saved,unread,extract,created_at,last_opened,published_at,integer_id";
     LOG(DEBUG) << "current_suffix " << current_suffix
                << std::endl;
 

@@ -27,20 +27,37 @@ static char TERMINUS_RECOMMEND_EMBEDDING_DIMENSION[] =
     "TERMINUS_RECOMMEND_EMBEDDING_DIMENSION";
 
 // user adjust parameter
+// use how many impression to calculate short term user embedding, value > 0
 static char TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION[] =
-    "TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION"; // use how many impression to calculate short term user embedding
+    "TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION"; // default 10
 
+// use how many impression to calculate long term user embedding, value > 0
 static char TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION[] =
-    "TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION"; // use how many impression to calculate short term user embedding
+    "TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION"; // default 10000
 
+// The proportion of the cosine distance between the long-term user vector and the article when calculating
+// the rank score, compared to the cosine distance between the short-term user vector and the article, value between 0 and 1
 static char TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE[] =
-    "TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE"; // The proportion of the cosine distance between the long-term user vector and the article when calculating the rank score, compared to the cosine distance between the short-term user vector and the article
+    "TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE"; // default 0.3
 
+//// The time weight of the article when calculating the rank score,
+// compared to the cosine distance between the user vector and the article,value 0 and 1
 static char TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE[] =
-    "TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE"; // The time weight of the article when calculating the rank score, compared to the cosine distance between the user vector and the article
+    "TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE"; // default 0.5
 
+// If the number of clicked articles is less than or equal this value, do not use the recommendation algorithm.
+//  Since they are all in one category, sort by time for cold start.
 static char TERMINUS_RECOMMEND_COLD_START_ARTICLE_CLICKED_NUMBER_THRESHOLD[] =
-    "TERMINUS_RECOMMEND_COLD_START_ARTICLE_CLICKED_NUMBER_THRESHOLD"; // If the number of clicked articles is less than or equal this value, do not use the recommendation algorithm. Since they are all in one category, sort by time for cold start.
+    "TERMINUS_RECOMMEND_COLD_START_ARTICLE_CLICKED_NUMBER_THRESHOLD"; // default 10
+
+// If the value is "long", use long-term user embedding as recall embedding,
+// otherwise use short-term user embedding as recall embedding
+static char TERMINUS_RECOMMEND_LONG_OR_SHORT_EMBEDDING_AS_RECALL_EMBEDDING[] =
+    "TERMINUS_RECOMMEND_LONG_OR_SHORT_EMBEDDING_AS_RECALL_EMBEDDING"; // default "long"
+
+// The number of zipped log
+static char TERMINUS_RECOMMEND_TRACE_INFO_NUMBER[] = "TERMINUS_RECOMMEND_TRACE_INFO_NUMBER"; // default 100
+
 void init_log();
 
 void printVector(const std::vector<std::string> &a);

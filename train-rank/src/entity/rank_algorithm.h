@@ -14,6 +14,7 @@ static const char ALGORITHM_MONGO_FIELD_EXTRA[] = "extra";
 static const char ALGORITHM_MONGO_FIELD_SCORE_RANK_TIME[] = "score_rank_time";
 static const char ALGORITHM_MONGO_FIELD_SCORE_RANK_METHOD[] = "score_rank_method";
 static const char ALGORITHM_MONGO_FIELD_SCORE_RANK_SEQUENCE[] = "score_rank_sequence";
+static const char ALGORITHM_MONGO_FIELD_INTEGER_ID[] = "integer_id";
 
 static const char ALGORITHM_MONGO_FIELD_EMBEDDING[] =
     "embedding"; // SUB FIELD ALGORITHM_MONGO_FIELD_EXTRA
@@ -33,4 +34,5 @@ struct Algorithm
   std::optional<long long> score_rank_time;
   std::optional<std::string> score_rank_method;
   int score_rank_sequence;
+  long long integer_id;
 };

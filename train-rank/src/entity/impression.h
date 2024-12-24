@@ -14,6 +14,7 @@ static const char IMPRESSION_MONGO_FIELD_ENTRY_ID[] = "entry_id";
 static const char IMPRESSION_MONGO_FIELD_CLICKED[] = "clicked";
 static const char IMPRESSION_MONGO_FIELD_ALGORITHM_EXTRA[] = "algorithm_extra";
 static const char IMPRESSION_MONGO_FIELD_SOURCE[] = "source";
+static const char IMPRESSION_INTEGER_ID[] = "integer_id";
 
 // SUB FIELD IMPRESSION_MONGO_FIELD_ALGORITHM_EXTRA
 static const char IMPRESSION_MONGO_FIELD_EMBEDDING[] = "embedding";
@@ -31,4 +32,5 @@ struct Impression
   std::optional<std::vector<double>> embedding;
   std::string source;
   long long entry_last_opened;
+  long long integer_id;
 };
