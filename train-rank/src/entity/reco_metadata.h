@@ -8,6 +8,8 @@
 #include <vector>
 using namespace std;
 
+#include "../common_tool.h"
+
 struct RecoReasonArticle
 {
     std::string id;
@@ -66,7 +68,11 @@ struct RecommendTraceUserEmbedding
     string source;
     vector<double> user_embedding;
     std::string impression_id_used_to_calculate_embedding; // 1-3;6;8-9
-    string unique_id;
+    string unique_id;                                      // according user_embedding 和 impression_id_used_to_calculate_embedding calculate hash
+    void calculateUniqueId()
+    {
+        this->unique_id = generateSHA256Hash(this->user_embedding, this->impression_id_used_to_calculate_embedding);
+    }
 };
 //
 struct RecommendTraceInfo
@@ -82,5 +88,43 @@ struct RecommendTraceInfo
     std::string short_term_user_embedding_id;        // RecommendTraceUserEmbedding.unique_id
     vector<int> top_ranked_algorithm_id;             // The top 1000 algorithm_ids, the number of top rankings can be controlled by parameters
     vector<int> top_ranked_algorithm_score;          // The top 1000 algorithm_scores, the number of top rankings can be controlled by parameters
+
+    void setNotImpressionedAlgorithmIdFromVec(const vector<int> &not_impressioned_algorithm_id_vec)
+    {
+        this->not_impressioned_algorithm_id = arrayToString(not_impressioned_algorithm_id_vec);
+    }
+    vector<int> getNotImpressionedAlgorithmIdVec()
+    {
+        return stringToArray(this->not_impressioned_algorithm_id);
+    }
+
+    void setAddedNotImpressionedAlgorithmIdFromVec(const vector<int> &added_not_impressioned_algorithm_id_vec)
+    {
+        this->added_not_impressioned_algorithm_id = arrayToString(added_not_impressioned_algorithm_id_vec);
+    }
+    vector<int> getAddedNotImpressionedAlgorithmIdVec()
+    {
+        return stringToArray(this->added_not_impressioned_algorithm_id);
+    }
+
+    void setImpressionedIdFromVec(const vector<int> &impressioned_id_vec)
+    {
+        this->impressioned_id = arrayToString(impressioned_id_vec);
+    }
+
+    vector<int> getImpressionedIdVec()
+    {
+        return stringToArray(this->impressioned_id);
+    }
+
+    void setAddedImpressionedIdFromVec(const vector<int> &added_impressioned_id_vec)
+    {
+        this->added_impressioned_id = arrayToString(added_impressioned_id_vec);
+    }
+
+    vector<int> getAddedImpressionedIdVec()
+    {
+        return stringToArray(this->added_impressioned_id);
+    }
 };
 #endif // RECO_METADATA_H
