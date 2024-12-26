@@ -547,3 +547,52 @@ TEST(KnowledgeApiTest, findRecommendTraceUserEmbeddingByUniqueId)
     std::cout << current << " " << std::endl;
   }
 }
+
+TEST(KnowledgeApiTest, postRecommendTraceInfo)
+{
+  // --gtest_filter=KnowledgeApiTest.postRecommendTraceInfo
+  initDevelop();
+  init_log();
+  RecommendTraceInfo recommend_trace_info;
+  recommend_trace_info.source = "testsource";
+  recommend_trace_info.rank_time = 1711080226;
+  recommend_trace_info.score_enum = "score_enum";
+  recommend_trace_info.not_impressioned_algorithm_id = "1-3;6;8-9";
+  recommend_trace_info.added_not_impressioned_algorithm_id = "8-9";
+  recommend_trace_info.impressioned_id = "1-20";
+  recommend_trace_info.added_impressioned_id = "20";
+  recommend_trace_info.long_term_user_embedding_id = "111111";
+  recommend_trace_info.short_term_user_embedding_id = "222222";
+  recommend_trace_info.top_ranked_algorithm_id = {1, 2, 3};
+  recommend_trace_info.top_ranked_algorithm_score = {0.1, 0.2, 0.3};
+  knowledgebase::postRecommendTraceInfo(recommend_trace_info);
+}
+
+TEST(KnowledgeApiTest, findRecommendTraceInfoByRankTimeAndSource)
+{
+  // --gtest_filter=KnowledgeApiTest.findRecommendTraceInfoByRankTimeAndSource
+  initDevelop();
+  init_log();
+  std::string source = "testsource";
+  int64_t rank_time = 1711080226;
+  std::optional<RecommendTraceInfo> recommend_trace_info = knowledgebase::findRecommendTraceInfoByRankTimeAndSource(source, rank_time);
+  if (recommend_trace_info != std::nullopt)
+  {
+    RecommendTraceInfo current = recommend_trace_info.value();
+    std::cout << current << " " << std::endl;
+  }
+}
+
+TEST(KnowledgeApiTest, findAllRecomendTraceInfoRankTimesBySource)
+{
+  // --gtest_filter=KnowledgeApiTest.findAllRecomendTraceInfoRankTimesBySource
+  initDevelop();
+  init_log();
+  std::string source = "testsource";
+  std::vector<int> rank_times = knowledgebase::findAllRecomendTraceInfoRankTimesBySource(source);
+  for (auto current : rank_times)
+  {
+    std::cout << current << " ";
+  }
+  std::cout << std::endl;
+}

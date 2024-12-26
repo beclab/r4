@@ -1719,6 +1719,49 @@ namespace knowledgebase
     return true;
   }
 
+  bool postRecommendTraceInfo(const RecommendTraceInfo &info)
+  {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
+    std::optional<web::json::value> optional_value =
+        convertFromRecommendTraceInfoToWebJsonValue(info);
+    if (optional_value == std::nullopt)
+    {
+      LOG(ERROR) << "convertFromRecommendTraceUserEmbeddingToWebJsonValue failed"
+                 << std::endl;
+      return false;
+    }
+    web::json::value value = optional_value.value();
+    const std::string current_trace_info_api_suffix =
+        std::string(RECOMMEND_TRACE_INFO_API_SUFFIX);
+    LOG(DEBUG) << "current_trace_info_api_suffix " << current_trace_info_api_suffix
+               << std::endl;
+    std::string source = info.source;
+    client.request(methods::POST, U(current_trace_info_api_suffix), value)
+        .then([source](http_response response) -> pplx::task<string_t>
+              {
+        LOG(DEBUG) << "create recommend trace info status_code "
+                   << response.status_code() << std::endl;
+        if (response.status_code() == status_codes::Created) {
+          return response.extract_string();
+        }
+        return pplx::task_from_result(string_t()); })
+        .then([](pplx::task<string_t> previousTask)
+              {
+        try {
+          string_t const &result = previousTask.get();
+          LOG(DEBUG) << result << endl;
+        } catch (http_exception const &e) {
+          // printf("Error exception:%s\n", e.what());
+          LOG(ERROR) << "create recommend trace info " << e.what()
+                     << std::endl;
+        } })
+        .wait();
+
+    return true;
+  }
+
   bool updateKnowledgeConfig(const std::string &source, const std::string &key,
                              const web::json::value &value)
   {
@@ -1923,32 +1966,12 @@ namespace knowledgebase
     }
     result[RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD] = web::json::value::string(info.score_enum);
 
-    if (info.not_impressioned_algorithm_id.empty())
-    {
-      LOG(ERROR) << "user_embedding_id is empty" << std::endl;
-      return std::nullopt;
-    }
     result[RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD] = web::json::value::string(info.not_impressioned_algorithm_id);
 
-    if (info.added_not_impressioned_algorithm_id.empty())
-    {
-      LOG(ERROR) << "added_not_impressioned_algorithm_id is empty" << std::endl;
-      return std::nullopt;
-    }
     result[RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD] = web::json::value::string(info.added_not_impressioned_algorithm_id);
 
-    if (info.impressioned_id.empty())
-    {
-      LOG(ERROR) << "impressioned_id is empty" << std::endl;
-      return std::nullopt;
-    }
     result[RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD] = web::json::value::string(info.impressioned_id);
 
-    if (info.added_impressioned_id.empty())
-    {
-      LOG(ERROR) << "added_impressioned_id is empty" << std::endl;
-      return std::nullopt;
-    }
     result[RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD] = web::json::value::string(info.added_impressioned_id);
 
     if (info.long_term_user_embedding_id.empty())
@@ -1983,4 +2006,205 @@ namespace knowledgebase
     return result;
 
   } // namespace knowledgebase
+
+  std::optional<RecommendTraceInfo> convertFromWebJsonValueToRecommendTraceInfo(
+      const web::json::value &value)
+  {
+    RecommendTraceInfo info;
+    if (value.has_field(RECOMMEND_TRACE_INFO_SOURCE_FIELD))
+    {
+      info.source = value.at(RECOMMEND_TRACE_INFO_SOURCE_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "source is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_RANK_TIME_FIELD))
+    {
+      info.rank_time = value.at(RECOMMEND_TRACE_INFO_RANK_TIME_FIELD).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "rank_time is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD))
+    {
+      info.score_enum = value.at(RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "score_enum is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD))
+    {
+      info.not_impressioned_algorithm_id = value.at(RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "not_impressioned_algorithm_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD))
+    {
+      info.added_not_impressioned_algorithm_id = value.at(RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "added_not_impressioned_algorithm_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD))
+    {
+      info.impressioned_id = value.at(RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "impressioned_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD))
+    {
+      info.added_impressioned_id = value.at(RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "added_impressioned_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD))
+    {
+      info.long_term_user_embedding_id = value.at(RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "long_term_user_embedding_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD))
+    {
+      info.short_term_user_embedding_id = value.at(RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "short_term_user_embedding_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD))
+    {
+      web::json::array top_ranked_algorithm_id_array = value.at(RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD).as_array();
+      for (const auto &val : top_ranked_algorithm_id_array)
+      {
+        info.top_ranked_algorithm_id.push_back(val.as_integer());
+      }
+    }
+    else
+    {
+      LOG(ERROR) << "top_ranked_algorithm_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD))
+    {
+      web::json::array top_ranked_algorithm_score_array = value.at(RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD).as_array();
+      for (const auto &val : top_ranked_algorithm_score_array)
+      {
+        info.top_ranked_algorithm_score.push_back(val.as_double());
+      }
+    }
+    else
+    {
+      LOG(ERROR) << "top_ranked_algorithm_score is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    return std::make_optional(info);
+  }
+
+  std::optional<RecommendTraceInfo> findRecommendTraceInfoByRankTimeAndSource(const std::string &source, int64_t rank_time)
+  {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    http_client &client = *current_client;
+    std::string current_suffix = std::string(RECOMMEND_TRACE_INFO_API_SUFFIX) + "/findBySourceAndRankTime?source=" + source + "&rank_time" + std::to_string(rank_time);
+    LOG(DEBUG) << "current_suffix " << current_suffix << std::endl;
+
+    std::optional<RecommendTraceInfo> option_info = std::nullopt;
+    client.request(methods::GET, U(current_suffix))
+        .then([](http_response response) -> pplx::task<web::json::value>
+              {
+        if (response.status_code() == status_codes::OK) {
+          return response.extract_json();
+        }
+        return pplx::task_from_result(web::json::value()); })
+        .then([&option_info](pplx::task<web::json::value> previousTask)
+              {
+        try {
+          web::json::value const &v = previousTask.get();
+          int code = v.at("code").as_integer();
+          std::string message = "null";
+          if (v.has_string_field("message")) {
+            message = v.at("message").as_string();
+          }
+          LOG(DEBUG) << "code " << code << " message " << message << std::endl;
+          if (code == 0) {
+            web::json::value current_value = v.at("data");
+            option_info = convertFromWebJsonValueToRecommendTraceInfo(current_value);
+          }
+        } catch (http_exception const &e) {
+          LOG(ERROR) << "Error exception " << e.what() << std::endl;
+        } })
+        .wait();
+    return option_info;
+  }
+
+  std::vector<int> findAllRecomendTraceInfoRankTimesBySource(const std::string &source)
+  {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    http_client &client = *current_client;
+    std::string current_suffix = std::string(RECOMMEND_TRACE_INFO_API_SUFFIX) + "/ranktimes/" + source;
+    LOG(DEBUG) << "current_suffix " << current_suffix << std::endl;
+
+    std::vector<int> rank_times;
+    client.request(methods::GET, U(current_suffix))
+        .then([](http_response response) -> pplx::task<web::json::value>
+              {
+        if (response.status_code() == status_codes::OK) {
+          return response.extract_json();
+        }
+        return pplx::task_from_result(web::json::value()); })
+        .then([&rank_times](pplx::task<web::json::value> previousTask)
+              {
+        try {
+          web::json::value const &v = previousTask.get();
+          int code = v.at("code").as_integer();
+          std::string message = "null";
+          if (v.has_string_field("message")) {
+            message = v.at("message").as_string();
+          }
+          LOG(DEBUG) << "code " << code << " message " << message << std::endl;
+          if (code == 0) {
+            web::json::array rank_times_array = v.at("data").as_array();
+            for (const auto &val : rank_times_array)
+            {
+              rank_times.push_back(val.as_integer());
+            }
+          }
+        } catch (http_exception const &e) {
+          LOG(ERROR) << "Error exception " << e.what() << std::endl;
+        } })
+        .wait();
+    return rank_times;
+  }
+
 }

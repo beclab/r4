@@ -235,4 +235,5 @@ struct RecommendTraceInfo
     */
 };
 ostream &operator<<(ostream &os, const RecommendTraceUserEmbedding &obj);
+std::ostream &operator<<(std::ostream &os, const RecommendTraceInfo &info);
 #endif // RECO_METADATA_H

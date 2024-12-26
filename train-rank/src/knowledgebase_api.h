@@ -72,6 +72,7 @@ namespace knowledgebase
                           std::vector<Impression> *impression_list, int *count);
     std::optional<Impression> GetImpressionById(const std::string &id);
     bool postRecommendTraceUserEmbedding(const RecommendTraceUserEmbedding &embedding);
+    bool postRecommendTraceInfo(const RecommendTraceInfo &info);
     void getAlgorithmAccordingRanked(int limit, int offset, std::string source,
                                      bool ranked,
                                      std::vector<Algorithm> *algorithm_list,
@@ -114,4 +115,8 @@ namespace knowledgebase
         const web::json::value &value);
     std::optional<RecommendTraceUserEmbedding> findRecommendTraceUserEmbeddingByUniqueId(const std::string &unique_id);
 
+    std::optional<RecommendTraceInfo> convertFromWebJsonValueToRecommendTraceInfo(
+        const web::json::value &value);
+    std::optional<RecommendTraceInfo> findRecommendTraceInfoByRankTimeAndSource(const std::string &source, int64_t rank_time);
+    std::vector<int> findAllRecomendTraceInfoRankTimesBySource(const std::string &source);
 } // namespace knowledgebase
