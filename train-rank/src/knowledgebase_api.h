@@ -108,6 +108,8 @@ namespace knowledgebase
         const std::unordered_map<std::string, ScoreWithMetadata> &algorithm_id_to_score_with_meta);
     std::optional<web::json::value> convertFromRecommendTraceUserEmbeddingToWebJsonValue(
         const RecommendTraceUserEmbedding &embedding);
+    std::optional<web::json::value> convertFromRecommendTraceInfoToWebJsonValue(
+        const RecommendTraceInfo &info);
     std::optional<RecommendTraceUserEmbedding> convertFromWebJsonValueToRecommendTraceUserEmbedding(
         const web::json::value &value);
     std::optional<RecommendTraceUserEmbedding> findRecommendTraceUserEmbeddingByUniqueId(const std::string &unique_id);

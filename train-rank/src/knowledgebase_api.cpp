@@ -1897,4 +1897,90 @@ namespace knowledgebase
         .wait();
     return option_embedding;
   }
-} // namespace knowledgebase
+
+  std::optional<web::json::value> convertFromRecommendTraceInfoToWebJsonValue(
+      const RecommendTraceInfo &info)
+  {
+    web::json::value result;
+    if (info.source.empty())
+    {
+      LOG(ERROR) << "source is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_SOURCE_FIELD] = web::json::value::string(info.source);
+
+    if (info.rank_time <= 0)
+    {
+      LOG(ERROR) << "rank_time is invalid" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_RANK_TIME_FIELD] = web::json::value::number(int(info.rank_time));
+
+    if (info.score_enum.empty())
+    {
+      LOG(ERROR) << "score_enum is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD] = web::json::value::string(info.score_enum);
+
+    if (info.not_impressioned_algorithm_id.empty())
+    {
+      LOG(ERROR) << "user_embedding_id is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD] = web::json::value::string(info.not_impressioned_algorithm_id);
+
+    if (info.added_not_impressioned_algorithm_id.empty())
+    {
+      LOG(ERROR) << "added_not_impressioned_algorithm_id is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD] = web::json::value::string(info.added_not_impressioned_algorithm_id);
+
+    if (info.impressioned_id.empty())
+    {
+      LOG(ERROR) << "impressioned_id is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD] = web::json::value::string(info.impressioned_id);
+
+    if (info.added_impressioned_id.empty())
+    {
+      LOG(ERROR) << "added_impressioned_id is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD] = web::json::value::string(info.added_impressioned_id);
+
+    if (info.long_term_user_embedding_id.empty())
+    {
+      LOG(ERROR) << "long_term_user_embedding_id is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD] = web::json::value::string(info.long_term_user_embedding_id);
+
+    if (info.short_term_user_embedding_id.empty())
+    {
+      LOG(ERROR) << "short_term_user_embedding_id is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD] = web::json::value::string(info.short_term_user_embedding_id);
+
+    web::json::value top_ranked_algorithm_id_array = web::json::value::array();
+    int index = 0;
+    for (const auto &val : info.top_ranked_algorithm_id)
+    {
+      top_ranked_algorithm_id_array[index++] = web::json::value::number(val);
+    }
+    result[RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD] = top_ranked_algorithm_id_array;
+
+    index = 0;
+    web::json::value top_ranked_algorithm_score_array = web::json::value::array();
+    for (const auto &val : info.top_ranked_algorithm_score)
+    {
+      top_ranked_algorithm_score_array[index++] = web::json::value::number(val);
+    }
+    result[RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD] = top_ranked_algorithm_score_array;
+    return result;
+
+  } // namespace knowledgebase
+}
