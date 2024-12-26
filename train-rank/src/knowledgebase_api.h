@@ -48,6 +48,9 @@ namespace knowledgebase
     static const char IMPRESSION_API_SUFFIX[] = "/knowledge/impression";
     static const char ENTRY_API_SUFFIX[] = "/knowledge/entry";
     static const char CONFIG_API_SUFFIX[] = "/knowledge/config";
+    static const char RECOMMEND_TRACE_USER_EMBEDDING_API_SUFFIX[] = "/knowledge/userembedding";
+    static const char RECOMMEND_TRACE_INFO_API_SUFFIX[] = "/knowledge/recommendtraceinfo";
+
     static const char LAST_RANK_TIME[] = "last_rank_time";
     static const char LAST_EXTRACTOR_TIME[] = "last_extractor_time";
     static const char LONG_TERM_USER_EMBEDDING[] = "user_embedding";
@@ -68,6 +71,7 @@ namespace knowledgebase
     void getAllImpression(std::string source,
                           std::vector<Impression> *impression_list, int *count);
     std::optional<Impression> GetImpressionById(const std::string &id);
+    bool postRecommendTraceUserEmbedding(const RecommendTraceUserEmbedding &embedding);
     void getAlgorithmAccordingRanked(int limit, int offset, std::string source,
                                      bool ranked,
                                      std::vector<Algorithm> *algorithm_list,
@@ -102,5 +106,6 @@ namespace knowledgebase
     std::vector<std::pair<std::string, float>> rankScoreMetadata(const std::unordered_map<std::string, ScoreWithMetadata> &algorithm_id_to_score_with_meta);
     bool updateAlgorithmScoreAndMetadataWithScoreOrder(
         const std::unordered_map<std::string, ScoreWithMetadata> &algorithm_id_to_score_with_meta);
-
+    std::optional<web::json::value> convertFromRecommendTraceUserEmbeddingToWebJsonValue(
+        const RecommendTraceUserEmbedding &embedding);
 } // namespace knowledgebase

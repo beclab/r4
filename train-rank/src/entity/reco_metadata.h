@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string>
 #include <vector>
+
 using namespace std;
 
 #include "../common_tool.h"
@@ -63,23 +64,80 @@ struct ScoreWithMetadata
 
 std::ostream &operator<<(std::ostream &os, const ScoreWithMetadata &score_with_meta);
 
+static const char RECOMMEND_TRACE_INFO_USER_EMBEDDING_SOURCE_FIELD[] = "source";
+static const char RECOMMEND_TRACE_INFO_USER_EMBEDDING_USER_EMBEDDING_FIELD[] = "user_embedding";
+static const char RECOMMEND_TRACE_INFO_USER_EMBEDDING_IMPRESSION_ID_USED_TO_CALCULATE_EMBEDDING_FIELD[] = "impression_id_used_to_calculate_embedding";
+static const char RECOMMEND_TRACE_INFO_USER_EMBEDDING_UNIQUE_ID_FIELD[] = "unique_id";
+
 struct RecommendTraceUserEmbedding
 {
     string source;
     vector<double> user_embedding;
     std::string impression_id_used_to_calculate_embedding; // 1-3;6;8-9
     string unique_id;                                      // according user_embedding 和 impression_id_used_to_calculate_embedding calculate hash
+    void setImpressionIdUsedToCalculateEmbedding(const vector<int> &impression_id_used_to_calculate_embedding_vec)
+    {
+        this->impression_id_used_to_calculate_embedding = arrayToString(impression_id_used_to_calculate_embedding_vec);
+    }
+
+    vector<int> getImpressionIdUsedToCalculateEmbeddingVec()
+    {
+        return stringToArray(this->impression_id_used_to_calculate_embedding);
+    }
+
     void calculateUniqueId()
     {
         this->unique_id = generateSHA256Hash(this->user_embedding, this->impression_id_used_to_calculate_embedding);
     }
+    /**
+    web::json::value toJson() const
+    {
+        web::json::value result = web::json::value::object();
+        result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_SOURCE_FIELD] = web::json::value::string(source);
+        result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_USER_EMBEDDING_FIELD] = web::json::value::array();
+        for (const auto &val : user_embedding)
+        {
+            result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_USER_EMBEDDING_FIELD].as_array().push_back(web::json::value::number(val));
+        }
+        result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_IMPRESSION_ID_USED_TO_CALCULATE_EMBEDDING_FIELD] = web::json::value::string(impression_id_used_to_calculate_embedding);
+        result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_UNIQUE_ID_FIELD] = web::json::value::string(unique_id);
+        return result;
+    }
+    */
+
+    /**
+ static RecommendTraceUserEmbedding fromJson(const web::json::value &json)
+ {
+     RecommendTraceUserEmbedding result;
+     result.source = json.at(RECOMMEND_TRACE_INFO_USER_EMBEDDING_SOURCE_FIELD).as_string();
+     for (const auto &val : json.at(RECOMMEND_TRACE_INFO_USER_EMBEDDING_USER_EMBEDDING_FIELD).as_array())
+     {
+         result.user_embedding.push_back(val.as_double());
+     }
+     result.impression_id_used_to_calculate_embedding = json.at(RECOMMEND_TRACE_INFO_USER_EMBEDDING_IMPRESSION_ID_USED_TO_CALCULATE_EMBEDDING_FIELD).as_string();
+     result.unique_id = json.at(RECOMMEND_TRACE_INFO_USER_EMBEDDING_UNIQUE_ID_FIELD).as_string();
+     return result;
+ }
+ */
 };
 //
+
+static const char RECOMMEND_TRACE_INFO_SOURCE_FIELD[] = "source";
+static const char RECOMMEND_TRACE_INFO_RANK_TIME_FIELD[] = "rank_time";
+static const char RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD[] = "score_enum";
+static const char RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD[] = "not_impressioned_algorithm_id";
+static const char RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD[] = "added_not_impressioned_algorithm_id";
+static const char RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD[] = "impressioned_id";
+static const char RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD[] = "added_impressioned_id";
+static const char RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD[] = "long_term_user_embedding_id";
+static const char RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD[] = "short_term_user_embedding_id";
+static const char RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD[] = "top_ranked_algorithm_id";
+static const char RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD[] = "top_ranked_algorithm_score";
 struct RecommendTraceInfo
 {
     string source;
     long long rank_time; // unique id
-    ScoreEnum score_enum;
+    std::string score_enum;
     std::string not_impressioned_algorithm_id;       // 1-3;6;8-9
     std::string added_not_impressioned_algorithm_id; // The difference between the current not_impressioned_algorithm_id and the last rank time's not_impressioned_algorithm_id, which is the newly added algorithm
     std::string impressioned_id;                     // All impressions at this moment
@@ -87,7 +145,7 @@ struct RecommendTraceInfo
     std::string long_term_user_embedding_id;         // RecommendTraceUserEmbedding.unique_id
     std::string short_term_user_embedding_id;        // RecommendTraceUserEmbedding.unique_id
     vector<int> top_ranked_algorithm_id;             // The top 1000 algorithm_ids, the number of top rankings can be controlled by parameters
-    vector<int> top_ranked_algorithm_score;          // The top 1000 algorithm_scores, the number of top rankings can be controlled by parameters
+    vector<float> top_ranked_algorithm_score;        // The top 1000 algorithm_scores, the number of top rankings can be controlled by parameters
 
     void setNotImpressionedAlgorithmIdFromVec(const vector<int> &not_impressioned_algorithm_id_vec)
     {
@@ -126,5 +184,55 @@ struct RecommendTraceInfo
     {
         return stringToArray(this->added_impressioned_id);
     }
+    /**
+    web::json::value toJson() const
+    {
+        web::json::value result = web::json::value::object();
+        result[RECOMMEND_TRACE_INFO_SOURCE_FIELD] = web::json::value::string(source);
+        result[RECOMMEND_TRACE_INFO_RANK_TIME_FIELD] = web::json::value::number(rank_time);
+        result[RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD] = web::json::value::string(score_enum);
+        result[RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD] = web::json::value::string(not_impressioned_algorithm_id);
+        result[RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD] = web::json::value::string(added_not_impressioned_algorithm_id);
+        result[RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD] = web::json::value::string(impressioned_id);
+        result[RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD] = web::json::value::string(added_impressioned_id);
+        result[RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD] = web::json::value::string(long_term_user_embedding_id);
+        result[RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD] = web::json::value::string(short_term_user_embedding_id);
+        result[RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD] = web::json::value::array();
+        for (const auto &val : top_ranked_algorithm_id)
+        {
+            result[RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD].as_array().push_back(web::json::value::number(val));
+        }
+        result[RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD] = web::json::value::array();
+        for (const auto &val : top_ranked_algorithm_score)
+        {
+            result[RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD].as_array().push_back(web::json::value::number(val));
+        }
+        return result;
+    }
+
+    static RecommendTraceInfo fromJson(const web::json::value &json)
+    {
+        RecommendTraceInfo result;
+        result.source = json.at(RECOMMEND_TRACE_INFO_SOURCE_FIELD).as_string();
+        result.rank_time = json.at(RECOMMEND_TRACE_INFO_RANK_TIME_FIELD).as_integer();
+        result.score_enum = json.at(RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD).as_string();
+        result.not_impressioned_algorithm_id = json.at(RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD).as_string();
+        result.added_not_impressioned_algorithm_id = json.at(RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD).as_string();
+        result.impressioned_id = json.at(RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD).as_string();
+        result.added_impressioned_id = json.at(RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD).as_string();
+        result.long_term_user_embedding_id = json.at(RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD).as_string();
+        result.short_term_user_embedding_id = json.at(RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD).as_string();
+        for (const auto &val : json.at(RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD).as_array())
+        {
+            result.top_ranked_algorithm_id.push_back(val.as_integer());
+        }
+        for (const auto &val : json.at(RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD).as_array())
+        {
+            result.top_ranked_algorithm_score.push_back(val.as_double());
+        }
+        return result;
+    }
+    */
 };
+ostream &operator<<(ostream &os, const RecommendTraceUserEmbedding &obj);
 #endif // RECO_METADATA_H

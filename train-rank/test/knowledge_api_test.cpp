@@ -520,3 +520,16 @@ TEST(RssRankTest, rankByTimeForColdStart)
   init_log();
   rssrank::rankByTimeForColdStart();
 }
+
+TEST(KnowledgeApiTest, postRecommendTraceUserEmbedding)
+{
+  // --gtest_filter=KnowledgeApiTest.postRecommendTraceUserEmbedding
+  initDevelop();
+  init_log();
+  RecommendTraceUserEmbedding recommend_trace_user_embedding;
+  recommend_trace_user_embedding.source = "testsource";
+  recommend_trace_user_embedding.user_embedding = {1.0, 2.0, 3.0};
+  recommend_trace_user_embedding.calculateUniqueId();
+  recommend_trace_user_embedding.setImpressionIdUsedToCalculateEmbedding({1, 2, 3});
+  knowledgebase::postRecommendTraceUserEmbedding(recommend_trace_user_embedding);
+}

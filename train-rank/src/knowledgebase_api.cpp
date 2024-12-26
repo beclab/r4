@@ -1676,6 +1676,49 @@ namespace knowledgebase
     return updateKnowledgeConfig(source, LAST_EXTRACTOR_TIME, current_value);
   }
 
+  bool postRecommendTraceUserEmbedding(const RecommendTraceUserEmbedding &embedding)
+  {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
+    std::optional<web::json::value> optional_value =
+        convertFromRecommendTraceUserEmbeddingToWebJsonValue(embedding);
+    if (optional_value == std::nullopt)
+    {
+      LOG(ERROR) << "convertFromRecommendTraceUserEmbeddingToWebJsonValue failed"
+                 << std::endl;
+      return false;
+    }
+    web::json::value value = optional_value.value();
+    const std::string current_user_embedding_api_suffix =
+        std::string(RECOMMEND_TRACE_USER_EMBEDDING_API_SUFFIX);
+    LOG(DEBUG) << "current_userembedding_api_prefix " << current_user_embedding_api_suffix
+               << std::endl;
+    std::string source = embedding.source;
+    client.request(methods::POST, U(current_user_embedding_api_suffix), value)
+        .then([source](http_response response) -> pplx::task<string_t>
+              {
+        LOG(DEBUG) << "create user embedding status_code "
+                   << response.status_code() << std::endl;
+        if (response.status_code() == status_codes::Created) {
+          return response.extract_string();
+        }
+        return pplx::task_from_result(string_t()); })
+        .then([](pplx::task<string_t> previousTask)
+              {
+        try {
+          string_t const &result = previousTask.get();
+          LOG(DEBUG) << result << endl;
+        } catch (http_exception const &e) {
+          // printf("Error exception:%s\n", e.what());
+          LOG(ERROR) << "create user embedding " << e.what()
+                     << std::endl;
+        } })
+        .wait();
+
+    return true;
+  }
+
   bool updateKnowledgeConfig(const std::string &source, const std::string &key,
                              const web::json::value &value)
   {
@@ -1731,5 +1774,41 @@ namespace knowledgebase
     }
 
     return random_data_array;
+  }
+
+  std::optional<web::json::value> convertFromRecommendTraceUserEmbeddingToWebJsonValue(
+      const RecommendTraceUserEmbedding &embedding)
+  {
+    web::json::value result;
+    if (embedding.source.empty())
+    {
+      LOG(ERROR) << "source is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_SOURCE_FIELD] = web::json::value::string(embedding.source);
+
+    result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_USER_EMBEDDING_FIELD] = web::json::value::array();
+    web::json::value json_array = web::json::value::array();
+    int index = 0;
+    for (const auto &val : embedding.user_embedding)
+    {
+      json_array[index++] = web::json::value::number(val);
+    }
+    result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_USER_EMBEDDING_FIELD] = json_array;
+
+    if (embedding.impression_id_used_to_calculate_embedding.empty())
+    {
+      LOG(ERROR) << "impression_id_used_to_calculate_embedding is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_IMPRESSION_ID_USED_TO_CALCULATE_EMBEDDING_FIELD] = web::json::value::string(embedding.impression_id_used_to_calculate_embedding);
+
+    if (embedding.unique_id.empty())
+    {
+      LOG(ERROR) << "unique_id is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_UNIQUE_ID_FIELD] = web::json::value::string(embedding.unique_id);
+    return std::make_optional(result);
   }
 } // namespace knowledgebase

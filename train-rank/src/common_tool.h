@@ -214,6 +214,7 @@ double normalized_similarity_score_based_on_cosine_similarity(const VectorXd &A,
 VectorXd vectorToEigentVectorXd(const std::vector<double> &vec);
 float randomFloatBetweenZeroAndOne();
 double stringToDouble(const std::string &str);
+
 std::string generateSHA256Hash(const std::vector<double> &vec, const std::string &impression_id);
 std::string arrayToString(const std::vector<int> &arr);
 std::vector<int> stringToArray(const std::string &str);

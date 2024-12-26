@@ -25,3 +25,13 @@ std::unordered_map<ScoreEnum, std::string>
         {SCORE_LOGISTIC_REGRESSION_AND_CREATED_TIME, "SCORE_LOGISTIC_REGRESSION_AND_CREATED_TIME"},
         {SCORE_PRERANK_SCORE_AND_CREATED_TIME, "SCORE_PRERANK_SCORE_AND_CREATED_TIME"},
         {SCORE_UNKNOWN, "SCORE_UNKNOWN"}};
+
+ostream &operator<<(ostream &os, const RecommendTraceUserEmbedding &obj)
+{
+
+    os << "Source: " << obj.source << "\n"
+       << "User Embedding Size: " << obj.user_embedding.size() << "\n"
+       << "Impression ID Used to Calculate Embedding: " << obj.impression_id_used_to_calculate_embedding << "\n"
+       << "Unique ID: " << obj.unique_id;
+    return os;
+}
