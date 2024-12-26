@@ -533,3 +533,17 @@ TEST(KnowledgeApiTest, postRecommendTraceUserEmbedding)
   recommend_trace_user_embedding.setImpressionIdUsedToCalculateEmbedding({1, 2, 3});
   knowledgebase::postRecommendTraceUserEmbedding(recommend_trace_user_embedding);
 }
+
+TEST(KnowledgeApiTest, findRecommendTraceUserEmbeddingByUniqueId)
+{
+  // --gtest_filter=KnowledgeApiTest.findRecommendTraceUserEmbeddingByUniqueId
+  initDevelop();
+  init_log();
+  std::string unique_id = "650637621e5f7523b818def76a5d7f64d6a10f41ac751a7cb085fd6330f90874";
+  std::optional<RecommendTraceUserEmbedding> recommend_trace_user_embedding = knowledgebase::findRecommendTraceUserEmbeddingByUniqueId(unique_id);
+  if (recommend_trace_user_embedding != std::nullopt)
+  {
+    RecommendTraceUserEmbedding current = recommend_trace_user_embedding.value();
+    std::cout << current << " " << std::endl;
+  }
+}
