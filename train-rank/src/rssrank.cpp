@@ -1039,9 +1039,9 @@ namespace rssrank
     return true;
   }
 
-  bool rankByTimeForColdStart()
+  bool rankByTimeForColdStart(long long current_rank_time)
   {
-    long long current_rank_time = getTimeStampNow();
+    // long long current_rank_time = getTimeStampNow();
     std::unordered_map<std::string, std::string> not_impressioned_algorithm_to_entry =
         getNotImpressionedAlgorithmToEntry();
     std::unordered_map<std::string, ScoreWithMetadata> id_to_score_with_meta;
@@ -1121,7 +1121,7 @@ namespace rssrank
     if (clicked_impressions.size() < cold_start_article_clicked_number)
     {
       LOG(INFO) << "clicked_impressions size " << clicked_impressions.size() << " less than " << cold_start_article_clicked_number << std::endl;
-      rankByTimeForColdStart();
+      rankByTimeForColdStart(current_rank_time);
       return true;
     }
 
@@ -1139,8 +1139,23 @@ namespace rssrank
     }
     VectorXd short_term_vectorxd = vectorToEigentVectorXd(short_term_embedding);
 
-    // vector<double> long_term_embedding = knowledgebase::getLongTermUserEmbedding(current_srouce_name);
+    // vector<double> long_term_embedding = knowledgebase::getRecallUserEmbedding(current_srouce_name);
     vector<double> long_term_embedding = calcluateUserLongTermEmbedding(clicked_impressions);
+    std::string recall_embedding = getEnvString(TERMINUS_RECOMMEND_LONG_OR_SHORT_EMBEDDING_AS_RECALL_EMBEDDING, "long");
+    if (recall_embedding == "long")
+    {
+      knowledgebase::updateRecallUserEmbedding(current_srouce_name, long_term_embedding, current_rank_time);
+    }
+    else if (recall_embedding == "short")
+    {
+      knowledgebase::updateRecallUserEmbedding(current_srouce_name, short_term_embedding, current_rank_time);
+    }
+    else
+    {
+      LOG(ERROR) << "recall_embedding " << recall_embedding << " not support" << std::endl;
+      return false;
+    }
+
     VectorXd long_term_vectorxd = vectorToEigentVectorXd(long_term_embedding);
 
     std::unordered_map<std::string, std::string> not_impressioned_algorithm_to_entry =
@@ -1216,8 +1231,8 @@ namespace rssrank
     {
       LOG(INFO) << "score with metadata update to knowledge " << std::endl;
       knowledgebase::updateAlgorithmScoreAndMetadataWithScoreOrder(id_to_score_with_meta);
-      knowledgebase::updateLastRankTime(FLAGS_recommend_source_name, getTimeStampNow());
-    }
+      knowledgebase::updateLastRankTime(FLAGS_recommend_source_name, current_rank_time);
+        }
 
     return true;
   }

@@ -167,6 +167,21 @@ int getEnvFloat(const char *envVar, float defaultValue)
   return defaultValue;
 }
 
+std::string getEnvString(const char *envVar, const std::string &defaultValue)
+{
+  // Get the environment variable
+  const char *envValue = std::getenv(envVar);
+
+  // If the environment variable does not exist, return the default value
+  if (envValue == nullptr)
+  {
+    return defaultValue;
+  }
+
+  // Return the environment variable value as a string
+  return std::string(envValue);
+}
+
 void calculate_embedding()
 {
   int n = 1000; // Assume we have 1000 embeddings, each is a vector of size 128

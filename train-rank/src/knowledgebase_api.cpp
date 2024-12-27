@@ -1057,7 +1057,7 @@ namespace knowledgebase
     return last_extractor_time;
   }
 
-  vector<double> getLongTermUserEmbedding(const std::string &source)
+  vector<double> getRecallUserEmbedding(const std::string &source)
   {
     http_client *current_client = HttpClientSingleton::get_instance();
     // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
@@ -1652,8 +1652,8 @@ namespace knowledgebase
     return updateKnowledgeConfig(source, LAST_RANK_TIME, current_value);
   }
 
-  bool updateLongTermUserEmbedding(std::string source,
-                                   const std::vector<double> &long_term_user_embedding)
+  bool updateRecallUserEmbedding(std::string source,
+                                 const std::vector<double> &long_term_user_embedding, long long current_time)
   {
     std::string embedding_str;
     for (const auto &element : long_term_user_embedding)
@@ -1852,6 +1852,8 @@ namespace knowledgebase
       return std::nullopt;
     }
     result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_UNIQUE_ID_FIELD] = web::json::value::string(embedding.unique_id);
+
+    result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_CREATED_RANK_TIME_FIELD] = web::json::value::number(int(embedding.created_rank_time));
     return std::make_optional(result);
   }
 
@@ -1900,6 +1902,16 @@ namespace knowledgebase
     else
     {
       LOG(ERROR) << "unique_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_USER_EMBEDDING_CREATED_RANK_TIME_FIELD))
+    {
+      embedding.created_rank_time = value.at(RECOMMEND_TRACE_INFO_USER_EMBEDDING_CREATED_RANK_TIME_FIELD).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "created_rank_time is empty" << std::endl;
       return std::nullopt;
     }
     return std::make_optional(embedding);
@@ -1964,7 +1976,10 @@ namespace knowledgebase
       LOG(ERROR) << "score_enum is empty" << std::endl;
       return std::nullopt;
     }
+
     result[RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD] = web::json::value::string(info.score_enum);
+
+    result[RECOMMEND_TRACE_INFO_PREVIOUS_RANK_TIME_FIELD] = web::json::value::number(int(info.previous_rank_time));
 
     result[RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD] = web::json::value::string(info.not_impressioned_algorithm_id);
 
@@ -2028,6 +2043,16 @@ namespace knowledgebase
     else
     {
       LOG(ERROR) << "rank_time is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_PREVIOUS_RANK_TIME_FIELD))
+    {
+      info.previous_rank_time = value.at(RECOMMEND_TRACE_INFO_PREVIOUS_RANK_TIME_FIELD).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "previous_rank_time is empty" << std::endl;
       return std::nullopt;
     }
 

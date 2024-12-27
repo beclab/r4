@@ -74,6 +74,8 @@ int getEnvInt(const char *envVar, int defaultValue);
 
 int getEnvFloat(const char *envVar, float defaultValue);
 
+std::string getEnvString(const char *envVar, const std::string &defaultValue);
+
 template <class T1, class T2>
 double AUROC(const T1 label[], const T2 score[], int n)
 {

@@ -433,8 +433,8 @@ TEST(RssRankTest, TestSetUserEmbedding)
 
   std::vector<double> user_embedding = knowledgebase::init_user_embedding(embedding_dimension);
   std::string source = "r4techbiz";
-  knowledgebase::updateLongTermUserEmbedding(source, user_embedding);
-  std::vector<double> result = knowledgebase::getLongTermUserEmbedding(source);
+  knowledgebase::updateRecallUserEmbedding(source, user_embedding, getTimeStampNow());
+  std::vector<double> result = knowledgebase::getRecallUserEmbedding(source);
   bool equal = true;
   for (int i = 0; i < result.size(); i++)
   {
@@ -518,7 +518,7 @@ TEST(RssRankTest, rankByTimeForColdStart)
   // --gtest_filter=RssRankTest.rankByTimeForColdStart
   initDevelop();
   init_log();
-  rssrank::rankByTimeForColdStart();
+  rssrank::rankByTimeForColdStart(getTimeStampNow());
 }
 
 TEST(KnowledgeApiTest, postRecommendTraceUserEmbedding)
@@ -529,6 +529,7 @@ TEST(KnowledgeApiTest, postRecommendTraceUserEmbedding)
   RecommendTraceUserEmbedding recommend_trace_user_embedding;
   recommend_trace_user_embedding.source = "testsource";
   recommend_trace_user_embedding.user_embedding = {1.0, 2.0, 3.0};
+  recommend_trace_user_embedding.created_rank_time = 1711080226;
   recommend_trace_user_embedding.calculateUniqueId();
   recommend_trace_user_embedding.setImpressionIdUsedToCalculateEmbedding({1, 2, 3});
   knowledgebase::postRecommendTraceUserEmbedding(recommend_trace_user_embedding);
@@ -556,6 +557,7 @@ TEST(KnowledgeApiTest, postRecommendTraceInfo)
   RecommendTraceInfo recommend_trace_info;
   recommend_trace_info.source = "testsource";
   recommend_trace_info.rank_time = 1711080226;
+  recommend_trace_info.previous_rank_time = 1711080225;
   recommend_trace_info.score_enum = "score_enum";
   recommend_trace_info.not_impressioned_algorithm_id = "1-3;6;8-9";
   recommend_trace_info.added_not_impressioned_algorithm_id = "8-9";

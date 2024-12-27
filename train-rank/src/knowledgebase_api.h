@@ -93,14 +93,14 @@ namespace knowledgebase
     bool updateKnowledgeConfig(const std::string &source, const std::string &key,
                                const web::json::value &value);
     bool updateLastRankTime(std::string source, int64_t last_rank_time);
-    bool updateLongTermUserEmbedding(std::string source,
-                                     const std::vector<double> &long_term_user_embedding);
+    bool updateRecallUserEmbedding(std::string source,
+                                   const std::vector<double> &long_term_user_embedding, long long current_time);
     bool updateLastExtractorTime(std::string source, int64_t last_extractor_time);
     void convertStringTimestampToInt64(std::string str_timestamp,
                                        int64_t *int64_timestamp);
     int64_t getLastRankTime(const std::string &source);
     int64_t getLastExtractorTime(const std::string &source);
-    std::vector<double> getLongTermUserEmbedding(const std::string &source);
+    std::vector<double> getRecallUserEmbedding(const std::string &source);
 
     std::vector<double> parse_embedding(const std::string &input, size_t embedding_dimension);
     std::vector<double> init_user_embedding(size_t embedding_dimension);

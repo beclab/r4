@@ -68,6 +68,7 @@ static const char RECOMMEND_TRACE_INFO_USER_EMBEDDING_SOURCE_FIELD[] = "source";
 static const char RECOMMEND_TRACE_INFO_USER_EMBEDDING_USER_EMBEDDING_FIELD[] = "user_embedding";
 static const char RECOMMEND_TRACE_INFO_USER_EMBEDDING_IMPRESSION_ID_USED_TO_CALCULATE_EMBEDDING_FIELD[] = "impression_id_used_to_calculate_embedding";
 static const char RECOMMEND_TRACE_INFO_USER_EMBEDDING_UNIQUE_ID_FIELD[] = "unique_id";
+static const char RECOMMEND_TRACE_INFO_USER_EMBEDDING_CREATED_RANK_TIME_FIELD[] = "created_rank_time";
 
 struct RecommendTraceUserEmbedding
 {
@@ -75,6 +76,7 @@ struct RecommendTraceUserEmbedding
     vector<double> user_embedding;
     std::string impression_id_used_to_calculate_embedding; // 1-3;6;8-9
     string unique_id;                                      // according user_embedding 和 impression_id_used_to_calculate_embedding calculate hash
+    long long created_rank_time;
     void setImpressionIdUsedToCalculateEmbedding(const vector<int> &impression_id_used_to_calculate_embedding_vec)
     {
         this->impression_id_used_to_calculate_embedding = arrayToString(impression_id_used_to_calculate_embedding_vec);
@@ -133,10 +135,13 @@ static const char RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD[] = "lo
 static const char RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD[] = "short_term_user_embedding_id";
 static const char RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD[] = "top_ranked_algorithm_id";
 static const char RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD[] = "top_ranked_algorithm_score";
+static const char RECOMMEND_TRACE_INFO_PREVIOUS_RANK_TIME_FIELD[] = "previous_rank_time";
+
 struct RecommendTraceInfo
 {
     string source;
     long long rank_time; // unique id
+    long long previous_rank_time;
     std::string score_enum;
     std::string not_impressioned_algorithm_id;       // 1-3;6;8-9
     std::string added_not_impressioned_algorithm_id; // The difference between the current not_impressioned_algorithm_id and the last rank time's not_impressioned_algorithm_id, which is the newly added algorithm
