@@ -45,8 +45,8 @@ std::ostream &operator<<(std::ostream &os, const RecommendTraceInfo &info)
     os << "score_enum: " << info.score_enum << "\n";
     os << "not_impressioned_algorithm_id: " << info.not_impressioned_algorithm_id << "\n";
     os << "added_not_impressioned_algorithm_id: " << info.added_not_impressioned_algorithm_id << "\n";
-    os << "impressioned_id: " << info.impressioned_id << "\n";
-    os << "added_impressioned_id: " << info.added_impressioned_id << "\n";
+    os << "impressioned_clicked_id: " << info.impressioned_clicked_id << "\n";
+    os << "added_impressioned_clicked_id: " << info.added_impressioned_clicked_id << "\n";
     os << "long_term_user_embedding_id: " << info.long_term_user_embedding_id << "\n";
     os << "short_term_user_embedding_id: " << info.short_term_user_embedding_id << "\n";
     os << "top_ranked_algorithm_id size: " << info.top_ranked_algorithm_id.size() << "\n";

@@ -129,14 +129,14 @@ static const char RECOMMEND_TRACE_INFO_RANK_TIME_FIELD[] = "rank_time";
 static const char RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD[] = "score_enum";
 static const char RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD[] = "not_impressioned_algorithm_id";
 static const char RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD[] = "added_not_impressioned_algorithm_id";
-static const char RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD[] = "impressioned_id";
-static const char RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD[] = "added_impressioned_id";
+static const char RECOMMEND_TRACE_INFO_IMPRESSIONED_CLICKED_ID_FIELD[] = "impressioned_clicked_id";
+static const char RECOMMEND_TRACE_INFO_ADDED_IMPRESSION_CLICKED_ID_FIELD[] = "added_impressioned_clicked_id";
 static const char RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD[] = "long_term_user_embedding_id";
 static const char RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD[] = "short_term_user_embedding_id";
 static const char RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD[] = "top_ranked_algorithm_id";
 static const char RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD[] = "top_ranked_algorithm_score";
 static const char RECOMMEND_TRACE_INFO_PREVIOUS_RANK_TIME_FIELD[] = "previous_rank_time";
-
+static const char RECOMMEND_TRACE_INFO_RECALL_USER_EMBEDDING_ID_FIELD[] = "recall_user_embedding_id";
 struct RecommendTraceInfo
 {
     string source;
@@ -145,12 +145,13 @@ struct RecommendTraceInfo
     std::string score_enum;
     std::string not_impressioned_algorithm_id;       // 1-3;6;8-9
     std::string added_not_impressioned_algorithm_id; // The difference between the current not_impressioned_algorithm_id and the last rank time's not_impressioned_algorithm_id, which is the newly added algorithm
-    std::string impressioned_id;                     // All impressions at this moment
-    std::string added_impressioned_id;               // Newly added impression_id
+    std::string impressioned_clicked_id;             // All impressions at this moment
+    std::string added_impressioned_clicked_id;       // Newly added impression_id
     std::string long_term_user_embedding_id;         // RecommendTraceUserEmbedding.unique_id
     std::string short_term_user_embedding_id;        // RecommendTraceUserEmbedding.unique_id
-    vector<int> top_ranked_algorithm_id;             // The top 1000 algorithm_ids, the number of top rankings can be controlled by parameters
-    vector<float> top_ranked_algorithm_score;        // The top 1000 algorithm_scores, the number of top rankings can be controlled by parameters
+    std::string recall_user_embedding_id;
+    vector<int> top_ranked_algorithm_id;      // The top 1000 algorithm_ids, the number of top rankings can be controlled by parameters
+    vector<float> top_ranked_algorithm_score; // The top 1000 algorithm_scores, the number of top rankings can be controlled by parameters
 
     void setNotImpressionedAlgorithmIdFromVec(const vector<int> &not_impressioned_algorithm_id_vec)
     {
@@ -170,24 +171,24 @@ struct RecommendTraceInfo
         return stringToArray(this->added_not_impressioned_algorithm_id);
     }
 
-    void setImpressionedIdFromVec(const vector<int> &impressioned_id_vec)
+    void setImpressionedIdFromVec(const vector<int> &impressioned_clicked_id_vec)
     {
-        this->impressioned_id = arrayToString(impressioned_id_vec);
+        this->impressioned_clicked_id = arrayToString(impressioned_clicked_id_vec);
     }
 
     vector<int> getImpressionedIdVec()
     {
-        return stringToArray(this->impressioned_id);
+        return stringToArray(this->impressioned_clicked_id);
     }
 
-    void setAddedImpressionedIdFromVec(const vector<int> &added_impressioned_id_vec)
+    void setAddedImpressionedIdFromVec(const vector<int> &added_impressioned_clicked_id_vec)
     {
-        this->added_impressioned_id = arrayToString(added_impressioned_id_vec);
+        this->added_impressioned_clicked_id = arrayToString(added_impressioned_clicked_id_vec);
     }
 
     vector<int> getAddedImpressionedIdVec()
     {
-        return stringToArray(this->added_impressioned_id);
+        return stringToArray(this->added_impressioned_clicked_id);
     }
     /**
     web::json::value toJson() const
@@ -198,8 +199,8 @@ struct RecommendTraceInfo
         result[RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD] = web::json::value::string(score_enum);
         result[RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD] = web::json::value::string(not_impressioned_algorithm_id);
         result[RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD] = web::json::value::string(added_not_impressioned_algorithm_id);
-        result[RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD] = web::json::value::string(impressioned_id);
-        result[RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD] = web::json::value::string(added_impressioned_id);
+        result[RECOMMEND_TRACE_INFO_IMPRESSIONED_CLICKED_ID_FIELD] = web::json::value::string(impressioned_clicked_id);
+        result[RECOMMEND_TRACE_INFO_ADDED_IMPRESSION_CLICKED_ID_FIELD] = web::json::value::string(added_impressioned_clicked_id);
         result[RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD] = web::json::value::string(long_term_user_embedding_id);
         result[RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD] = web::json::value::string(short_term_user_embedding_id);
         result[RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD] = web::json::value::array();
@@ -223,8 +224,8 @@ struct RecommendTraceInfo
         result.score_enum = json.at(RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD).as_string();
         result.not_impressioned_algorithm_id = json.at(RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD).as_string();
         result.added_not_impressioned_algorithm_id = json.at(RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD).as_string();
-        result.impressioned_id = json.at(RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD).as_string();
-        result.added_impressioned_id = json.at(RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD).as_string();
+        result.impressioned_clicked_id = json.at(RECOMMEND_TRACE_INFO_IMPRESSIONED_CLICKED_ID_FIELD).as_string();
+        result.added_impressioned_clicked_id = json.at(RECOMMEND_TRACE_INFO_ADDED_IMPRESSION_CLICKED_ID_FIELD).as_string();
         result.long_term_user_embedding_id = json.at(RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD).as_string();
         result.short_term_user_embedding_id = json.at(RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD).as_string();
         for (const auto &val : json.at(RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD).as_array())

@@ -220,3 +220,5 @@ double stringToDouble(const std::string &str);
 std::string generateSHA256Hash(const std::vector<double> &vec, const std::string &impression_id);
 std::string arrayToString(const std::vector<int> &arr);
 std::vector<int> stringToArray(const std::string &str);
+
+std::vector<int> find_elements_in_b_not_in_a(const std::vector<int> &a, const std::vector<int> &b);

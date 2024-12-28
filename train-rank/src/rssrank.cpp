@@ -1232,7 +1232,7 @@ namespace rssrank
       LOG(INFO) << "score with metadata update to knowledge " << std::endl;
       knowledgebase::updateAlgorithmScoreAndMetadataWithScoreOrder(id_to_score_with_meta);
       knowledgebase::updateLastRankTime(FLAGS_recommend_source_name, current_rank_time);
-        }
+    }
 
     return true;
   }
@@ -1681,4 +1681,57 @@ namespace rssrank
     }
     return number;
   }
+
+  RecommendTraceUserEmbedding buildRecommendTraceUserEmbedding(
+      const std::string &source,
+      const std::vector<double> &embedding,
+      const std::vector<int> &impression_id_used_to_calculate_embedding,
+      const long long &created_rank_time)
+  {
+    RecommendTraceUserEmbedding recommend_trace_user_embedding;
+    recommend_trace_user_embedding.source = source;
+    recommend_trace_user_embedding.user_embedding = embedding;
+    recommend_trace_user_embedding.impression_id_used_to_calculate_embedding =
+        arrayToString(impression_id_used_to_calculate_embedding);
+    recommend_trace_user_embedding.calculateUniqueId();
+    recommend_trace_user_embedding.created_rank_time = created_rank_time;
+    return recommend_trace_user_embedding;
+  }
+
+  RecommendTraceInfo buildRecommendTraceInfo(
+      const std::optional<RecommendTraceInfo> &previous_recommend_trace_info,
+      const std::string &source,
+      const long long &rank_time,
+      const ScoreEnum current_score_enum,
+      const std::vector<int> &not_impressioned_algorithm_id,
+      const std::vector<int> &impressioned_clicked_id,
+      const std::string &long_term_user_embedding_id,
+      const std::string &short_term_user_embedding_id,
+      const std::vector<int> &top_ranked_algorithm_id,
+      const std::vector<float> &top_ranked_algorithm_score)
+  {
+    RecommendTraceInfo recommend_trace_info;
+    recommend_trace_info.source = source;
+    recommend_trace_info.rank_time = rank_time;
+    recommend_trace_info.score_enum = scoreEnumToString[current_score_enum];
+    recommend_trace_info.not_impressioned_algorithm_id =
+        arrayToString(not_impressioned_algorithm_id);
+    recommend_trace_info.impressioned_clicked_id = arrayToString(impressioned_clicked_id);
+    recommend_trace_info.long_term_user_embedding_id = long_term_user_embedding_id;
+    recommend_trace_info.short_term_user_embedding_id = short_term_user_embedding_id;
+    recommend_trace_info.top_ranked_algorithm_id = top_ranked_algorithm_id;
+    recommend_trace_info.top_ranked_algorithm_score = top_ranked_algorithm_score;
+    if (previous_recommend_trace_info != std::nullopt)
+    {
+      std::vector<int> previous_not_impressioned_algorithm_id =
+          stringToArray(previous_recommend_trace_info.value().not_impressioned_algorithm_id);
+      std::vector<int> added_not_impressioned_algorithm_id = find_elements_in_b_not_in_a(previous_not_impressioned_algorithm_id, not_impressioned_algorithm_id);
+      recommend_trace_info.added_not_impressioned_algorithm_id = arrayToString(added_not_impressioned_algorithm_id);
+      std::vector<int> previous_impressioned_clicked_id = stringToArray(previous_recommend_trace_info.value().impressioned_clicked_id);
+      std::vector<int> added_impressioned_clicked_id = find_elements_in_b_not_in_a(previous_impressioned_clicked_id, impressioned_clicked_id);
+      recommend_trace_info.added_impressioned_clicked_id = arrayToString(added_impressioned_clicked_id);
+    }
+    return recommend_trace_info;
+  }
+
 } // namespace rssrank

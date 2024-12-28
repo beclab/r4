@@ -5,6 +5,7 @@
 #include <eigen3/Eigen/Dense>
 #include <random>
 #include <openssl/sha.h>
+#include <unordered_set>
 
 using namespace Eigen;
 
@@ -336,6 +337,24 @@ std::vector<int> stringToArray(const std::string &str)
       {
         result.push_back(i);
       }
+    }
+  }
+
+  return result;
+}
+
+std::vector<int> find_elements_in_b_not_in_a(const std::vector<int> &a, const std::vector<int> &b)
+{
+  // Use unordered_set to store elements in a for efficient lookup
+  std::unordered_set<int> set_a(a.begin(), a.end());
+  std::vector<int> result;
+
+  // Iterate through elements in b and check if they are in set_a
+  for (int num : b)
+  {
+    if (set_a.find(num) == set_a.end())
+    {
+      result.push_back(num); // If the element is not in set_a, add it to the result
     }
   }
 

@@ -1985,9 +1985,9 @@ namespace knowledgebase
 
     result[RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD] = web::json::value::string(info.added_not_impressioned_algorithm_id);
 
-    result[RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD] = web::json::value::string(info.impressioned_id);
+    result[RECOMMEND_TRACE_INFO_IMPRESSIONED_CLICKED_ID_FIELD] = web::json::value::string(info.impressioned_clicked_id);
 
-    result[RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD] = web::json::value::string(info.added_impressioned_id);
+    result[RECOMMEND_TRACE_INFO_ADDED_IMPRESSION_CLICKED_ID_FIELD] = web::json::value::string(info.added_impressioned_clicked_id);
 
     if (info.long_term_user_embedding_id.empty())
     {
@@ -2002,6 +2002,13 @@ namespace knowledgebase
       return std::nullopt;
     }
     result[RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD] = web::json::value::string(info.short_term_user_embedding_id);
+
+    if (info.recall_user_embedding_id.empty())
+    {
+      LOG(ERROR) << "recall_user_embedding_id is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_RECALL_USER_EMBEDDING_ID_FIELD] = web::json::value::string(info.recall_user_embedding_id);
 
     web::json::value top_ranked_algorithm_id_array = web::json::value::array();
     int index = 0;
@@ -2086,23 +2093,23 @@ namespace knowledgebase
       return std::nullopt;
     }
 
-    if (value.has_field(RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD))
+    if (value.has_field(RECOMMEND_TRACE_INFO_IMPRESSIONED_CLICKED_ID_FIELD))
     {
-      info.impressioned_id = value.at(RECOMMEND_TRACE_INFO_IMPRESSIONED_ID_FIELD).as_string();
+      info.impressioned_clicked_id = value.at(RECOMMEND_TRACE_INFO_IMPRESSIONED_CLICKED_ID_FIELD).as_string();
     }
     else
     {
-      LOG(ERROR) << "impressioned_id is empty" << std::endl;
+      LOG(ERROR) << "impressioned_clicked_id is empty" << std::endl;
       return std::nullopt;
     }
 
-    if (value.has_field(RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD))
+    if (value.has_field(RECOMMEND_TRACE_INFO_ADDED_IMPRESSION_CLICKED_ID_FIELD))
     {
-      info.added_impressioned_id = value.at(RECOMMEND_TRACE_INFO_ADDED_IMPRESSIONED_ID_FIELD).as_string();
+      info.added_impressioned_clicked_id = value.at(RECOMMEND_TRACE_INFO_ADDED_IMPRESSION_CLICKED_ID_FIELD).as_string();
     }
     else
     {
-      LOG(ERROR) << "added_impressioned_id is empty" << std::endl;
+      LOG(ERROR) << "added_impressioned_clicked_id is empty" << std::endl;
       return std::nullopt;
     }
 
@@ -2123,6 +2130,16 @@ namespace knowledgebase
     else
     {
       LOG(ERROR) << "short_term_user_embedding_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_RECALL_USER_EMBEDDING_ID_FIELD))
+    {
+      info.recall_user_embedding_id = value.at(RECOMMEND_TRACE_INFO_RECALL_USER_EMBEDDING_ID_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "recall_user_embedding_id is empty" << std::endl;
       return std::nullopt;
     }
 

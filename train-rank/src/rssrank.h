@@ -96,5 +96,22 @@ namespace rssrank
     vector<double> calcluateUserLongTermEmbedding(const vector<Impression> &impressions);
 
     bool rankByTimeForColdStart(long long current_time);
+    RecommendTraceUserEmbedding buildRecommendTraceUserEmbedding(
+        const std::string &source,
+        const std::vector<double> &embedding,
+        const std::vector<int> &impression_id_used_to_calculate_embedding,
+        const long long &created_rank_time);
+
+    RecommendTraceInfo buildRecommendTraceInfo(
+        const std::optional<RecommendTraceInfo> &previous_recommend_trace_info,
+        const std::string &source,
+        const long long &rank_time,
+        const ScoreEnum current_score_enum,
+        const std::vector<int> &not_impressioned_algorithm_id,
+        const std::vector<int> &impressioned_clicked_id,
+        const std::string &long_term_user_embedding_id,
+        const std::string &short_term_user_embedding_id,
+        const std::vector<int> &top_ranked_algorithm_id,
+        const std::vector<float> &top_ranked_algorithm_score);
 
 } // namespace rssrank
