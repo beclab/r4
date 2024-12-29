@@ -558,6 +558,15 @@ namespace knowledgebase
                  << std::endl;
       // return std::nullopt;
     }
+    if (current_item.has_integer_field(ENTRY_INTEGER_ID))
+    {
+      temp_entry.integer_id = current_item.at(ENTRY_INTEGER_ID).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "current web json value have no " << ENTRY_INTEGER_ID
+                 << std::endl;
+    }
 
     return std::make_optional(temp_entry);
   }
@@ -592,6 +601,16 @@ namespace knowledgebase
       LOG(ERROR) << "current web json value have no "
                  << ALGORITHM_MONGO_FIELD_ENTRY << std::endl;
       return std::nullopt;
+    }
+
+    if (current_item.has_integer_field(ALGORITHM_MONGO_FIELD_INTEGER_ID))
+    {
+      temp_algorithm.integer_id = current_item.at(ALGORITHM_MONGO_FIELD_INTEGER_ID).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "current web json value have no " << ALGORITHM_MONGO_FIELD_INTEGER_ID << std::endl;
+      temp_algorithm.integer_id = 0;
     }
 
     if (current_item.has_object_field(ALGORITHM_MONGO_FIELD_EXTRA))
@@ -751,6 +770,17 @@ namespace knowledgebase
       LOG(ERROR) << "current web json value have no " << IMPRESSION_MONGO_FIELD_ID
                  << std::endl;
       return std::nullopt;
+    }
+
+    if (current_item.has_integer_field(IMPRESSION_INTEGER_ID))
+    {
+      temp_impression.integer_id = current_item.at(IMPRESSION_INTEGER_ID).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "current web json value have no " << IMPRESSION_INTEGER_ID
+                 << std::endl;
+      temp_impression.integer_id = 0;
     }
 
     if (current_item.has_string_field(IMPRESSION_MONGO_FIELD_ENTRY_ID))
@@ -982,6 +1012,47 @@ namespace knowledgebase
     }
   }
 
+  std::optional<std::string> getKnowledgeCofnig(const string &source, const string &key)
+  {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
+    std::string current_config_api_suffix =
+        std::string(CONFIG_API_SUFFIX) + "/" + source + "/" + key;
+
+    LOG(DEBUG) << "current_config_api_suffix " << current_config_api_suffix
+               << std::endl;
+
+    uri_builder builder(U(current_config_api_suffix));
+
+    std::string value;
+    client.request(methods::GET, builder.to_string())
+        .then([](http_response response) -> pplx::task<web::json::value>
+              {
+        if (response.status_code() == status_codes::OK) {
+          return response.extract_json();
+        }
+        return pplx::task_from_result(web::json::value()); })
+        .then([&value](pplx::task<web::json::value> previousTask)
+              {
+        try {
+          web::json::value const &v = previousTask.get();
+          int code = v.at("code").as_integer();
+          std::string message = "null";
+          if (v.has_string_field("message")) {
+            message = v.at("message").as_string();
+          }
+          LOG(DEBUG) << "code " << code << " message " << message << std::endl;
+          if (v.has_string_field("data")) {
+            value = v.at("data").as_string();
+          }
+        } catch (http_exception const &e) {
+          LOG(ERROR) << "Error exception " << e.what() << std::endl;
+        } })
+        .wait();
+    return std::make_optional(value);
+  }
+
   int64_t getLastExtractorTime(const std::string &source)
   {
     http_client *current_client = HttpClientSingleton::get_instance();
@@ -1027,13 +1098,13 @@ namespace knowledgebase
     return last_extractor_time;
   }
 
-  vector<double> getLongTermUserEmbedding(const std::string &source)
+  vector<double> getRecallUserEmbedding(const std::string &source)
   {
     http_client *current_client = HttpClientSingleton::get_instance();
     // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
     http_client &client = *current_client;
     std::string current_config_api_suffix =
-        std::string(CONFIG_API_SUFFIX) + "/" + source + "/" + LONG_TERM_USER_EMBEDDING;
+        std::string(CONFIG_API_SUFFIX) + "/" + source + "/" + REDIS_KEY_RECALL_USER_EMBEDDING;
 
     LOG(DEBUG) << "current_config_api_suffix " << current_config_api_suffix
                << std::endl;
@@ -1306,7 +1377,7 @@ namespace knowledgebase
     // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
     http_client &client = *current_client;
     std::string current_suffix =
-        std::string(ENTRY_API_SUFFIX) + "?offset=" + std::to_string(offset) + "&limit=" + std::to_string(limit) + "&source=" + source + "&extract=true" + "&fields=id,file_type,language,url,title,readlater,crawler,starred,disabled,saved,unread,extract,created_at,last_opened,published_at";
+        std::string(ENTRY_API_SUFFIX) + "?offset=" + std::to_string(offset) + "&limit=" + std::to_string(limit) + "&source=" + source + "&extract=true" + "&fields=id,file_type,language,url,title,readlater,crawler,starred,disabled,saved,unread,extract,created_at,last_opened,published_at,integer_id";
     LOG(DEBUG) << "current_suffix " << current_suffix
                << std::endl;
 
@@ -1622,8 +1693,8 @@ namespace knowledgebase
     return updateKnowledgeConfig(source, LAST_RANK_TIME, current_value);
   }
 
-  bool updateLongTermUserEmbedding(std::string source,
-                                   const std::vector<double> &long_term_user_embedding)
+  bool updateRecallUserEmbedding(std::string source,
+                                 const std::vector<double> &long_term_user_embedding, long long current_time)
   {
     std::string embedding_str;
     for (const auto &element : long_term_user_embedding)
@@ -1636,7 +1707,7 @@ namespace knowledgebase
 
     web::json::value current_value;
     current_value["value"] = web::json::value::string(embedding_str);
-    return updateKnowledgeConfig(source, LONG_TERM_USER_EMBEDDING, current_value);
+    return updateKnowledgeConfig(source, REDIS_KEY_RECALL_USER_EMBEDDING, current_value);
   }
 
   bool updateLastExtractorTime(std::string source, int64_t last_extractor_time)
@@ -1644,6 +1715,92 @@ namespace knowledgebase
     web::json::value current_value;
     current_value["value"] = web::json::value::number(last_extractor_time);
     return updateKnowledgeConfig(source, LAST_EXTRACTOR_TIME, current_value);
+  }
+
+  bool postRecommendTraceUserEmbedding(const RecommendTraceUserEmbedding &embedding)
+  {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
+    std::optional<web::json::value> optional_value =
+        convertFromRecommendTraceUserEmbeddingToWebJsonValue(embedding);
+    if (optional_value == std::nullopt)
+    {
+      LOG(ERROR) << "convertFromRecommendTraceUserEmbeddingToWebJsonValue failed"
+                 << std::endl;
+      return false;
+    }
+    web::json::value value = optional_value.value();
+    const std::string current_user_embedding_api_suffix =
+        std::string(RECOMMEND_TRACE_USER_EMBEDDING_API_SUFFIX);
+    LOG(DEBUG) << "current_userembedding_api_prefix " << current_user_embedding_api_suffix
+               << std::endl;
+    std::string source = embedding.source;
+    client.request(methods::POST, U(current_user_embedding_api_suffix), value)
+        .then([source](http_response response) -> pplx::task<string_t>
+              {
+        LOG(DEBUG) << "create user embedding status_code "
+                   << response.status_code() << std::endl;
+        if (response.status_code() == status_codes::Created) {
+          return response.extract_string();
+        }
+        return pplx::task_from_result(string_t()); })
+        .then([](pplx::task<string_t> previousTask)
+              {
+        try {
+          string_t const &result = previousTask.get();
+          LOG(DEBUG) << result << endl;
+        } catch (http_exception const &e) {
+          // printf("Error exception:%s\n", e.what());
+          LOG(ERROR) << "create user embedding " << e.what()
+                     << std::endl;
+        } })
+        .wait();
+
+    return true;
+  }
+
+  bool postRecommendTraceInfo(const RecommendTraceInfo &info)
+  {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
+    std::optional<web::json::value> optional_value =
+        convertFromRecommendTraceInfoToWebJsonValue(info);
+    if (optional_value == std::nullopt)
+    {
+      LOG(ERROR) << "convertFromRecommendTraceUserEmbeddingToWebJsonValue failed"
+                 << std::endl;
+      return false;
+    }
+    web::json::value value = optional_value.value();
+    const std::string current_trace_info_api_suffix =
+        std::string(RECOMMEND_TRACE_INFO_API_SUFFIX);
+    LOG(DEBUG) << "current_trace_info_api_suffix " << current_trace_info_api_suffix
+               << std::endl;
+    std::string source = info.source;
+    client.request(methods::POST, U(current_trace_info_api_suffix), value)
+        .then([source](http_response response) -> pplx::task<string_t>
+              {
+        LOG(DEBUG) << "create recommend trace info status_code "
+                   << response.status_code() << std::endl;
+        if (response.status_code() == status_codes::Created) {
+          return response.extract_string();
+        }
+        return pplx::task_from_result(string_t()); })
+        .then([](pplx::task<string_t> previousTask)
+              {
+        try {
+          string_t const &result = previousTask.get();
+          LOG(DEBUG) << result << endl;
+        } catch (http_exception const &e) {
+          // printf("Error exception:%s\n", e.what());
+          LOG(ERROR) << "create recommend trace info " << e.what()
+                     << std::endl;
+        } })
+        .wait();
+
+    return true;
   }
 
   bool updateKnowledgeConfig(const std::string &source, const std::string &key,
@@ -1686,20 +1843,680 @@ namespace knowledgebase
 
   std::vector<double> init_user_embedding(size_t embedding_dimension)
   {
-    // Create a random number generator (uniform distribution between 0 and 1)
-    std::random_device rd;
-    std::mt19937 gen(rd());                         // Mersenne Twister random number generator
-    std::uniform_real_distribution<> dis(0.0, 1.0); // Uniform distribution between 0 and 1
+    // Create a random number generator and normal distribution object
+    std::random_device rd;                    // Used to obtain a random seed
+    std::mt19937 gen(rd());                   // Random number generator
+    std::normal_distribution<> dis(0.0, 1.0); // Gaussian distribution with mean 0 and standard deviation 1
 
-    std::vector<double> random_data_array;
-    random_data_array.reserve(embedding_dimension);
+    std::vector<double> result(embedding_dimension); // Store the output n-dimensional vector
 
-    // Fill the vector with random values between 0 and 1
-    for (size_t i = 0; i < embedding_dimension; ++i)
+    // Generate n random numbers to fill the vector
+    for (int i = 0; i < embedding_dimension; ++i)
     {
-      random_data_array.push_back(dis(gen));
+      result[i] = dis(gen); // Sample from the Gaussian distribution
     }
 
-    return random_data_array;
+    return result;
   }
-} // namespace knowledgebase
+
+  std::optional<web::json::value> convertFromRecommendTraceUserEmbeddingToWebJsonValue(
+      const RecommendTraceUserEmbedding &embedding)
+  {
+    web::json::value result;
+    if (embedding.source.empty())
+    {
+      LOG(ERROR) << "source is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_SOURCE_FIELD] = web::json::value::string(embedding.source);
+
+    result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_USER_EMBEDDING_FIELD] = web::json::value::array();
+    web::json::value json_array = web::json::value::array();
+    int index = 0;
+    for (const auto &val : embedding.user_embedding)
+    {
+      json_array[index++] = web::json::value::number(val);
+    }
+    result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_USER_EMBEDDING_FIELD] = json_array;
+
+    if (embedding.impression_id_used_to_calculate_embedding.empty())
+    {
+      LOG(ERROR) << "impression_id_used_to_calculate_embedding is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_IMPRESSION_ID_USED_TO_CALCULATE_EMBEDDING_FIELD] = web::json::value::string(embedding.impression_id_used_to_calculate_embedding);
+
+    if (embedding.unique_id.empty())
+    {
+      LOG(ERROR) << "unique_id is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_UNIQUE_ID_FIELD] = web::json::value::string(embedding.unique_id);
+
+    result[RECOMMEND_TRACE_INFO_USER_EMBEDDING_CREATED_RANK_TIME_FIELD] = web::json::value::number(int(embedding.created_rank_time));
+    return std::make_optional(result);
+  }
+
+  std::optional<RecommendTraceUserEmbedding> convertFromWebJsonValueToRecommendTraceUserEmbedding(
+      const web::json::value &value)
+  {
+    RecommendTraceUserEmbedding embedding;
+    if (value.has_field(RECOMMEND_TRACE_INFO_USER_EMBEDDING_SOURCE_FIELD))
+    {
+      embedding.source = value.at(RECOMMEND_TRACE_INFO_USER_EMBEDDING_SOURCE_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "source is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_USER_EMBEDDING_USER_EMBEDDING_FIELD))
+    {
+      web::json::array user_embedding_array = value.at(RECOMMEND_TRACE_INFO_USER_EMBEDDING_USER_EMBEDDING_FIELD).as_array();
+      for (const auto &val : user_embedding_array)
+      {
+        embedding.user_embedding.push_back(val.as_double());
+      }
+    }
+    else
+    {
+      LOG(ERROR) << "user_embedding is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_USER_EMBEDDING_IMPRESSION_ID_USED_TO_CALCULATE_EMBEDDING_FIELD))
+    {
+      embedding.impression_id_used_to_calculate_embedding = value.at(RECOMMEND_TRACE_INFO_USER_EMBEDDING_IMPRESSION_ID_USED_TO_CALCULATE_EMBEDDING_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "impression_id_used_to_calculate_embedding is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_USER_EMBEDDING_UNIQUE_ID_FIELD))
+    {
+      embedding.unique_id = value.at(RECOMMEND_TRACE_INFO_USER_EMBEDDING_UNIQUE_ID_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "unique_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_USER_EMBEDDING_CREATED_RANK_TIME_FIELD))
+    {
+      embedding.created_rank_time = value.at(RECOMMEND_TRACE_INFO_USER_EMBEDDING_CREATED_RANK_TIME_FIELD).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "created_rank_time is empty" << std::endl;
+      return std::nullopt;
+    }
+    return std::make_optional(embedding);
+  }
+
+  std::optional<RecommendTraceUserEmbedding> findRecommendTraceUserEmbeddingByUniqueId(const std::string &unique_id)
+  {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    http_client &client = *current_client;
+    std::string current_suffix = std::string(RECOMMEND_TRACE_USER_EMBEDDING_API_SUFFIX) + "/findByUniqueId/" + unique_id;
+    LOG(DEBUG) << "current_suffix " << current_suffix << std::endl;
+
+    std::optional<RecommendTraceUserEmbedding> option_embedding = std::nullopt;
+    client.request(methods::GET, U(current_suffix))
+        .then([](http_response response) -> pplx::task<web::json::value>
+              {
+        if (response.status_code() == status_codes::OK) {
+          return response.extract_json();
+        }
+        return pplx::task_from_result(web::json::value()); })
+        .then([&option_embedding](pplx::task<web::json::value> previousTask)
+              {
+        try {
+          web::json::value const &v = previousTask.get();
+          int code = v.at("code").as_integer();
+          std::string message = "null";
+          if (v.has_string_field("message")) {
+            message = v.at("message").as_string();
+          }
+          LOG(DEBUG) << "code " << code << " message " << message << std::endl;
+          if (code == 0) {
+            web::json::value current_value = v.at("data");
+            option_embedding = convertFromWebJsonValueToRecommendTraceUserEmbedding(current_value);
+          }
+        } catch (http_exception const &e) {
+          LOG(ERROR) << "Error exception " << e.what() << std::endl;
+        } })
+        .wait();
+    return option_embedding;
+  }
+
+  std::optional<web::json::value> convertFromRecommendTraceInfoToWebJsonValue(
+      const RecommendTraceInfo &info)
+  {
+    web::json::value result;
+    if (info.source.empty())
+    {
+      LOG(ERROR) << "source is empty" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_SOURCE_FIELD] = web::json::value::string(info.source);
+
+    if (info.rank_time <= 0)
+    {
+      LOG(ERROR) << "rank_time is invalid" << std::endl;
+      return std::nullopt;
+    }
+    result[RECOMMEND_TRACE_INFO_RANK_TIME_FIELD] = web::json::value::number(int(info.rank_time));
+
+    if (info.score_enum.empty())
+    {
+      LOG(ERROR) << "score_enum is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    result[RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD] = web::json::value::string(info.score_enum);
+
+    result[RECOMMEND_TRACE_INFO_PREVIOUS_RANK_TIME_FIELD] = web::json::value::number(int(info.previous_rank_time));
+
+    result[RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD] = web::json::value::string(info.not_impressioned_algorithm_id);
+
+    result[RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD] = web::json::value::string(info.added_not_impressioned_algorithm_id);
+
+    result[RECOMMEND_TRACE_INFO_IMPRESSIONED_CLICKED_ID_FIELD] = web::json::value::string(info.impressioned_clicked_id);
+
+    result[RECOMMEND_TRACE_INFO_ADDED_IMPRESSION_CLICKED_ID_FIELD] = web::json::value::string(info.added_impressioned_clicked_id);
+
+    /**
+    if (info.long_term_user_embedding_id.empty())
+    {
+      LOG(ERROR) << "long_term_user_embedding_id is empty" << std::endl;
+      return std::nullopt;
+    }
+    */
+    result[RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD] = web::json::value::string(info.long_term_user_embedding_id);
+
+    /**
+    if (info.short_term_user_embedding_id.empty())
+    {
+      LOG(ERROR) << "short_term_user_embedding_id is empty" << std::endl;
+      return std::nullopt;
+    }*/
+    result[RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD] = web::json::value::string(info.short_term_user_embedding_id);
+
+    /**
+    if (info.recall_user_embedding_id.empty())
+    {
+      LOG(ERROR) << "recall_user_embedding_id is empty" << std::endl;
+      return std::nullopt;
+    }*/
+    result[RECOMMEND_TRACE_INFO_RECALL_USER_EMBEDDING_ID_FIELD] = web::json::value::string(info.recall_user_embedding_id);
+
+    web::json::value top_ranked_algorithm_id_array = web::json::value::array();
+    int index = 0;
+    for (const auto &val : info.top_ranked_algorithm_id)
+    {
+      top_ranked_algorithm_id_array[index++] = web::json::value::number(val);
+    }
+    result[RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD] = top_ranked_algorithm_id_array;
+
+    index = 0;
+    web::json::value top_ranked_algorithm_score_array = web::json::value::array();
+    for (const auto &val : info.top_ranked_algorithm_score)
+    {
+      top_ranked_algorithm_score_array[index++] = web::json::value::number(val);
+    }
+    result[RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD] = top_ranked_algorithm_score_array;
+    result[RECOMMEND_TRACE_INFO_RECOMMEND_PARAMETER_JSON_SERIALIZED_FIELD] = web::json::value::string(info.recommend_parameter_json_serialized);
+    return result;
+
+  } // namespace knowledgebase
+
+  std::optional<RecommendTraceInfo> convertFromWebJsonValueToRecommendTraceInfo(
+      const web::json::value &value)
+  {
+    RecommendTraceInfo info;
+    if (value.has_field(RECOMMEND_TRACE_INFO_SOURCE_FIELD))
+    {
+      info.source = value.at(RECOMMEND_TRACE_INFO_SOURCE_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "source is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_RANK_TIME_FIELD))
+    {
+      info.rank_time = value.at(RECOMMEND_TRACE_INFO_RANK_TIME_FIELD).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "rank_time is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_PREVIOUS_RANK_TIME_FIELD))
+    {
+      info.previous_rank_time = value.at(RECOMMEND_TRACE_INFO_PREVIOUS_RANK_TIME_FIELD).as_integer();
+    }
+    else
+    {
+      LOG(ERROR) << "previous_rank_time is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD))
+    {
+      info.score_enum = value.at(RECOMMEND_TRACE_INFO_SCORE_ENUM_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "score_enum is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD))
+    {
+      info.not_impressioned_algorithm_id = value.at(RECOMMEND_TRACE_INFO_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "not_impressioned_algorithm_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD))
+    {
+      info.added_not_impressioned_algorithm_id = value.at(RECOMMEND_TRACE_INFO_ADDED_NOT_IMPRESSIONED_ALGORITHM_ID_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "added_not_impressioned_algorithm_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_IMPRESSIONED_CLICKED_ID_FIELD))
+    {
+      info.impressioned_clicked_id = value.at(RECOMMEND_TRACE_INFO_IMPRESSIONED_CLICKED_ID_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "impressioned_clicked_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_ADDED_IMPRESSION_CLICKED_ID_FIELD))
+    {
+      info.added_impressioned_clicked_id = value.at(RECOMMEND_TRACE_INFO_ADDED_IMPRESSION_CLICKED_ID_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "added_impressioned_clicked_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD))
+    {
+      info.long_term_user_embedding_id = value.at(RECOMMEND_TRACE_INFO_LONG_TERM_USER_EMBEDDING_ID_FIELD).as_string();
+    }
+    else
+    {
+      info.long_term_user_embedding_id = "";
+      LOG(ERROR) << "long_term_user_embedding_id is empty" << std::endl;
+      // return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD))
+    {
+      info.short_term_user_embedding_id = value.at(RECOMMEND_TRACE_INFO_SHORT_TERM_USER_EMBEDDING_ID_FIELD).as_string();
+    }
+    else
+    {
+      info.short_term_user_embedding_id = "";
+      LOG(ERROR) << "short_term_user_embedding_id is empty" << std::endl;
+      // return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_RECALL_USER_EMBEDDING_ID_FIELD))
+    {
+      info.recall_user_embedding_id = value.at(RECOMMEND_TRACE_INFO_RECALL_USER_EMBEDDING_ID_FIELD).as_string();
+    }
+    else
+    {
+      info.recall_user_embedding_id = "";
+      LOG(ERROR) << "recall_user_embedding_id is empty" << std::endl;
+      // return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD))
+    {
+      web::json::array top_ranked_algorithm_id_array = value.at(RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD).as_array();
+      for (const auto &val : top_ranked_algorithm_id_array)
+      {
+        info.top_ranked_algorithm_id.push_back(val.as_integer());
+      }
+    }
+    else
+    {
+      LOG(ERROR) << "top_ranked_algorithm_id is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD))
+    {
+      web::json::array top_ranked_algorithm_score_array = value.at(RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD).as_array();
+      for (const auto &val : top_ranked_algorithm_score_array)
+      {
+        info.top_ranked_algorithm_score.push_back(val.as_double());
+      }
+    }
+    else
+    {
+      LOG(ERROR) << "top_ranked_algorithm_score is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    if (value.has_field(RECOMMEND_TRACE_INFO_RECOMMEND_PARAMETER_JSON_SERIALIZED_FIELD))
+    {
+      info.recommend_parameter_json_serialized = value.at(RECOMMEND_TRACE_INFO_RECOMMEND_PARAMETER_JSON_SERIALIZED_FIELD).as_string();
+    }
+    else
+    {
+      LOG(ERROR) << "created_time is empty" << std::endl;
+      return std::nullopt;
+    }
+
+    return std::make_optional(info);
+  }
+
+  std::optional<RecommendTraceInfo> findRecommendTraceInfoByRankTimeAndSource(const std::string &source, int64_t rank_time)
+  {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    http_client &client = *current_client;
+    std::string current_suffix = std::string(RECOMMEND_TRACE_INFO_API_SUFFIX) + "/findBySourceAndRankTime?source=" + source + "&rank_time" + std::to_string(rank_time);
+    LOG(DEBUG) << "current_suffix " << current_suffix << std::endl;
+
+    std::optional<RecommendTraceInfo> option_info = std::nullopt;
+    client.request(methods::GET, U(current_suffix))
+        .then([](http_response response) -> pplx::task<web::json::value>
+              {
+        if (response.status_code() == status_codes::OK) {
+          return response.extract_json();
+        }
+        return pplx::task_from_result(web::json::value()); })
+        .then([&option_info](pplx::task<web::json::value> previousTask)
+              {
+        try {
+          web::json::value const &v = previousTask.get();
+          int code = v.at("code").as_integer();
+          std::string message = "null";
+          if (v.has_string_field("message")) {
+            message = v.at("message").as_string();
+          }
+          LOG(DEBUG) << "code " << code << " message " << message << std::endl;
+          if (code == 0) {
+            web::json::value current_value = v.at("data");
+            option_info = convertFromWebJsonValueToRecommendTraceInfo(current_value);
+          }
+        } catch (http_exception const &e) {
+          LOG(ERROR) << "Error exception " << e.what() << std::endl;
+        } })
+        .wait();
+    return option_info;
+  }
+
+  std::vector<int> findAllRecomendTraceInfoRankTimesBySource(const std::string &source)
+  {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    http_client &client = *current_client;
+    std::string current_suffix = std::string(RECOMMEND_TRACE_INFO_API_SUFFIX) + "/ranktimes/" + source;
+    LOG(DEBUG) << "current_suffix " << current_suffix << std::endl;
+
+    std::vector<int> rank_times;
+    client.request(methods::GET, U(current_suffix))
+        .then([](http_response response) -> pplx::task<web::json::value>
+              {
+        if (response.status_code() == status_codes::OK) {
+          return response.extract_json();
+        }
+        return pplx::task_from_result(web::json::value()); })
+        .then([&rank_times](pplx::task<web::json::value> previousTask)
+              {
+        try {
+          web::json::value const &v = previousTask.get();
+          int code = v.at("code").as_integer();
+          std::string message = "null";
+          if (v.has_string_field("message")) {
+            message = v.at("message").as_string();
+          }
+          LOG(DEBUG) << "code " << code << " message " << message << std::endl;
+          if (code == 0) {
+            web::json::array rank_times_array = v.at("data").as_array();
+            for (const auto &val : rank_times_array)
+            {
+              rank_times.push_back(val.as_integer());
+            }
+          }
+        } catch (http_exception const &e) {
+          LOG(ERROR) << "Error exception " << e.what() << std::endl;
+        } })
+        .wait();
+
+    std::sort(rank_times.begin(), rank_times.end(), std::greater<int>());
+    return rank_times;
+  }
+
+  void init_global_recommend_param_short_term_user_embedding_impression_count()
+  {
+    std::optional<std::string> short_term_user_embedding_impression_count_value = getKnowledgeCofnig(std::string(TERMINUS_RECOMMEND_PARAMETER), std::string(TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION));
+    if (short_term_user_embedding_impression_count_value != std::nullopt && short_term_user_embedding_impression_count_value.value().length() > 0)
+    {
+      std::string short_term_user_embedding_impression_count_str = short_term_user_embedding_impression_count_value.value();
+      try
+      {
+        globalTerminusRecommendParams.short_term_user_embedding_impression_count = std::stoi(short_term_user_embedding_impression_count_str);
+        LOG(INFO) << "short_term_user_embedding_impression_count is set in redis, use [" << globalTerminusRecommendParams.short_term_user_embedding_impression_count << "]" << std::endl;
+      }
+      catch (std::invalid_argument const &e)
+      {
+        LOG(ERROR) << "short_term_user_embedding_impression_count Bad input: std::invalid_argument thrown [" << short_term_user_embedding_impression_count_str << "]" << std::endl;
+      }
+      catch (std::out_of_range const &e)
+      {
+        LOG(ERROR) << "short_term_user_embedding_impression_count Integer overflow: std::out_of_range thrown [" << short_term_user_embedding_impression_count_str << "]" << std::endl;
+      }
+    }
+    else
+    {
+      LOG(INFO) << "short_term_user_embedding_impression_count is not set in redis, use" << std::endl;
+    }
+  }
+
+  void init_global_recommend_param_long_term_user_embedding_impression_count()
+  {
+    std::optional<std::string> long_term_user_embedding_impression_count_value = getKnowledgeCofnig(std::string(TERMINUS_RECOMMEND_PARAMETER), std::string(TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION));
+    if (long_term_user_embedding_impression_count_value != std::nullopt && long_term_user_embedding_impression_count_value.value().length() > 0)
+    {
+      std::string long_term_user_embedding_impression_count_str = long_term_user_embedding_impression_count_value.value();
+      try
+      {
+        globalTerminusRecommendParams.long_term_user_embedding_impression_count = std::stoi(long_term_user_embedding_impression_count_str);
+        LOG(INFO) << "long_term_user_embedding_impression_count is set in redis, use [" << globalTerminusRecommendParams.long_term_user_embedding_impression_count << "]" << std::endl;
+      }
+      catch (std::invalid_argument const &e)
+      {
+        LOG(ERROR) << "long_term_user_embedding_impression_count Bad input: std::invalid_argument thrown [" << long_term_user_embedding_impression_count_str << "]" << std::endl;
+      }
+      catch (std::out_of_range const &e)
+      {
+        LOG(ERROR) << "long_term_user_embedding_impression_count Integer overflow: std::out_of_range thrown [" << long_term_user_embedding_impression_count_str << "]" << std::endl;
+      }
+    }
+    else
+    {
+      LOG(INFO) << "long_term_user_embedding_impression_count is not set in redis, use" << std::endl;
+    }
+  }
+
+  void init_global_recommend_param_long_term_user_embedding_weight_for_rankscore()
+  {
+    std::optional<std::string> long_term_user_embedding_weight_for_rankscore_value = getKnowledgeCofnig(std::string(TERMINUS_RECOMMEND_PARAMETER), std::string(TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE));
+    if (long_term_user_embedding_weight_for_rankscore_value != std::nullopt && long_term_user_embedding_weight_for_rankscore_value.value().length() > 0)
+    {
+      std::string long_term_user_embedding_weight_for_rankscore_str = long_term_user_embedding_weight_for_rankscore_value.value();
+      try
+      {
+        globalTerminusRecommendParams.long_term_user_embedding_weight_for_rankscore = std::stod(long_term_user_embedding_weight_for_rankscore_str);
+        LOG(INFO) << "long_term_user_embedding_weight_for_rankscore is set in redis, use [" << globalTerminusRecommendParams.long_term_user_embedding_weight_for_rankscore << "]" << std::endl;
+      }
+      catch (std::invalid_argument const &e)
+      {
+        LOG(ERROR) << "long_term_user_embedding_weight_for_rankscore Bad input: std::invalid_argument thrown [" << long_term_user_embedding_weight_for_rankscore_str << "]" << std::endl;
+      }
+      catch (std::out_of_range const &e)
+      {
+        LOG(ERROR) << "long_term_user_embedding_weight_for_rankscore Integer overflow: std::out_of_range thrown [" << long_term_user_embedding_weight_for_rankscore_str << "]" << std::endl;
+      }
+    }
+    else
+    {
+      LOG(INFO) << "long_term_user_embedding_weight_for_rankscore is not set in redis, use" << std::endl;
+    }
+  }
+
+  void init_global_recommend_param_article_time_weight_for_rankscore()
+  {
+    std::optional<std::string> article_time_weight_for_rankscore_value = getKnowledgeCofnig(std::string(TERMINUS_RECOMMEND_PARAMETER), std::string(TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE));
+    if (article_time_weight_for_rankscore_value != std::nullopt && article_time_weight_for_rankscore_value.value().length() > 0)
+    {
+      std::string article_time_weight_for_rankscore_str = article_time_weight_for_rankscore_value.value();
+      try
+      {
+        globalTerminusRecommendParams.article_time_weight_for_rankscore = std::stod(article_time_weight_for_rankscore_str);
+        LOG(INFO) << "article_time_weight_for_rankscore is set in redis, use [" << globalTerminusRecommendParams.article_time_weight_for_rankscore << "]" << std::endl;
+      }
+      catch (std::invalid_argument const &e)
+      {
+        LOG(ERROR) << "article_time_weight_for_rankscore Bad input: std::invalid_argument thrown [" << article_time_weight_for_rankscore_str << "]" << std::endl;
+      }
+      catch (std::out_of_range const &e)
+      {
+        LOG(ERROR) << "article_time_weight_for_rankscore Integer overflow: std::out_of_range thrown [" << article_time_weight_for_rankscore_str << "]" << std::endl;
+      }
+    }
+    else
+    {
+      LOG(INFO) << "article_time_weight_for_rankscore is not set in redis, use" << std::endl;
+    }
+  }
+
+  void init_global_recommend_param_cold_start_article_clicked_number_threshold()
+  {
+    std::optional<std::string> cold_start_article_clicked_number_threshold_value = getKnowledgeCofnig(std::string(TERMINUS_RECOMMEND_PARAMETER), std::string(TERMINUS_RECOMMEND_COLD_START_ARTICLE_CLICKED_NUMBER_THRESHOLD));
+    if (cold_start_article_clicked_number_threshold_value != std::nullopt && cold_start_article_clicked_number_threshold_value.value().length() > 0)
+    {
+      std::string cold_start_article_clicked_number_threshold_str = cold_start_article_clicked_number_threshold_value.value();
+      try
+      {
+        globalTerminusRecommendParams.cold_start_article_clicked_number_threshold = std::stoi(cold_start_article_clicked_number_threshold_str);
+        LOG(INFO) << "cold_start_article_clicked_number_threshold is set in redis, use [" << globalTerminusRecommendParams.cold_start_article_clicked_number_threshold << "]" << std::endl;
+      }
+      catch (std::invalid_argument const &e)
+      {
+        LOG(ERROR) << "cold_start_article_clicked_number_threshold Bad input: std::invalid_argument thrown [" << cold_start_article_clicked_number_threshold_str << "]" << std::endl;
+      }
+      catch (std::out_of_range const &e)
+      {
+        LOG(ERROR) << "cold_start_article_clicked_number_threshold Integer overflow: std::out_of_range thrown [" << cold_start_article_clicked_number_threshold_str << "]" << std::endl;
+      }
+    }
+    else
+    {
+      LOG(INFO) << "cold_start_article_clicked_number_threshold is not set in redis, use" << std::endl;
+    }
+  }
+
+  void init_global_recommend_param_long_or_short_embedding_as_recall_embedding()
+  {
+    std::optional<std::string> long_or_short_embedding_as_recall_embedding_value = getKnowledgeCofnig(std::string(TERMINUS_RECOMMEND_PARAMETER), std::string(TERMINUS_RECOMMEND_LONG_OR_SHORT_EMBEDDING_AS_RECALL_EMBEDDING));
+    if (long_or_short_embedding_as_recall_embedding_value != std::nullopt && long_or_short_embedding_as_recall_embedding_value.value().length() > 0)
+    {
+      std::string long_or_short_embedding_as_recall_embedding_str = long_or_short_embedding_as_recall_embedding_value.value();
+      try
+      {
+        globalTerminusRecommendParams.long_or_short_embedding_as_recall_embedding = long_or_short_embedding_as_recall_embedding_str;
+        LOG(INFO) << "long_or_short_embedding_as_recall_embedding is set in redis, use [" << globalTerminusRecommendParams.long_or_short_embedding_as_recall_embedding << "]" << std::endl;
+      }
+      catch (std::invalid_argument const &e)
+      {
+        LOG(ERROR) << "long_or_short_embedding_as_recall_embedding Bad input: std::invalid_argument thrown [" << long_or_short_embedding_as_recall_embedding_str << "]" << std::endl;
+      }
+      catch (std::out_of_range const &e)
+      {
+        LOG(ERROR) << "long_or_short_embedding_as_recall_embedding Integer overflow: std::out_of_range thrown [" << long_or_short_embedding_as_recall_embedding_str << "]" << std::endl;
+      }
+    }
+    else
+    {
+      LOG(INFO) << "long_or_short_embedding_as_recall_embedding is not set in redis, use" << std::endl;
+    }
+  }
+
+  void init_global_recommend_param_trace_info_number()
+  {
+
+    std::optional<std::string> trace_info_number_value = getKnowledgeCofnig(std::string(TERMINUS_RECOMMEND_PARAMETER), std::string(TERMINUS_RECOMMEND_TRACE_INFO_NUMBER));
+    if (trace_info_number_value != std::nullopt && trace_info_number_value.value().length() > 0)
+    {
+      std::string trace_info_number_str = trace_info_number_value.value();
+      try
+      {
+        globalTerminusRecommendParams.trace_info_number_zip = std::stoi(trace_info_number_str);
+        LOG(INFO) << "trace_info_number is set in redis, use [" << globalTerminusRecommendParams.trace_info_number_zip << "]" << std::endl;
+      }
+      catch (std::invalid_argument const &e)
+      {
+        LOG(ERROR) << "trace_info_number Bad input: std::invalid_argument thrown [" << trace_info_number_str << "]" << std::endl;
+      }
+      catch (std::out_of_range const &e)
+      {
+        LOG(ERROR) << "trace_info_number Integer overflow: std::out_of_range thrown [" << trace_info_number_str << "]" << std::endl;
+      }
+    }
+    else
+    {
+      LOG(INFO) << "trace_info_number is not set in redis, use" << std::endl;
+    }
+  }
+  void init_global_terminus_recommend_params()
+  {
+    init_global_recommend_param_short_term_user_embedding_impression_count();
+    init_global_recommend_param_long_term_user_embedding_impression_count();
+    init_global_recommend_param_long_term_user_embedding_weight_for_rankscore();
+    init_global_recommend_param_article_time_weight_for_rankscore();
+    init_global_recommend_param_cold_start_article_clicked_number_threshold();
+    init_global_recommend_param_long_or_short_embedding_as_recall_embedding();
+    init_global_recommend_param_trace_info_number();
+  }
+
+  web::json::value convertTerminusRecommendParamsToJsonValue(const TerminusRecommendParams &params)
+  {
+    // Create a JSON object
+    web::json::value json_obj;
+
+    // Add the members of the struct to the JSON object
+    json_obj[TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION] = web::json::value::number(params.short_term_user_embedding_impression_count);
+    json_obj[TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION] = web::json::value::number(params.long_term_user_embedding_impression_count);
+    json_obj[TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE] = web::json::value::number(params.long_term_user_embedding_weight_for_rankscore);
+    json_obj[TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE] = web::json::value::number(params.article_time_weight_for_rankscore);
+    json_obj[TERMINUS_RECOMMEND_COLD_START_ARTICLE_CLICKED_NUMBER_THRESHOLD] = web::json::value::number(params.cold_start_article_clicked_number_threshold);
+    json_obj[TERMINUS_RECOMMEND_LONG_OR_SHORT_EMBEDDING_AS_RECALL_EMBEDDING] = web::json::value::string(params.long_or_short_embedding_as_recall_embedding);
+    json_obj[TERMINUS_RECOMMEND_TRACE_INFO_NUMBER] = web::json::value::number(params.trace_info_number_zip);
+
+    return json_obj;
+  }
+
+}

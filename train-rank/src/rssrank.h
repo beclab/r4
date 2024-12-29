@@ -88,13 +88,33 @@ namespace rssrank
                                        int test_rows, float *test_labels,
                                        BoosterHandle h_booster, float *biggest_auc);
     std::vector<Impression> getImpressionForShortTermAndLongTermUserEmbeddingRank();
-    std::vector<double> calcluateUserShortTermEmbedding(const std::vector<Impression> &impressions, bool with_weight);
+    // std::vector<double> calcluateUserShortTermEmbedding(const std::vector<Impression> &impressions, bool with_weight);
     double getTimeCoefficientForUnixTimestamp(long long timestamp, long long current_timestamp);
-    float getSpecificImpressionScoreForShortTermUserEmbedding(const Impression &current_impression);
+    float ForShortTermUserEmbedding(const Impression &current_impression);
     bool rankShortTermAndLongTermUserEmbedding();
     std::unordered_map<std::string, std::string> getNotImpressionedAlgorithmToEntry();
-    vector<double> calcluateUserLongTermEmbedding(const vector<Impression> &impressions);
+    // vector<double> calcluateUserLongTermEmbedding(const vector<Impression> &impressions);
 
-    bool rankByTimeForColdStart();
+    bool rankByTimeForColdStart(long long current_time, const vector<Impression> &clicked_impressions);
+    RecommendTraceUserEmbedding buildRecommendTraceUserEmbedding(
+        const std::string &source,
+        const std::vector<double> &embedding,
+        const std::vector<int> &impression_id_used_to_calculate_embedding,
+        const long long &created_rank_time);
+
+    RecommendTraceInfo buildRecommendTraceInfo(
+        const std::optional<RecommendTraceInfo> &previous_recommend_trace_info,
+        const std::string &source,
+        const long long &rank_time,
+        const ScoreEnum current_score_enum,
+        const std::vector<int> &not_impressioned_algorithm_id,
+        const std::vector<int> &impressioned_clicked_id,
+        const std::string &long_term_user_embedding_id,
+        const std::string &short_term_user_embedding_id,
+        const std::string &recall_user_embedding_id,
+        const std::vector<std::pair<int, double>> &algorithm_integer_id_to_score,
+        const TerminusRecommendParams &recommendParams);
+
+    std::vector<int> getIntegerIdFromVecImpression(const std::vector<Impression> &impressions);
 
 } // namespace rssrank

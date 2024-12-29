@@ -90,7 +90,11 @@ TEST(KnowledgeApiTest, TestGetImpression)
   init_log();
   std::vector<Impression> impression_list;
   int count;
-  knowledgebase::getImpression(10, 10, "bert_v2", &impression_list, &count);
+  knowledgebase::getImpression(10, 10, "r4techbiz", &impression_list, &count);
+  for (auto current_impression : impression_list)
+  {
+    std::cout << current_impression.id << " " << current_impression.source << " " << current_impression.integer_id << std::endl;
+  }
   std::cout << impression_list.size() << " " << count << std::endl;
 }
 
@@ -245,12 +249,7 @@ TEST(KnowledgeApiTest, TestGetAlgorithmAccordingImpression)
                                                  &algorithm_list, &count);
   for (auto current : algorithm_list)
   {
-    std::cout << current.id << " " << current.impression << std::endl;
-  }
-  for (int i = 0; i < 10; i++)
-  {
-    knowledgebase::getAlgorithmAccordingImpression(10, 0, source, 1,
-                                                   &algorithm_list, &count);
+    std::cout << current.id << " " << current.impression << " " << current.integer_id << std::endl;
   }
 }
 
@@ -276,7 +275,7 @@ TEST(KnowledgeApiTest, TestGetEntries)
   std::cout << entry_list.size() << " " << count << std::endl;
   for (auto current : entry_list)
   {
-    std::cout << current.url << " " << current.title << " " << current.published_at << std::endl;
+    std::cout << current.url << " " << current.title << " " << current.published_at << " " << current.integer_id << std::endl;
   }
 }
 
@@ -305,7 +304,7 @@ TEST(RssRankTest, getImpressionForShortTermAndLongTermUserEmbeddingRank)
     std::cout << "current_last_opened " << current.entry_last_opened << std::endl;
   }
 }
-
+#include "../src/userembedding_calculation.h"
 TEST(RssRankTest, TestCalculateEmbeddingMultipleReal)
 {
   // --gtest_filter=RssRankTest.TestCalculateEmbeddingMultipleReal
@@ -313,7 +312,7 @@ TEST(RssRankTest, TestCalculateEmbeddingMultipleReal)
   init_log();
   knowledgebase::EntryCache::getInstance().init();
   std::vector<Impression> result = rssrank::getImpressionForShortTermAndLongTermUserEmbeddingRank();
-  std::vector<double> embedding = rssrank::calcluateUserShortTermEmbedding(result, true);
+  std::vector<double> embedding = calcluateUserShortTermEmbedding(result, true);
   double total = 0;
   for (auto current : embedding)
   {
@@ -321,7 +320,7 @@ TEST(RssRankTest, TestCalculateEmbeddingMultipleReal)
     total += current * current;
   }
   std::cout << "total " << total << std::endl;
-  std::vector<double> embedding2 = rssrank::calcluateUserLongTermEmbedding(result);
+  std::vector<double> embedding2 = calcluateUserLongTermEmbedding(result);
   double total2 = 0;
   for (auto current : embedding2)
   {
@@ -380,7 +379,7 @@ TEST(RssRankTest, TestCalculateEmbeddingMultiple)
   impression1.embedding = std::vector<double>{1.0, 2.0, 3.0};
   impression2.embedding = std::vector<double>{4.0, 5.0, 6.0};
   std::vector<Impression> impressions = {impression1, impression2};
-  std::vector<double> result = rssrank::calcluateUserShortTermEmbedding(impressions, false);
+  std::vector<double> result = calcluateUserShortTermEmbedding(impressions, false);
   ASSERT_EQ(result.size(), 3);
   EXPECT_FLOAT_EQ(result[0], 5.0);
   EXPECT_FLOAT_EQ(result[1], 7.0);
@@ -434,8 +433,8 @@ TEST(RssRankTest, TestSetUserEmbedding)
 
   std::vector<double> user_embedding = knowledgebase::init_user_embedding(embedding_dimension);
   std::string source = "r4techbiz";
-  knowledgebase::updateLongTermUserEmbedding(source, user_embedding);
-  std::vector<double> result = knowledgebase::getLongTermUserEmbedding(source);
+  knowledgebase::updateRecallUserEmbedding(source, user_embedding, getTimeStampNow());
+  std::vector<double> result = knowledgebase::getRecallUserEmbedding(source);
   bool equal = true;
   for (int i = 0; i < result.size(); i++)
   {
@@ -519,5 +518,99 @@ TEST(RssRankTest, rankByTimeForColdStart)
   // --gtest_filter=RssRankTest.rankByTimeForColdStart
   initDevelop();
   init_log();
-  rssrank::rankByTimeForColdStart();
+  vector<Impression> clicked_impressions = rssrank::getImpressionForShortTermAndLongTermUserEmbeddingRank();
+  rssrank::rankByTimeForColdStart(getTimeStampNow(), clicked_impressions);
+}
+
+TEST(KnowledgeApiTest, postRecommendTraceUserEmbedding)
+{
+  // --gtest_filter=KnowledgeApiTest.postRecommendTraceUserEmbedding
+  initDevelop();
+  init_log();
+  RecommendTraceUserEmbedding recommend_trace_user_embedding;
+  recommend_trace_user_embedding.source = "testsource";
+  recommend_trace_user_embedding.user_embedding = {1.0, 2.0, 3.0};
+  recommend_trace_user_embedding.created_rank_time = 1711080226;
+  recommend_trace_user_embedding.calculateUniqueId();
+  recommend_trace_user_embedding.setImpressionIdUsedToCalculateEmbedding({1, 2, 3});
+  knowledgebase::postRecommendTraceUserEmbedding(recommend_trace_user_embedding);
+}
+
+TEST(KnowledgeApiTest, findRecommendTraceUserEmbeddingByUniqueId)
+{
+  // --gtest_filter=KnowledgeApiTest.findRecommendTraceUserEmbeddingByUniqueId
+  initDevelop();
+  init_log();
+  std::string unique_id = "650637621e5f7523b818def76a5d7f64d6a10f41ac751a7cb085fd6330f90874";
+  std::optional<RecommendTraceUserEmbedding> recommend_trace_user_embedding = knowledgebase::findRecommendTraceUserEmbeddingByUniqueId(unique_id);
+  if (recommend_trace_user_embedding != std::nullopt)
+  {
+    RecommendTraceUserEmbedding current = recommend_trace_user_embedding.value();
+    std::cout << current << " " << std::endl;
+  }
+}
+
+TEST(KnowledgeApiTest, postRecommendTraceInfo)
+{
+  // --gtest_filter=KnowledgeApiTest.postRecommendTraceInfo
+  initDevelop();
+  init_log();
+  RecommendTraceInfo recommend_trace_info;
+  recommend_trace_info.source = "testsource";
+  recommend_trace_info.rank_time = 1711080226;
+  recommend_trace_info.previous_rank_time = 1711080225;
+  recommend_trace_info.score_enum = "score_enum";
+  recommend_trace_info.not_impressioned_algorithm_id = "1-3;6;8-9";
+  recommend_trace_info.added_not_impressioned_algorithm_id = "8-9";
+  recommend_trace_info.impressioned_clicked_id = "1-20";
+  recommend_trace_info.added_impressioned_clicked_id = "20";
+  recommend_trace_info.long_term_user_embedding_id = "111111";
+  recommend_trace_info.short_term_user_embedding_id = "222222";
+  recommend_trace_info.recall_user_embedding_id = "333333";
+  recommend_trace_info.top_ranked_algorithm_id = {1, 2, 3};
+  recommend_trace_info.top_ranked_algorithm_score = {0.1, 0.2, 0.3};
+  knowledgebase::postRecommendTraceInfo(recommend_trace_info);
+}
+
+TEST(KnowledgeApiTest, findRecommendTraceInfoByRankTimeAndSource)
+{
+  // --gtest_filter=KnowledgeApiTest.findRecommendTraceInfoByRankTimeAndSource
+  initDevelop();
+  init_log();
+  std::string source = "testsource";
+  int64_t rank_time = 1711080226;
+  std::optional<RecommendTraceInfo> recommend_trace_info = knowledgebase::findRecommendTraceInfoByRankTimeAndSource(source, rank_time);
+  if (recommend_trace_info != std::nullopt)
+  {
+    RecommendTraceInfo current = recommend_trace_info.value();
+    std::cout << current << " " << std::endl;
+  }
+}
+
+TEST(KnowledgeApiTest, findAllRecomendTraceInfoRankTimesBySource)
+{
+  // --gtest_filter=KnowledgeApiTest.findAllRecomendTraceInfoRankTimesBySource
+  initDevelop();
+  init_log();
+  std::string source = "testsource";
+  std::vector<int> rank_times = knowledgebase::findAllRecomendTraceInfoRankTimesBySource(source);
+  for (auto current : rank_times)
+  {
+    std::cout << current << " ";
+  }
+  std::cout << std::endl;
+}
+
+TEST(KnowledgeApiTest, getKnowledgeCofnig)
+{
+  // --gtest_filter=KnowledgeApiTest.getKnowledgeCofnig
+  initDevelop();
+  init_log();
+
+  std::string source = "r4techbiz";
+
+  std::optional<string> value = knowledgebase::getKnowledgeCofnig(source, knowledgebase::LAST_RANK_TIME);
+  std::cout << "LAST_RANK_TIME " << value.value() << std::endl;
+  value = knowledgebase::getKnowledgeCofnig("recommend_parameter", "long_weight");
+  std::cout << "long_weight " << value.value() << " " << value.value().length() << std::endl;
 }

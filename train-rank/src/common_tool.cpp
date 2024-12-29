@@ -5,6 +5,7 @@
 #include <eigen3/Eigen/Dense>
 #include <random>
 #include <openssl/sha.h>
+#include <unordered_set>
 
 using namespace Eigen;
 
@@ -167,6 +168,21 @@ int getEnvFloat(const char *envVar, float defaultValue)
   return defaultValue;
 }
 
+std::string getEnvString(const char *envVar, const std::string &defaultValue)
+{
+  // Get the environment variable
+  const char *envValue = std::getenv(envVar);
+
+  // If the environment variable does not exist, return the default value
+  if (envValue == nullptr)
+  {
+    return defaultValue;
+  }
+
+  // Return the environment variable value as a string
+  return std::string(envValue);
+}
+
 void calculate_embedding()
 {
   int n = 1000; // Assume we have 1000 embeddings, each is a vector of size 128
@@ -220,6 +236,13 @@ double normalized_similarity_score_based_on_cosine_similarity(const VectorXd &A,
   return (cosine_similarity + 1) / 2;
 }
 
+double normalized_similarity_score_based_on_cosine_similarity(const std::vector<double> &A, const std::vector<double> &B)
+{
+  VectorXd A_eigen = vectorToEigentVectorXd(A);
+  VectorXd B_eigen = vectorToEigentVectorXd(B);
+  return normalized_similarity_score_based_on_cosine_similarity(A_eigen, B_eigen);
+}
+
 float randomFloatBetweenZeroAndOne()
 {
   // Create a random number generator (uniform distribution between 0 and 1)
@@ -260,8 +283,11 @@ std::string generateSHA256Hash(const std::vector<double> &vec, const std::string
   return hash_hex;
 }
 
-std::string arrayToString(const std::vector<int> &arr)
+std::string arrayToString(const std::vector<int> &current)
 {
+  std::vector<int> arr = current;
+  std::sort(arr.begin(), arr.end());
+
   if (arr.empty())
     return "";
 
@@ -321,6 +347,24 @@ std::vector<int> stringToArray(const std::string &str)
       {
         result.push_back(i);
       }
+    }
+  }
+
+  return result;
+}
+
+std::vector<int> find_elements_in_b_not_in_a(const std::vector<int> &a, const std::vector<int> &b)
+{
+  // Use unordered_set to store elements in a for efficient lookup
+  std::unordered_set<int> set_a(a.begin(), a.end());
+  std::vector<int> result;
+
+  // Iterate through elements in b and check if they are in set_a
+  for (int num : b)
+  {
+    if (set_a.find(num) == set_a.end())
+    {
+      result.push_back(num); // If the element is not in set_a, add it to the result
     }
   }
 
