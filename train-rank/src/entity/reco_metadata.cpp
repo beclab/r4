@@ -54,3 +54,6 @@ std::ostream &operator<<(std::ostream &os, const RecommendTraceInfo &info)
 
     return os;
 }
+TerminusRecommendParams globalTerminusRecommendParams;
+
+// globalTerminusRecommendParams = TerminusRecommendParams();

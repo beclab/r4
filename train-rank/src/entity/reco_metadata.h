@@ -137,6 +137,7 @@ static const char RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_ID_FIELD[] = "top_ra
 static const char RECOMMEND_TRACE_INFO_TOP_RANKED_ALGORITHM_SCORE_FIELD[] = "top_ranked_algorithm_score";
 static const char RECOMMEND_TRACE_INFO_PREVIOUS_RANK_TIME_FIELD[] = "previous_rank_time";
 static const char RECOMMEND_TRACE_INFO_RECALL_USER_EMBEDDING_ID_FIELD[] = "recall_user_embedding_id";
+static const char RECOMMEND_TRACE_INFO_RECOMMEND_PARAMETER_JSON_SERIALIZED_FIELD[] = "recommend_parameter_json_serialized";
 struct RecommendTraceInfo
 {
     string source;
@@ -148,10 +149,11 @@ struct RecommendTraceInfo
     std::string impressioned_clicked_id;             // All impressions at this moment
     std::string added_impressioned_clicked_id;       // Newly added impression_id
     std::string long_term_user_embedding_id;         // RecommendTraceUserEmbedding.unique_id
-    std::string short_term_user_embedding_id;        // RecommendTraceUserEmbedding.unique_id
+    std::string short_term_user_embedding_id;        // RecommendTraceUserEmbedding.
     std::string recall_user_embedding_id;
     vector<int> top_ranked_algorithm_id;      // The top 1000 algorithm_ids, the number of top rankings can be controlled by parameters
     vector<float> top_ranked_algorithm_score; // The top 1000 algorithm_scores, the number of top rankings can be controlled by parameters
+    std::string recommend_parameter_json_serialized;
 
     void setNotImpressionedAlgorithmIdFromVec(const vector<int> &not_impressioned_algorithm_id_vec)
     {
@@ -242,4 +244,51 @@ struct RecommendTraceInfo
 };
 ostream &operator<<(ostream &os, const RecommendTraceUserEmbedding &obj);
 std::ostream &operator<<(std::ostream &os, const RecommendTraceInfo &info);
-#endif // RECO_METADATA_H
+
+struct TerminusRecommendParams
+{
+    // Number of impressions used to calculate short-term user embedding, value > 0
+    int short_term_user_embedding_impression_count; // Default 10
+
+    // Number of impressions used to calculate long-term user embedding, value > 0
+    int long_term_user_embedding_impression_count; // Default 10000
+
+    // Weight of long-term user embedding in rank score calculation, value between 0 and 1
+    double long_term_user_embedding_weight_for_rankscore; // Default 0.3
+
+    // Weight of article time in rank score calculation, value between 0 and 1
+    double article_time_weight_for_rankscore; // Default 0.5
+
+    // If the number of clicked articles is less than or equal to this value, the recommendation algorithm is not used. Default is to sort by time
+    int cold_start_article_clicked_number_threshold; // Default 10
+
+    // If the value is "long", use long-term user embedding as recall embedding, otherwise use short-term user embedding as recall embedding
+    std::string long_or_short_embedding_as_recall_embedding; // Default "long"
+
+    int trace_info_number_zip; // Default 100
+
+    // Constructor to initialize default values
+    TerminusRecommendParams()
+        : short_term_user_embedding_impression_count(10),
+          long_term_user_embedding_impression_count(10000),
+          long_term_user_embedding_weight_for_rankscore(0.3),
+          article_time_weight_for_rankscore(0.5),
+          cold_start_article_clicked_number_threshold(10),
+          long_or_short_embedding_as_recall_embedding("long"),
+          trace_info_number_zip(100) {}
+
+    // Method to print parameter values for debugging
+    void printParams() const
+    {
+        std::cout << "Short-term User Embedding Impression Count: " << short_term_user_embedding_impression_count << std::endl;
+        std::cout << "Long-term User Embedding Impression Count: " << long_term_user_embedding_impression_count << std::endl;
+        std::cout << "Long-term User Embedding Weight for RankScore: " << long_term_user_embedding_weight_for_rankscore << std::endl;
+        std::cout << "Article Time Weight for RankScore: " << article_time_weight_for_rankscore << std::endl;
+        std::cout << "Cold Start Article Clicked Number Threshold: " << cold_start_article_clicked_number_threshold << std::endl;
+        std::cout << "Long or Short Embedding as Recall Embedding: " << long_or_short_embedding_as_recall_embedding << std::endl;
+    }
+};
+
+extern TerminusRecommendParams globalTerminusRecommendParams;
+
+#endif

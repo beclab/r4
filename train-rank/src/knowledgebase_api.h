@@ -53,7 +53,8 @@ namespace knowledgebase
 
     static const char LAST_RANK_TIME[] = "last_rank_time";
     static const char LAST_EXTRACTOR_TIME[] = "last_extractor_time";
-    static const char LONG_TERM_USER_EMBEDDING[] = "user_embedding";
+    // static const char LONG_TERM_USER_EMBEDDING[] = "user_embedding";
+    static const char REDIS_KEY_RECALL_USER_EMBEDDING[] = "user_embedding";
 
     bool updateAlgorithmScoreAndRanked(const std::string &entry_id,
                                        float rank_score, bool ranked);
@@ -119,4 +120,8 @@ namespace knowledgebase
         const web::json::value &value);
     std::optional<RecommendTraceInfo> findRecommendTraceInfoByRankTimeAndSource(const std::string &source, int64_t rank_time);
     std::vector<int> findAllRecomendTraceInfoRankTimesBySource(const std::string &source);
+    std::optional<std::string> getKnowledgeCofnig(const string &source, const string &key);
+    void init_global_terminus_recommend_params();
+    web::json::value convertTerminusRecommendParamsToJsonValue(const TerminusRecommendParams &params);
+
 } // namespace knowledgebase

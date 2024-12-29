@@ -276,8 +276,11 @@ std::string generateSHA256Hash(const std::vector<double> &vec, const std::string
   return hash_hex;
 }
 
-std::string arrayToString(const std::vector<int> &arr)
+std::string arrayToString(const std::vector<int> &current)
 {
+  std::vector<int> arr = current;
+  std::sort(arr.begin(), arr.end());
+
   if (arr.empty())
     return "";
 

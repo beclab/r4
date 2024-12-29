@@ -24,6 +24,8 @@ using namespace Eigen;
 #include "knowledgebase_api.h"
 #include "xgboost_macro.hpp"
 
+// #include "entity/reco_metadata.h"
+
 #include "lr/feature_extractor.h"
 #include "lr/logistic_regression.h"
 #include "lr/model_serializer.h"
@@ -1039,12 +1041,22 @@ namespace rssrank
     return true;
   }
 
-  bool rankByTimeForColdStart(long long current_rank_time)
+  bool rankByTimeForColdStart(long long current_rank_time, const vector<Impression> &clicked_impressions)
   {
     // long long current_rank_time = getTimeStampNow();
+    std::string current_srouce_name = envOrBlank("TERMINUS_RECOMMEND_SOURCE_NAME");
+    std::vector<int> all_source_rank_time = knowledgebase::findAllRecomendTraceInfoRankTimesBySource(current_srouce_name);
+    std::optional<RecommendTraceInfo> previous_recommend_trace_info = std::nullopt;
+    if (all_source_rank_time.size() > 0)
+    {
+      previous_recommend_trace_info = knowledgebase::findRecommendTraceInfoByRankTimeAndSource(current_srouce_name, all_source_rank_time[0]);
+    }
+
     std::unordered_map<std::string, std::string> not_impressioned_algorithm_to_entry =
         getNotImpressionedAlgorithmToEntry();
     std::unordered_map<std::string, ScoreWithMetadata> id_to_score_with_meta;
+    std::vector<int> not_impressioned_algorithm_integer_ids;
+    std::vector<pair<int, double>> algorithm_integer_id_to_score;
     for (const auto &current_item : not_impressioned_algorithm_to_entry)
     {
       std::optional<Entry> temp_entry =
@@ -1070,6 +1082,7 @@ namespace rssrank
         LOG(ERROR) << "Algorithm item not found, id = " << current_item.first << std::endl;
         continue;
       }
+      not_impressioned_algorithm_integer_ids.push_back(current_algorithm.value().integer_id);
 
       double time_score = 0;
       if (temp_entry.value().published_at != 0)
@@ -1081,8 +1094,11 @@ namespace rssrank
         time_score = getTimeCoefficient(temp_entry.value().timestamp);
       }
       id_to_score_with_meta.emplace(current_item.first, buildScoreWithMeta(time_score, "", current_rank_time, ScoreEnum::SCORE_PUBLISHED_AT_TIME));
+      algorithm_integer_id_to_score.push_back(std::make_pair(current_algorithm.value().integer_id, time_score));
     }
 
+    std::sort(algorithm_integer_id_to_score.begin(), algorithm_integer_id_to_score.end(), [](const std::pair<int, double> &a, const std::pair<int, double> &b)
+              { return a.second > b.second; });
     if (FLAGS_verbose)
     {
       std::vector<std::pair<std::string, float>> sorted_algorithm_to_score = knowledgebase::rankScoreMetadata(id_to_score_with_meta);
@@ -1097,12 +1113,23 @@ namespace rssrank
       LOG(INFO) << "score with metadata update to knowledge " << std::endl;
       knowledgebase::updateAlgorithmScoreAndMetadataWithScoreOrder(id_to_score_with_meta);
       knowledgebase::updateLastRankTime(FLAGS_recommend_source_name, current_rank_time);
+      RecommendTraceInfo current_recommend_trace_info = buildRecommendTraceInfo(previous_recommend_trace_info, current_srouce_name, current_rank_time,
+                                                                                ScoreEnum::SCORE_PUBLISHED_AT_TIME,
+                                                                                not_impressioned_algorithm_integer_ids,
+                                                                                getIntegerIdFromVecImpression(clicked_impressions),
+                                                                                "",
+                                                                                "",
+                                                                                "",
+                                                                                algorithm_integer_id_to_score,
+                                                                                globalTerminusRecommendParams);
+      knowledgebase::postRecommendTraceInfo(current_recommend_trace_info);
     }
     return true;
   }
 
   bool rankShortTermAndLongTermUserEmbedding()
   {
+    knowledgebase::init_global_terminus_recommend_params();
     long long current_rank_time = getTimeStampNow();
     std::string current_srouce_name = envOrBlank("TERMINUS_RECOMMEND_SOURCE_NAME");
     if (FLAGS_recommend_source_name.size() == 0)
@@ -1111,27 +1138,41 @@ namespace rssrank
 
       return false;
     }
-    LOG(INFO) << "recommend_source_name " << FLAGS_recommend_source_name << std::endl;
-    int embedding_dimension = getCurrentEmbeddingDimension();
-    int cold_start_article_clicked_number = getEnvInt(TERMINUS_RECOMMEND_COLD_START_ARTICLE_CLICKED_NUMBER_THRESHOLD, 10);
-    knowledgebase::EntryCache::getInstance().init();
 
+    LOG(INFO)
+        << "recommend_source_name " << FLAGS_recommend_source_name << std::endl;
+
+    // int cold_start_article_clicked_number = getEnvInt(TERMINUS_RECOMMEND_COLD_START_ARTICLE_CLICKED_NUMBER_THRESHOLD, 10);
+    int cold_start_article_clicked_number = globalTerminusRecommendParams.cold_start_article_clicked_number_threshold;
+    knowledgebase::EntryCache::getInstance().init();
     vector<Impression> clicked_impressions = getImpressionForShortTermAndLongTermUserEmbeddingRank();
     // TODO: If the number of clicked articles is less than 10, do not use the recommendation algorithm. Since they are all in one category, sort by time for cold start.
     if (clicked_impressions.size() < cold_start_article_clicked_number)
     {
       LOG(INFO) << "clicked_impressions size " << clicked_impressions.size() << " less than " << cold_start_article_clicked_number << std::endl;
-      rankByTimeForColdStart(current_rank_time);
+      rankByTimeForColdStart(current_rank_time, clicked_impressions);
       return true;
     }
+    std::vector<int> all_source_rank_time = knowledgebase::findAllRecomendTraceInfoRankTimesBySource(current_srouce_name);
+    std::optional<RecommendTraceInfo> previous_recommend_trace_info = std::nullopt;
+    if (all_source_rank_time.size() > 0)
+    {
+      previous_recommend_trace_info = knowledgebase::findRecommendTraceInfoByRankTimeAndSource(current_srouce_name, all_source_rank_time[0]);
+    }
 
-    int short_number = getEnvInt(TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION, 10);
-    float long_term_weight = getEnvFloat(TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE, 0.3);
+    int embedding_dimension = getCurrentEmbeddingDimension();
+
+    // int short_number = getEnvInt(TERMINUS_RECOMMEND_SHORT_TERM_USER_EMBEDDING_NUMBER_OF_IMPRESSION, 10);
+    int short_number = globalTerminusRecommendParams.short_term_user_embedding_impression_count;
+    // float long_term_weight = getEnvFloat(TERMINUS_RECOMMEND_LONG_TERM_USER_EMBEDDING_WEIGHT_FOR_RANKSCORE, 0.3);
+    float long_term_weight = globalTerminusRecommendParams.long_term_user_embedding_weight_for_rankscore;
     float short_term_weight = 1 - long_term_weight; // long_term_weight + short_term_weight = 1
-    float article_time_weight = getEnvFloat(TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE, 0.5);
+    // float article_time_weight = getEnvFloat(TERMINUS_RECOMMEND_ARTICLE_TIME_WEIGHT_FOR_RANKSCORE, 0.5);
+    float article_time_weight = globalTerminusRecommendParams.article_time_weight_for_rankscore;
 
     vector<Impression> short_term_impression = get_subvector(clicked_impressions, short_number);
     vector<double> short_term_embedding = calcluateUserShortTermEmbedding(short_term_impression, true);
+
     // todo after calculate shore term embedding, clear short_term_impression
     if (short_term_embedding.size() == 0)
     {
@@ -1139,15 +1180,30 @@ namespace rssrank
     }
     VectorXd short_term_vectorxd = vectorToEigentVectorXd(short_term_embedding);
 
+    // post short term user embedding
+    RecommendTraceUserEmbedding short_recommend_trace_user_embedding =
+        buildRecommendTraceUserEmbedding(current_srouce_name, short_term_embedding, getIntegerIdFromVecImpression(short_term_impression), current_rank_time);
+    knowledgebase::postRecommendTraceUserEmbedding(short_recommend_trace_user_embedding);
+
     // vector<double> long_term_embedding = knowledgebase::getRecallUserEmbedding(current_srouce_name);
     vector<double> long_term_embedding = calcluateUserLongTermEmbedding(clicked_impressions);
-    std::string recall_embedding = getEnvString(TERMINUS_RECOMMEND_LONG_OR_SHORT_EMBEDDING_AS_RECALL_EMBEDDING, "long");
+
+    // post long term user embedding
+    RecommendTraceUserEmbedding long_recommend_trace_user_embedding =
+        buildRecommendTraceUserEmbedding(current_srouce_name, long_term_embedding, getIntegerIdFromVecImpression(clicked_impressions), current_rank_time);
+    knowledgebase::postRecommendTraceUserEmbedding(long_recommend_trace_user_embedding);
+
+    // std::string recall_embedding = getEnvString(TERMINUS_RECOMMEND_LONG_OR_SHORT_EMBEDDING_AS_RECALL_EMBEDDING, "long");
+    std::string recall_embedding = globalTerminusRecommendParams.long_or_short_embedding_as_recall_embedding;
+    std::string current_recall_user_embedding_id = "";
     if (recall_embedding == "long")
     {
+      current_recall_user_embedding_id = long_recommend_trace_user_embedding.unique_id;
       knowledgebase::updateRecallUserEmbedding(current_srouce_name, long_term_embedding, current_rank_time);
     }
     else if (recall_embedding == "short")
     {
+      current_recall_user_embedding_id = short_recommend_trace_user_embedding.unique_id;
       knowledgebase::updateRecallUserEmbedding(current_srouce_name, short_term_embedding, current_rank_time);
     }
     else
@@ -1166,6 +1222,9 @@ namespace rssrank
     std::unordered_map<std::string, ScoreWithMetadata> id_to_score_with_meta;
     long long current_time = getTimeStampNow();
     FAISSArticleSearch search(clicked_impressions);
+
+    std::vector<int> not_impressioned_algorithm_integer_ids;
+    std::vector<pair<int, double>> algorithm_integer_id_to_score;
     for (const auto &current_item : not_impressioned_algorithm_to_entry)
     {
       std::optional<Entry> temp_entry =
@@ -1196,6 +1255,7 @@ namespace rssrank
         LOG(ERROR) << "Algorithm item no embbeding found, id = " << current_item.first << std::endl;
         continue;
       }
+      not_impressioned_algorithm_integer_ids.push_back(current_algorithm.value().integer_id);
       vector<double> current_article_embedding = current_algorithm.value().embedding.value();
       VectorXd current_article_vectorxd = vectorToEigentVectorXd(current_article_embedding);
       double short_term_similarity_score = normalized_similarity_score_based_on_cosine_similarity(current_article_vectorxd, short_term_vectorxd);
@@ -1216,7 +1276,10 @@ namespace rssrank
       std::pair<int, float> row_id_to_distance = search.findMostSimilarArticle(current_algorithm.value().embedding.value());
       std::string most_similar_article_id = clicked_impressions[row_id_to_distance.first].id;
       id_to_score_with_meta.emplace(current_item.first, buildScoreWithMeta(score, most_similar_article_id, current_rank_time, ScoreEnum::SCORE_DISTANCE_ARTICLE_WITH_SHORT_AND_LONG_TERM_USER_EMBEDDING_PLUS_PUBLISHED_TIME));
+      algorithm_integer_id_to_score.push_back(std::make_pair(current_algorithm.value().integer_id, score));
     }
+    std::sort(algorithm_integer_id_to_score.begin(), algorithm_integer_id_to_score.end(), [](const std::pair<int, double> &a, const std::pair<int, double> &b)
+              { return a.second > b.second; });
 
     if (FLAGS_verbose)
     {
@@ -1232,6 +1295,16 @@ namespace rssrank
       LOG(INFO) << "score with metadata update to knowledge " << std::endl;
       knowledgebase::updateAlgorithmScoreAndMetadataWithScoreOrder(id_to_score_with_meta);
       knowledgebase::updateLastRankTime(FLAGS_recommend_source_name, current_rank_time);
+      RecommendTraceInfo current_recommend_trace_info = buildRecommendTraceInfo(previous_recommend_trace_info, current_srouce_name, current_rank_time,
+                                                                                ScoreEnum::SCORE_DISTANCE_ARTICLE_WITH_SHORT_AND_LONG_TERM_USER_EMBEDDING_PLUS_PUBLISHED_TIME,
+                                                                                not_impressioned_algorithm_integer_ids,
+                                                                                getIntegerIdFromVecImpression(clicked_impressions),
+                                                                                long_recommend_trace_user_embedding.unique_id,
+                                                                                short_recommend_trace_user_embedding.unique_id,
+                                                                                current_recall_user_embedding_id,
+                                                                                algorithm_integer_id_to_score,
+                                                                                globalTerminusRecommendParams);
+      knowledgebase::postRecommendTraceInfo(current_recommend_trace_info);
     }
 
     return true;
@@ -1707,8 +1780,9 @@ namespace rssrank
       const std::vector<int> &impressioned_clicked_id,
       const std::string &long_term_user_embedding_id,
       const std::string &short_term_user_embedding_id,
-      const std::vector<int> &top_ranked_algorithm_id,
-      const std::vector<float> &top_ranked_algorithm_score)
+      const std::string &recall_user_embedding_id,
+      const std::vector<std::pair<int, double>> &algorithm_integer_id_to_score,
+      const TerminusRecommendParams &recommendParams)
   {
     RecommendTraceInfo recommend_trace_info;
     recommend_trace_info.source = source;
@@ -1719,19 +1793,47 @@ namespace rssrank
     recommend_trace_info.impressioned_clicked_id = arrayToString(impressioned_clicked_id);
     recommend_trace_info.long_term_user_embedding_id = long_term_user_embedding_id;
     recommend_trace_info.short_term_user_embedding_id = short_term_user_embedding_id;
-    recommend_trace_info.top_ranked_algorithm_id = top_ranked_algorithm_id;
+
+    std::vector<int> top_ranked_algorithm_integer_id;
+    std::vector<float> top_ranked_algorithm_score;
+    for (const auto &current_item : algorithm_integer_id_to_score)
+    {
+      top_ranked_algorithm_integer_id.push_back(current_item.first);
+      top_ranked_algorithm_score.push_back(current_item.second);
+    }
+
+    recommend_trace_info.top_ranked_algorithm_id = top_ranked_algorithm_integer_id;
     recommend_trace_info.top_ranked_algorithm_score = top_ranked_algorithm_score;
     if (previous_recommend_trace_info != std::nullopt)
     {
+      RecommendTraceInfo previous_recommend_trace_info_value = previous_recommend_trace_info.value();
       std::vector<int> previous_not_impressioned_algorithm_id =
-          stringToArray(previous_recommend_trace_info.value().not_impressioned_algorithm_id);
+          stringToArray(previous_recommend_trace_info_value.not_impressioned_algorithm_id);
       std::vector<int> added_not_impressioned_algorithm_id = find_elements_in_b_not_in_a(previous_not_impressioned_algorithm_id, not_impressioned_algorithm_id);
       recommend_trace_info.added_not_impressioned_algorithm_id = arrayToString(added_not_impressioned_algorithm_id);
-      std::vector<int> previous_impressioned_clicked_id = stringToArray(previous_recommend_trace_info.value().impressioned_clicked_id);
+      std::vector<int> previous_impressioned_clicked_id = stringToArray(previous_recommend_trace_info_value.impressioned_clicked_id);
       std::vector<int> added_impressioned_clicked_id = find_elements_in_b_not_in_a(previous_impressioned_clicked_id, impressioned_clicked_id);
       recommend_trace_info.added_impressioned_clicked_id = arrayToString(added_impressioned_clicked_id);
+      recommend_trace_info.previous_rank_time = previous_recommend_trace_info_value.rank_time;
     }
+    else
+    {
+      recommend_trace_info.previous_rank_time = -1; // previous_rank_time -1 means no previous rank time
+    }
+
+    web::json::value params = knowledgebase::convertTerminusRecommendParamsToJsonValue(recommendParams);
+    recommend_trace_info.recommend_parameter_json_serialized = params.serialize();
     return recommend_trace_info;
+  }
+
+  std::vector<int> getIntegerIdFromVecImpression(const std::vector<Impression> &impressions)
+  {
+    std::vector<int> result;
+    for (const auto &impression : impressions)
+    {
+      result.push_back(int(impression.integer_id));
+    }
+    return result;
   }
 
 } // namespace rssrank

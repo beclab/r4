@@ -518,7 +518,8 @@ TEST(RssRankTest, rankByTimeForColdStart)
   // --gtest_filter=RssRankTest.rankByTimeForColdStart
   initDevelop();
   init_log();
-  rssrank::rankByTimeForColdStart(getTimeStampNow());
+  vector<Impression> clicked_impressions = rssrank::getImpressionForShortTermAndLongTermUserEmbeddingRank();
+  rssrank::rankByTimeForColdStart(getTimeStampNow(), clicked_impressions);
 }
 
 TEST(KnowledgeApiTest, postRecommendTraceUserEmbedding)
@@ -598,4 +599,18 @@ TEST(KnowledgeApiTest, findAllRecomendTraceInfoRankTimesBySource)
     std::cout << current << " ";
   }
   std::cout << std::endl;
+}
+
+TEST(KnowledgeApiTest, getKnowledgeCofnig)
+{
+  // --gtest_filter=KnowledgeApiTest.getKnowledgeCofnig
+  initDevelop();
+  init_log();
+
+  std::string source = "r4techbiz";
+
+  std::optional<string> value = knowledgebase::getKnowledgeCofnig(source, knowledgebase::LAST_RANK_TIME);
+  std::cout << "LAST_RANK_TIME " << value.value() << std::endl;
+  value = knowledgebase::getKnowledgeCofnig("recommend_parameter", "long_weight");
+  std::cout << "long_weight " << value.value() << " " << value.value().length() << std::endl;
 }

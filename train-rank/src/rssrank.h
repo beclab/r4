@@ -95,7 +95,7 @@ namespace rssrank
     std::unordered_map<std::string, std::string> getNotImpressionedAlgorithmToEntry();
     vector<double> calcluateUserLongTermEmbedding(const vector<Impression> &impressions);
 
-    bool rankByTimeForColdStart(long long current_time);
+    bool rankByTimeForColdStart(long long current_time, const vector<Impression> &clicked_impressions);
     RecommendTraceUserEmbedding buildRecommendTraceUserEmbedding(
         const std::string &source,
         const std::vector<double> &embedding,
@@ -111,7 +111,10 @@ namespace rssrank
         const std::vector<int> &impressioned_clicked_id,
         const std::string &long_term_user_embedding_id,
         const std::string &short_term_user_embedding_id,
-        const std::vector<int> &top_ranked_algorithm_id,
-        const std::vector<float> &top_ranked_algorithm_score);
+        const std::string &recall_user_embedding_id,
+        const std::vector<std::pair<int, double>> &algorithm_integer_id_to_score,
+        const TerminusRecommendParams &recommendParams);
+
+    std::vector<int> getIntegerIdFromVecImpression(const std::vector<Impression> &impressions);
 
 } // namespace rssrank
