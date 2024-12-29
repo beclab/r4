@@ -51,6 +51,8 @@ add_library(rankcommon STATIC src/data_process.cpp
                               src/http_single_client.cpp
                               src/faiss_article_search.h
                               src/faiss_article_search.cpp
+                              src/userembedding_calculation.h
+                              src/userembedding_calculation.cpp
                               )
                               
 add_dependencies(rankcommon gen_git_info)
@@ -235,6 +237,30 @@ cpprestsdk::cpprest
  crypto
  gflags
  )
+add_executable(
+  parameter_tune_tool
+  src/recommend_parameter_tune_tool.cpp
+)
+
+target_link_libraries(
+  parameter_tune_tool
+  libgtest_main.a
+  libgmock.a  
+  libgmock_main.a  
+  libgtest.a
+  rankcommon
+  xgboost::xgboost 
+  openblas
+  lapack
+  faiss
+  # ${LIBMONGOCXX_LIBRARIES}
+  # ${LIBBSONCXX_LIBRARIES}
+  cpprestsdk::cpprest
+  boost_system
+  ssl
+  crypto
+  gflags
+)
 
  add_executable(
   test_cpprest

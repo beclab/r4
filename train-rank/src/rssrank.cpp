@@ -15,14 +15,15 @@ namespace fs = std::filesystem;
 #include <vector>
 
 #include <boost/date_time.hpp>
-#include <eigen3/Eigen/Dense>
-using namespace Eigen;
+// #include <eigen3/Eigen/Dense>
+// using namespace Eigen;
 
 #include "common_tool.h"
 #include "data_process.h"
 #include "easylogging++.h"
 #include "knowledgebase_api.h"
 #include "xgboost_macro.hpp"
+#include "userembedding_calculation.h"
 
 // #include "entity/reco_metadata.h"
 
@@ -148,62 +149,6 @@ namespace rssrank
     double result = 1.8 / (1.0 + std::exp(-86400.0 / diff)) - 0.8; // when diff->0,result->1.0; when diff->+infinite,result->0.1; when diff=86400,result=0.55
 
     return result;
-  }
-
-  vector<double> calcluateUserShortTermEmbedding(const vector<Impression> &impressions, bool with_weight)
-  {
-    if (impressions.empty())
-    {
-      return {};
-    }
-    int row = impressions.size();
-    int col = impressions[0].embedding.value().size();
-    MatrixXf embeddings(row, col);
-
-    // Fill these vectors
-    for (int i = 0; i < row; ++i)
-    {
-      for (int j = 0; j < col; ++j)
-      {
-        embeddings(i, j) = impressions[i].embedding.value()[j];
-      }
-    }
-    if (with_weight)
-    {
-      // Sum the vectors
-      for (int i = 0; i < row; ++i)
-      {
-        embeddings.row(i) = embeddings.row(i) * getSpecificImpressionScore(impressions[i]);
-      }
-    }
-    // Sum the vectors
-    VectorXf eig_vec = embeddings.colwise().sum();
-    eig_vec = eig_vec / eig_vec.norm();
-    return std::vector<double>(eig_vec.data(), eig_vec.data() + eig_vec.size());
-  }
-
-  vector<double> calcluateUserLongTermEmbedding(const vector<Impression> &impressions)
-  {
-    if (impressions.empty())
-    {
-      return {};
-    }
-    int row = impressions.size();
-    int col = impressions[0].embedding.value().size();
-    MatrixXf embeddings(row, col);
-
-    // Fill these vectors
-    for (int i = 0; i < row; ++i)
-    {
-      for (int j = 0; j < col; ++j)
-      {
-        embeddings(i, j) = impressions[i].embedding.value()[j];
-      }
-    }
-    // Sum the vectors
-    VectorXf eig_vec = embeddings.colwise().sum();
-    eig_vec = eig_vec / eig_vec.norm();
-    return std::vector<double>(eig_vec.data(), eig_vec.data() + eig_vec.size());
   }
 
   vector<Impression> getImpressionForShortTermAndLongTermUserEmbeddingRank()
@@ -1057,6 +1002,9 @@ namespace rssrank
     std::unordered_map<std::string, ScoreWithMetadata> id_to_score_with_meta;
     std::vector<int> not_impressioned_algorithm_integer_ids;
     std::vector<pair<int, double>> algorithm_integer_id_to_score;
+    int embedding_dimension = getCurrentEmbeddingDimension();
+    std::vector<double> recall_user_embedding = knowledgebase::init_user_embedding(embedding_dimension);
+    knowledgebase::updateRecallUserEmbedding(current_srouce_name, recall_user_embedding, current_rank_time);
     for (const auto &current_item : not_impressioned_algorithm_to_entry)
     {
       std::optional<Entry> temp_entry =
@@ -1178,7 +1126,7 @@ namespace rssrank
     {
       short_term_embedding = vector<double>(embedding_dimension, 0.0);
     }
-    VectorXd short_term_vectorxd = vectorToEigentVectorXd(short_term_embedding);
+    // Eigen::VectorXd short_term_vectorxd = vectorToEigentVectorXd(short_term_embedding);
 
     // post short term user embedding
     RecommendTraceUserEmbedding short_recommend_trace_user_embedding =
@@ -1212,7 +1160,7 @@ namespace rssrank
       return false;
     }
 
-    VectorXd long_term_vectorxd = vectorToEigentVectorXd(long_term_embedding);
+    // Eigen::VectorXd long_term_vectorxd = vectorToEigentVectorXd(long_term_embedding);
 
     std::unordered_map<std::string, std::string> not_impressioned_algorithm_to_entry =
         getNotImpressionedAlgorithmToEntry(); // This is actually algorithm_id_to_entry_id, the current logic does not distinguish between ranked and unranked, it is all algorithms under a certain source
@@ -1257,9 +1205,9 @@ namespace rssrank
       }
       not_impressioned_algorithm_integer_ids.push_back(current_algorithm.value().integer_id);
       vector<double> current_article_embedding = current_algorithm.value().embedding.value();
-      VectorXd current_article_vectorxd = vectorToEigentVectorXd(current_article_embedding);
-      double short_term_similarity_score = normalized_similarity_score_based_on_cosine_similarity(current_article_vectorxd, short_term_vectorxd);
-      double long_term_similarity_score = normalized_similarity_score_based_on_cosine_similarity(current_article_vectorxd, long_term_vectorxd);
+      // Eigen::VectorXd current_article_vectorxd = vectorToEigentVectorXd(current_article_embedding);
+      double short_term_similarity_score = normalized_similarity_score_based_on_cosine_similarity(current_article_embedding, short_term_embedding);
+      double long_term_similarity_score = normalized_similarity_score_based_on_cosine_similarity(current_article_embedding, long_term_embedding);
       double similarity_score = short_term_weight * short_term_similarity_score +
                                 long_term_weight * long_term_similarity_score;
       double time_score = 0;

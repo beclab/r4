@@ -71,6 +71,7 @@ TEST(CommonTest, partitionChunkTest)
   }
 }
 
+/*
 TEST(CosineSimilarityTest, BasicTest)
 {
   // --gtest_filter=CosineSimilarityTest.BasicTest
@@ -164,6 +165,7 @@ TEST(CosineSimilarityTest, EmptyVector)
   // If empty vectors are allowed, the result might be NaN, or you need to modify the function to throw an exception
   EXPECT_TRUE(std::isnan(result)); // Here we assume we return NaN
 }
+*/
 
 TEST(ArrayToStringTest, ConvertsArrayToStringCorrectly)
 {

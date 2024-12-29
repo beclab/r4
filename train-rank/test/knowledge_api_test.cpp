@@ -304,7 +304,7 @@ TEST(RssRankTest, getImpressionForShortTermAndLongTermUserEmbeddingRank)
     std::cout << "current_last_opened " << current.entry_last_opened << std::endl;
   }
 }
-
+#include "../src/userembedding_calculation.h"
 TEST(RssRankTest, TestCalculateEmbeddingMultipleReal)
 {
   // --gtest_filter=RssRankTest.TestCalculateEmbeddingMultipleReal
@@ -312,7 +312,7 @@ TEST(RssRankTest, TestCalculateEmbeddingMultipleReal)
   init_log();
   knowledgebase::EntryCache::getInstance().init();
   std::vector<Impression> result = rssrank::getImpressionForShortTermAndLongTermUserEmbeddingRank();
-  std::vector<double> embedding = rssrank::calcluateUserShortTermEmbedding(result, true);
+  std::vector<double> embedding = calcluateUserShortTermEmbedding(result, true);
   double total = 0;
   for (auto current : embedding)
   {
@@ -320,7 +320,7 @@ TEST(RssRankTest, TestCalculateEmbeddingMultipleReal)
     total += current * current;
   }
   std::cout << "total " << total << std::endl;
-  std::vector<double> embedding2 = rssrank::calcluateUserLongTermEmbedding(result);
+  std::vector<double> embedding2 = calcluateUserLongTermEmbedding(result);
   double total2 = 0;
   for (auto current : embedding2)
   {
@@ -379,7 +379,7 @@ TEST(RssRankTest, TestCalculateEmbeddingMultiple)
   impression1.embedding = std::vector<double>{1.0, 2.0, 3.0};
   impression2.embedding = std::vector<double>{4.0, 5.0, 6.0};
   std::vector<Impression> impressions = {impression1, impression2};
-  std::vector<double> result = rssrank::calcluateUserShortTermEmbedding(impressions, false);
+  std::vector<double> result = calcluateUserShortTermEmbedding(impressions, false);
   ASSERT_EQ(result.size(), 3);
   EXPECT_FLOAT_EQ(result[0], 5.0);
   EXPECT_FLOAT_EQ(result[1], 7.0);

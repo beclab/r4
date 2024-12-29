@@ -9,8 +9,8 @@
 #include <string>
 #include <vector>
 
-#include <eigen3/Eigen/Dense>
-using namespace Eigen;
+// #include <eigen3/Eigen/Dense>
+// using namespace Eigen;
 using namespace std::chrono;
 
 // DECLARE_string(model_path_root);
@@ -211,10 +211,12 @@ std::vector<T> get_subvector(const std::vector<T> &input, int n)
   }
 }
 
-double eigen_cosine_similarity(const VectorXd &A, const VectorXd &B); // this score between -1 and 1, the higher the score, the more similar the two vectors are
+// double eigen_cosine_similarity(const VectorXd &A, const VectorXd &B);                                // this score between -1 and 1, the higher the score, the more similar the two vectors are
+// double normalized_similarity_score_based_on_cosine_similarity(const VectorXd &A, const VectorXd &B); // this score between 0 and 1, the higher the score, the more similar the two vectors are
+// VectorXd vectorToEigentVectorXd(const std::vector<double> &vec);
 
-double normalized_similarity_score_based_on_cosine_similarity(const VectorXd &A, const VectorXd &B); // this score between 0 and 1, the higher the score, the more similar the two vectors are
-VectorXd vectorToEigentVectorXd(const std::vector<double> &vec);
+double normalized_similarity_score_based_on_cosine_similarity(const std::vector<double> &A, const std::vector<double> &B);
+
 float randomFloatBetweenZeroAndOne();
 double stringToDouble(const std::string &str);
 

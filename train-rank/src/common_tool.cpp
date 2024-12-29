@@ -236,6 +236,13 @@ double normalized_similarity_score_based_on_cosine_similarity(const VectorXd &A,
   return (cosine_similarity + 1) / 2;
 }
 
+double normalized_similarity_score_based_on_cosine_similarity(const std::vector<double> &A, const std::vector<double> &B)
+{
+  VectorXd A_eigen = vectorToEigentVectorXd(A);
+  VectorXd B_eigen = vectorToEigentVectorXd(B);
+  return normalized_similarity_score_based_on_cosine_similarity(A_eigen, B_eigen);
+}
+
 float randomFloatBetweenZeroAndOne()
 {
   // Create a random number generator (uniform distribution between 0 and 1)

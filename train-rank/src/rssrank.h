@@ -88,12 +88,12 @@ namespace rssrank
                                        int test_rows, float *test_labels,
                                        BoosterHandle h_booster, float *biggest_auc);
     std::vector<Impression> getImpressionForShortTermAndLongTermUserEmbeddingRank();
-    std::vector<double> calcluateUserShortTermEmbedding(const std::vector<Impression> &impressions, bool with_weight);
+    // std::vector<double> calcluateUserShortTermEmbedding(const std::vector<Impression> &impressions, bool with_weight);
     double getTimeCoefficientForUnixTimestamp(long long timestamp, long long current_timestamp);
-    float getSpecificImpressionScoreForShortTermUserEmbedding(const Impression &current_impression);
+    float ForShortTermUserEmbedding(const Impression &current_impression);
     bool rankShortTermAndLongTermUserEmbedding();
     std::unordered_map<std::string, std::string> getNotImpressionedAlgorithmToEntry();
-    vector<double> calcluateUserLongTermEmbedding(const vector<Impression> &impressions);
+    // vector<double> calcluateUserLongTermEmbedding(const vector<Impression> &impressions);
 
     bool rankByTimeForColdStart(long long current_time, const vector<Impression> &clicked_impressions);
     RecommendTraceUserEmbedding buildRecommendTraceUserEmbedding(
