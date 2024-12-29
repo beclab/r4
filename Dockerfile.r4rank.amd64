@@ -166,7 +166,7 @@ COPY --from=builder /usr/local/lib/libblas.a /usr/local/lib/libblas.a
 COPY --from=builder /usr/local/lib/libopenblas.a /usr/local/lib/libopenblas.a
 COPY --from=builder /usr/local/lib/libopenblas.so /usr/local/lib/libopenblas.so
 COPY --from=builder /usr/local/lib/libopenblas.so.0 /usr/local/lib/libopenblas.so.0
-COPY --from=builder /usr/local/lib/libopenblas_cooperlakep-r0.3.28.a /usr/local/lib/libopenblas_cooperlakep-r0.3.28.a
+# COPY --from=builder /usr/local/lib/libopenblas_cooperlakep-r0.3.28.a /usr/local/lib/libopenblas_cooperlakep-r0.3.28.a
 # COPY --from=builder /usr/local/lib/libopenblas_cooperlakep-r0.3.28.so /usr/local/lib/libopenblas_cooperlakep-r0.3.28.so
 
 RUN mkdir /opt/rank_model/
