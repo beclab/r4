@@ -28,7 +28,7 @@ jobs:
           platforms: linux/amd64
 
   update_rank_arm64:
-    runs-on: self-hosted
+    runs-on: [self-hosted, linux, ARM64]
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
