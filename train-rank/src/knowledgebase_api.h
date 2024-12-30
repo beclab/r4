@@ -86,6 +86,7 @@ namespace knowledgebase
                                          std::vector<Algorithm> *algorithm_list,
                                          int *count);
     std::optional<Algorithm> GetAlgorithmById(const std::string &id);
+    std::optional<Algorithm> GetAlgorithmByIntegerId(int integer_id);
     std::optional<Entry> GetEntryById(const std::string &id);
     std::unordered_map<std::string, Entry> getEntries(const std::string &source);
     std::unordered_map<std::string, Entry> getEntries(const std::string &source);

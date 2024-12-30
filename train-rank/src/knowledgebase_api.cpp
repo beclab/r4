@@ -1492,6 +1492,10 @@ namespace knowledgebase
     return option_algorithm;
   }
 
+  std::optional<Algorithm> GetAlgorithmByIntegerId(int integer_id)
+  {
+  }
+
   void getAllImpression(std::string source,
                         std::vector<Impression> *impression_list, int *count)
   {
