@@ -81,9 +81,22 @@ namespace knowledgebase
     return std::nullopt;
   }
 
+  std::optional<Entry> EntryCache::getEntryByIntegerId(int integer_id)
+  {
+    if (cache_integer_id_to_id.find(integer_id) != cache_integer_id_to_id.end())
+    {
+      return getEntryById(cache_integer_id_to_id[integer_id]);
+    }
+    return std::nullopt;
+  }
+
   void EntryCache::loadAllEntries()
   {
     cache = getEntries(FLAGS_recommend_source_name);
+    for (const auto &entry : cache)
+    {
+      cache_integer_id_to_id[entry.second.integer_id] = entry.first;
+    }
     long long min_last_opened = std::numeric_limits<long long>::max();
     long long max_last_opened = 0;
     for (const auto &entry : cache)
@@ -1243,6 +1256,50 @@ namespace knowledgebase
 
     return embedding_data;
   }
+  std::optional<Impression> GetImpressionByIntegerId(int integer_id)
+  {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
+    std::string current_impression_api_suffix =
+        std::string(IMPRESSION_API_SUFFIX) + "/integer_id/" + std::to_string(integer_id);
+
+    LOG(DEBUG) << "current_impression_api_suffix "
+               << current_impression_api_suffix << std::endl;
+
+    uri_builder builder(U(current_impression_api_suffix));
+
+    // Impression current_impression;
+    std::optional<Impression> option_impression = std::nullopt;
+
+    client.request(methods::GET, builder.to_string())
+        .then([](http_response response) -> pplx::task<web::json::value>
+              {
+        if (response.status_code() == status_codes::OK) {
+          return response.extract_json();
+        }
+        return pplx::task_from_result(web::json::value()); })
+        .then([&option_impression](pplx::task<web::json::value> previousTask)
+              {
+        try {
+          web::json::value const &v = previousTask.get();
+          int code = v.at("code").as_integer();
+          std::string message = "null";
+          if (v.has_string_field("message")) {
+            message = v.at("message").as_string();
+          }
+          LOG(DEBUG) << "code " << code << " message " << message << std::endl;
+          if (code == 0) {
+            web::json::value current_value = v.at("data");
+            option_impression =
+                convertFromWebJsonValueToImpression(current_value);
+          }
+        } catch (http_exception const &e) {
+          LOG(ERROR) << "Error exception " << e.what() << std::endl;
+        } })
+        .wait();
+    return option_impression;
+  }
 
   std::optional<Impression> GetImpressionById(const std::string &id)
   {
@@ -1494,6 +1551,47 @@ namespace knowledgebase
 
   std::optional<Algorithm> GetAlgorithmByIntegerId(int integer_id)
   {
+    http_client *current_client = HttpClientSingleton::get_instance();
+    // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
+    http_client &client = *current_client;
+    std::string current_algorithm_api_suffix =
+        std::string(ALGORITHM_API_SUFFIX) + "/integer_id/" + std::to_string(integer_id);
+
+    LOG(DEBUG) << "current_impression_api_suffix " << current_algorithm_api_suffix
+               << std::endl;
+
+    uri_builder builder(U(current_algorithm_api_suffix));
+
+    // Impression current_impression;
+    std::optional<Algorithm> option_algorithm = std::nullopt;
+
+    client.request(methods::GET, builder.to_string())
+        .then([](http_response response) -> pplx::task<web::json::value>
+              {
+        if (response.status_code() == status_codes::OK) {
+          return response.extract_json();
+        }
+        return pplx::task_from_result(web::json::value()); })
+        .then([&option_algorithm](pplx::task<web::json::value> previousTask)
+              {
+        try {
+          web::json::value const &v = previousTask.get();
+          int code = v.at("code").as_integer();
+          std::string message = "null";
+          if (v.has_string_field("message")) {
+            message = v.at("message").as_string();
+          }
+          LOG(DEBUG) << "code " << code << " message " << message << std::endl;
+          if (code == 0) {
+            web::json::value current_value = v.at("data");
+            option_algorithm =
+                convertFromWebJsonValueToAlgorithm(current_value);
+          }
+        } catch (http_exception const &e) {
+          LOG(ERROR) << "Error exception " << e.what() << std::endl;
+        } })
+        .wait();
+    return option_algorithm;
   }
 
   void getAllImpression(std::string source,

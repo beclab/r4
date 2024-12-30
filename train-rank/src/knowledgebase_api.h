@@ -29,6 +29,7 @@ namespace knowledgebase
         static EntryCache &getInstance();
         void init();
         std::optional<Entry> getEntryById(const std::string &id);
+        std::optional<Entry> getEntryByIntegerId(int integer_id);
         void loadAllEntries();
 
         void dumpStatistics();
@@ -38,6 +39,7 @@ namespace knowledgebase
     private:
         EntryCache();
         std::unordered_map<std::string, Entry> cache;
+        std::unordered_map<int, std::string> cache_integer_id_to_id;
         int cache_miss;
         int cache_hit;
         long long min_last_opened;
@@ -72,6 +74,7 @@ namespace knowledgebase
     void getAllImpression(std::string source,
                           std::vector<Impression> *impression_list, int *count);
     std::optional<Impression> GetImpressionById(const std::string &id);
+    std::optional<Impression> GetImpressionByIntegerId(int integer_id);
     bool postRecommendTraceUserEmbedding(const RecommendTraceUserEmbedding &embedding);
     bool postRecommendTraceInfo(const RecommendTraceInfo &info);
     void getAlgorithmAccordingRanked(int limit, int offset, std::string source,

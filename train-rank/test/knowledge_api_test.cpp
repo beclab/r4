@@ -536,6 +536,32 @@ TEST(KnowledgeApiTest, postRecommendTraceUserEmbedding)
   knowledgebase::postRecommendTraceUserEmbedding(recommend_trace_user_embedding);
 }
 
+TEST(KnowledgeApiTest, GetAlgorithmByIntegerId)
+{
+  // --gtest_filter=KnowledgeApiTest.GetAlgorithmByIntegerId
+  initDevelop();
+  init_log();
+  std::optional<Algorithm> current_algorithm = knowledgebase::GetAlgorithmByIntegerId(100);
+  if (current_algorithm != std::nullopt)
+  {
+    Algorithm temp = current_algorithm.value();
+    std::cout << temp.id << " " << temp.entry << " " << temp.source << std::endl;
+  }
+}
+
+TEST(KnowledgeApiTest, GetImpressionByIntegerId)
+{
+  // --gtest_filter=KnowledgeApiTest.GetImpressionByIntegerId
+  initDevelop();
+  init_log();
+  std::optional<Impression> current_impression = knowledgebase::GetImpressionByIntegerId(100);
+  if (current_impression != std::nullopt)
+  {
+    Impression temp = current_impression.value();
+    std::cout << temp.id << " " << temp.source << " " << temp.entry_id << std::endl;
+  }
+}
+
 TEST(KnowledgeApiTest, findRecommendTraceUserEmbeddingByUniqueId)
 {
   // --gtest_filter=KnowledgeApiTest.findRecommendTraceUserEmbeddingByUniqueId
