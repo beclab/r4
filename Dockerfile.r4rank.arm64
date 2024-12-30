@@ -138,6 +138,16 @@ RUN cd /opt && \
     make -j$(nproc) && \
     make install
 
+
+RUN cd /opt && \
+    wget https://github.com/libarchive/libarchive/releases/download/v3.7.7/libarchive-3.7.7.tar.gz && \
+    tar -xvzf libarchive-3.7.7.tar.gz && \
+    cd libarchive-3.7.7 && \
+    ./configure && \
+    make && \
+    make install
+
+
 ADD train-rank/src /opt/rss-terminus-v2-rank/src
 ADD train-rank/test /opt/rss-terminus-v2-rank/test
 COPY train-rank/CMakeLists.txt /opt/rss-terminus-v2-rank/CMakeLists.txt
@@ -180,6 +190,13 @@ COPY --from=builder /usr/local/lib/libopenblas_genericp-r0.3.28.a  /usr/local/li
 COPY --from=builder /usr/local/lib/libopenblas_genericp-r0.3.28.so  /usr/local/lib/libopenblas_genericp-r0.3.28.so 
 COPY --from=builder /usr/local/lib/libxlnt.so.1.5.0  /usr/local/lib/libxlnt.so.1.5.0
 COPY --from=builder /usr/local/lib/libxlnt.so  /usr/local/lib/libxlnt.so
+
+COPY --from=builder /usr/local/lib/libarchive.a /usr/local/lib/libarchive.a
+COPY --from=builder /usr/local/lib/libarchive.la /usr/local/lib/libarchive.la
+COPY --from=builder /usr/local/lib/libarchive.so /usr/local/lib/libarchive.so
+COPY --from=builder /usr/local/lib/libarchive.so.13 /usr/local/lib/libarchive.so.13
+COPY --from=builder /usr/local/lib/libarchive.so.13.7.7 /usr/local/lib/libarchive.so.13.7.7
+
 
 RUN mkdir /opt/rank_model/
 CMD ["/usr/local/bin/bertv2rank"]

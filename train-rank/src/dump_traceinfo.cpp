@@ -1,3 +1,4 @@
+#include "archive_file.h"
 #include "knowledgebase_api.h"
 #include "common_tool.h"
 #include "dump_traceinfo.h"
@@ -276,5 +277,20 @@ void dump_traceinfo_main(std::string source_name)
             write_top_ranked_entry(current_rank_time_path, current_trace_info_value);
             list_need_zip_directory.push_back(current_rank_time_path);
         }
+    }
+
+    if (list_need_zip_directory.size() > globalTerminusRecommendParams.trace_info_number_zip)
+    {
+        for (int index = globalTerminusRecommendParams.trace_info_number_zip; index < list_need_zip_directory.size(); index++)
+        {
+            std::string current_rank_time_path = list_need_zip_directory[index];
+            std::filesystem::remove_all(current_rank_time_path);
+        }
+    }
+
+    if (list_need_zip_directory.size() > 0)
+    {
+        std::string tar_gz_file_path = recommend_trace_root + "/" + source_name + ".tar.gz";
+        create_tar_gz(recommend_trace_root_source, tar_gz_file_path);
     }
 }

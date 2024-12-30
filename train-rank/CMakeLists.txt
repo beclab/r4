@@ -55,6 +55,8 @@ add_library(rankcommon STATIC src/data_process.cpp
                               src/userembedding_calculation.cpp
                               src/dump_traceinfo.h
                               src/dump_traceinfo.cpp
+                              src/archive_file.h
+                              src/archive_file.cpp
                               )
                               
 add_dependencies(rankcommon gen_git_info)
@@ -98,6 +100,7 @@ target_link_libraries(
   ssl
   crypto
   xlnt
+  archive
 )
 
 add_executable(
@@ -127,6 +130,7 @@ cpprestsdk::cpprest
  lapack
  faiss
  xlnt
+ archive
  )
 
 
@@ -151,7 +155,7 @@ cpprestsdk::cpprest
  lapack
  faiss
  xlnt
-
+archive
  )
 
 add_executable(
@@ -174,6 +178,7 @@ target_link_libraries(
   lapack
   faiss
   xlnt
+  archive
 )
 
 add_executable(
@@ -196,7 +201,7 @@ target_link_libraries(
   lapack
   faiss
   xlnt
-  
+  archive
 )
 
 
@@ -217,6 +222,7 @@ target_link_libraries(
   ssl
   crypto
   xlnt
+  archive
 )
 
 add_executable(
@@ -245,6 +251,7 @@ cpprestsdk::cpprest
  crypto
  gflags
  xlnt
+ archive
  )
 add_executable(
   parameter_tune_tool
@@ -270,6 +277,7 @@ target_link_libraries(
   crypto
   gflags
   xlnt
+  archive
 )
 
 add_executable(
@@ -296,6 +304,7 @@ target_link_libraries(
   crypto
   gflags
   xlnt
+  archive
 )
 
  add_executable(
