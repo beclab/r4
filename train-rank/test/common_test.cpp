@@ -2,6 +2,7 @@
 #include <cppitertools/itertools.hpp>
 #include <gtest/gtest.h>
 #include "../src/common_tool.h"
+#include "../src/archive_file.h"
 using namespace std;
 // Demonstrate some basic assertions.
 TEST(CommonTest, countStringTokenTest)
@@ -216,4 +217,10 @@ TEST(StringToArrayTest, HandlesSingleElementString)
   std::vector<int> result = stringToArray(str);
   std::vector<int> expected = {5};
   EXPECT_EQ(result, expected);
+}
+
+TEST(CommonTest, CreateTarGz)
+{
+  // --gtest_filter=CommonTest.CreateTarGz
+  create_tar_gz("/opt/rss-termius-v2-rank", "/opt/rss-termius-v2-rank.tar.gz");
 }

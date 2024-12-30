@@ -133,5 +133,24 @@ RUN cd /opt && \
     make -j$(nproc) && \
     make install 
 
+RUN cd /opt && \
+    curl -LJO https://github.com/tfussell/xlnt/archive/refs/tags/v1.5.0.tar.gz  && \
+    tar -xvzf xlnt-1.5.0.tar.gz  && \
+    cd xlnt-1.5.0 && \  
+    sed -i '1i #include <limits>' /opt/xlnt-1.5.0/source/detail/number_format/number_formatter.cpp && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j$(nproc) && \
+    make 
+    
+RUN cd /opt && \
+    wget https://github.com/libarchive/libarchive/releases/download/v3.7.7/libarchive-3.7.7.tar.gz && \
+    tar -xvzf libarchive-3.7.7.tar.gz && \
+    cd libarchive-3.7.7 && \
+    ./configure && \
+    make && \
+    make install
+
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]

@@ -23,6 +23,7 @@ static const char KNOWLEDGE_BASE_API_URL[] = "KNOWLEDGE_BASE_API_URL";
 static const char TERMINUS_RECOMMEND_EMBEDDING_NAME[] =
     "EMBEDDING_METHOD"; // because user embedding module use "EMBEDDING_METHOD" as env name, so here also use it
 static char RECOMMEND_MODEL_ROOT[] = "/opt/rank_model";
+static char RECOMMEND_TRACE_ROOT[] = "/opt/rank_model/trace_log"; // put trace log in the same directory as model, reduce the number of mount directories
 static char TERMINUS_RECOMMEND_EMBEDDING_DIMENSION[] =
     "TERMINUS_RECOMMEND_EMBEDDING_DIMENSION";
 

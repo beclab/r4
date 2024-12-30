@@ -7,6 +7,7 @@
 #include "gitinfo.h"
 #include "rssrank.h"
 #include "common_tool.h"
+#include "dump_traceinfo.h"
 
 int main(int argc, char **argv)
 {
@@ -38,4 +39,5 @@ int main(int argc, char **argv)
   //  rssrank::rankLR();
   rssrank::rankShortTermAndLongTermUserEmbedding();
   LOG(DEBUG) << "compelete rank" << std::endl;
+  dump_traceinfo_main(std::string(source_name));
 }

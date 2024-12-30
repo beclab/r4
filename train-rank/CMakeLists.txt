@@ -53,6 +53,10 @@ add_library(rankcommon STATIC src/data_process.cpp
                               src/faiss_article_search.cpp
                               src/userembedding_calculation.h
                               src/userembedding_calculation.cpp
+                              src/dump_traceinfo.h
+                              src/dump_traceinfo.cpp
+                              src/archive_file.h
+                              src/archive_file.cpp
                               )
                               
 add_dependencies(rankcommon gen_git_info)
@@ -95,6 +99,8 @@ target_link_libraries(
   faiss
   ssl
   crypto
+  xlnt
+  archive
 )
 
 add_executable(
@@ -123,6 +129,8 @@ cpprestsdk::cpprest
  openblas
  lapack
  faiss
+ xlnt
+ archive
  )
 
 
@@ -146,7 +154,8 @@ cpprestsdk::cpprest
  openblas
  lapack
  faiss
-
+ xlnt
+archive
  )
 
 add_executable(
@@ -168,6 +177,8 @@ target_link_libraries(
   openblas
   lapack
   faiss
+  xlnt
+  archive
 )
 
 add_executable(
@@ -189,7 +200,8 @@ target_link_libraries(
   openblas
   lapack
   faiss
-  
+  xlnt
+  archive
 )
 
 
@@ -209,6 +221,8 @@ target_link_libraries(
   rankcommon
   ssl
   crypto
+  xlnt
+  archive
 )
 
 add_executable(
@@ -236,6 +250,8 @@ cpprestsdk::cpprest
  ssl
  crypto
  gflags
+ xlnt
+ archive
  )
 add_executable(
   parameter_tune_tool
@@ -260,6 +276,35 @@ target_link_libraries(
   ssl
   crypto
   gflags
+  xlnt
+  archive
+)
+
+add_executable(
+  dump_traceinfo_tool
+  src/dump_traceinfo_tool.cpp
+)
+
+target_link_libraries(
+  dump_traceinfo_tool
+  libgtest_main.a
+  libgmock.a  
+  libgmock_main.a  
+  libgtest.a
+  rankcommon
+  xgboost::xgboost 
+  openblas
+  lapack
+  faiss
+  # ${LIBMONGOCXX_LIBRARIES}
+  # ${LIBBSONCXX_LIBRARIES}
+  cpprestsdk::cpprest
+  boost_system
+  ssl
+  crypto
+  gflags
+  xlnt
+  archive
 )
 
  add_executable(
