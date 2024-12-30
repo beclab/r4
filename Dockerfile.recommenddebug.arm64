@@ -126,6 +126,18 @@ RUN cd /opt && \
     make -j$(nproc) && \
     make install 
 
+
+RUN cd /opt && \
+    curl -LJO https://github.com/tfussell/xlnt/archive/refs/tags/v1.5.0.tar.gz  && \
+    tar -xvzf xlnt-1.5.0.tar.gz  && \
+    cd xlnt-1.5.0 && \  
+    sed -i '1i #include <limits>' /opt/xlnt-1.5.0/source/detail/number_format/number_formatter.cpp && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j$(nproc) && \
+    make install
+
 ADD train-rank/src /opt/rss-terminus-v2-rank/src
 ADD train-rank/test /opt/rss-terminus-v2-rank/test
 COPY train-rank/CMakeLists.txt /opt/rss-terminus-v2-rank/CMakeLists.txt
@@ -168,6 +180,8 @@ COPY --from=builder /usr/local/lib/libopenblas.so /usr/local/lib/libopenblas.so
 COPY --from=builder /usr/local/lib/libopenblas.so.0 /usr/local/lib/libopenblas.so.0
 COPY --from=builder /usr/local/lib/libopenblas_genericp-r0.3.28.a  /usr/local/lib/libopenblas_genericp-r0.3.28.a 
 COPY --from=builder /usr/local/lib/libopenblas_genericp-r0.3.28.so  /usr/local/lib/libopenblas_genericp-r0.3.28.so 
+COPY --from=builder /usr/local/lib/libxlnt.so.1.5.0  /usr/local/lib/libxlnt.so.1.5.0
+COPY --from=builder /usr/local/lib/libxlnt.so  /usr/local/lib/libxlnt.so
 
 RUN mkdir /opt/rank_model/
 # CMD ["/usr/local/bin/bertv2rank"]
