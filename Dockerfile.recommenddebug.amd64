@@ -160,6 +160,7 @@ RUN cd /opt/rss-terminus-v2-rank && \
     make && \
     cp bertv2rank /usr/local/bin && \
     cp parameter_tune_tool /usr/local/bin && \
+    cp dump_traceinfo_tool /usr/local/bin && \
     cd /opt && \
     rm -r rss-termius-v2-rank
 
@@ -169,6 +170,7 @@ FROM ubuntu:jammy
 
 COPY --from=builder /usr/local/bin/bertv2rank /usr/local/bin/bertv2rank
 COPY --from=builder /usr/local/bin/parameter_tune_tool /usr/local/bin/parameter_tune_tool
+COPY --from=builder /usr/local/bin/dump_traceinfo_tool /usr/local/bin/dump_traceinfo_tool
 
 COPY  --from=builder /usr/local/lib/libmongocxx.so._noabi /usr/local/lib/libmongocxx.so._noabi
 COPY  --from=builder /usr/local/lib/libbsoncxx.so._noabi  /usr/local/lib/libbsoncxx.so._noabi
