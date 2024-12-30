@@ -105,7 +105,7 @@ RUN cd /opt && \
     curl -LJO https://github.com/OpenMathLib/OpenBLAS/archive/refs/tags/v0.3.28.tar.gz  && \
     tar -xvzf OpenBLAS-0.3.28.tar.gz  && \
     cd OpenBLAS-0.3.28  && \
-    make -j$(nproc) && \
+    make TARGET=GENERIC  -j$(nproc) && \
     make PREFIX=/usr/local install
 
 RUN cd /opt && \
