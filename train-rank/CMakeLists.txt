@@ -57,6 +57,7 @@ add_library(rankcommon STATIC src/data_process.cpp
                               src/dump_traceinfo.cpp
                               src/archive_file.h
                               src/archive_file.cpp
+                              src/json.hpp
                               )
                               
 add_dependencies(rankcommon gen_git_info)
