@@ -2,6 +2,7 @@
 #include <string>
 #include <cstdlib>
 #include "dump_traceinfo.h"
+#include "knowledgebase_api.h"
 
 // Function declaration
 void printHelp();
@@ -51,6 +52,8 @@ int main(int argc, char *argv[])
     // If --source argument is specified
     if (!source.empty())
     {
+        knowledgebase::init_global_terminus_recommend_params();
+        knowledgebase::EntryCache::getInstance().init();
         dump_traceinfo_main(source);
     }
     else

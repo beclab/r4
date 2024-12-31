@@ -12,6 +12,9 @@ static const std::string LATEST_CLICKED_MOST_SIMILAR_THREE_FILE_NAME = "latest_c
 static const std::string LONGE_TERM_USER_EMBEDDING_FILE_NAME = "long_term_user_embedding.json";
 static const std::string SHORT_TERM_USER_EMBEDDING_FILE_NAME = "short_term_user_embedding.json";
 static const std::string RECALL_USER_EMBEDDING_FILE_NAME = "recall_user_embedding.json";
+const int MOST_SIMLAR_NOT_IMPRESSIONED_ENTRY = 10000;
+const int MOST_SIMLAR_IMPRESSIONED_CLICKED_ENTRY = 100;
+const int MOST_SIMLAR_NUMBER_ENTRY = 5;
 void dump_traceinfo_main(std::string source_name);
 void writeEntryToExcel(const std::vector<Entry> &entries, const std::string &xlsx_path);
 void writeEntryToExcelWithScore(const std::vector<Entry> &entries, const std::string &xlsx_path, const std::vector<double> &score);

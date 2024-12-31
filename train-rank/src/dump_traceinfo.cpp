@@ -2,10 +2,13 @@
 #include "knowledgebase_api.h"
 #include "common_tool.h"
 #include "dump_traceinfo.h"
+#include "faiss_article_search.h"
 #include "json.hpp"
 #include <filesystem>
 #include <xlnt/xlnt.hpp> // 引入 xlnt 库
 #include <cmath>
+#include <unordered_map>
+#include <vector>
 
 using nlohmann::json;
 
@@ -42,6 +45,16 @@ std::optional<Entry> getEntryByImpressionIntegerId(int current_impression_intege
     return std::nullopt;
 }
 
+std::vector<float> convertToFloatVector(const std::vector<double> &double_vector)
+{
+    std::vector<float> float_vector;
+    for (const auto &current_double : double_vector)
+    {
+        float_vector.push_back(static_cast<float>(current_double));
+    }
+    return float_vector;
+}
+
 void writeWebJsonValueToFile(const web::json::value &web_json, const std::string &file_path)
 {
     // Step 1: Serialize web::json::value to JSON string
@@ -57,6 +70,24 @@ void writeWebJsonValueToFile(const web::json::value &web_json, const std::string
     if (outFile.is_open())
     {
         outFile << nlohmannJson.dump(4); // Format output with 4-space indentation
+        outFile.close();
+        LOG(INFO) << "Successfully wrote info to: " << file_path << std::endl;
+    }
+    else
+    {
+        LOG(ERROR) << "Failed to write info to: " << file_path << std::endl;
+    }
+}
+
+void writeNlohmannJsonToFile(const nlohmann::json &nlohmann_json, const std::string &file_path)
+{
+    // Step 3: Open a file output stream
+    std::ofstream outFile(file_path);
+
+    // Step 4: Format and output JSON data to file with 4-space indentation
+    if (outFile.is_open())
+    {
+        outFile << nlohmann_json.dump(4); // Format output with 4-space indentation
         outFile.close();
         LOG(INFO) << "Successfully wrote info to: " << file_path << std::endl;
     }
@@ -127,10 +158,14 @@ void writeEntryToExcelWithScore(const std::vector<Entry> &entries, const std::st
     wb.save(xlsx_path); // Save the workbook
 }
 
-void write_not_impressioned_entry(const std::string &current_rank_time_path, const RecommendTraceInfo &current_trace_info_value)
+/**
+ * return entry_integer_id_to_embedding, small than 10000 latest not impressioned entry
+ */
+std::unordered_map<int, std::vector<float>> write_not_impressioned_entry(const std::string &current_rank_time_path, const RecommendTraceInfo &current_trace_info_value, bool whether_must)
 {
     std::string not_impressioned_file_path = current_rank_time_path + "/" + NOT_IMRESSIONED_FILE_NAME;
-    if (!std::filesystem::exists(not_impressioned_file_path))
+    std::unordered_map<int, std::vector<float>> entry_integer_id_to_embedding;
+    if (!std::filesystem::exists(not_impressioned_file_path) || whether_must)
     {
         std::vector<int> algorithm_integer_id = stringToArray(current_trace_info_value.not_impressioned_algorithm_id);
         std::sort(algorithm_integer_id.begin(), algorithm_integer_id.end(), std::greater<int>());
@@ -147,6 +182,10 @@ void write_not_impressioned_entry(const std::string &current_rank_time_path, con
                 if (current_entry != std::nullopt)
                 {
                     not_impressioned_entry_list.push_back(current_entry.value());
+                    if (entry_integer_id_to_embedding.size() <= MOST_SIMLAR_NOT_IMPRESSIONED_ENTRY && current_algorithm_value.embedding != std::nullopt)
+                    {
+                        entry_integer_id_to_embedding[int(current_entry.value().integer_id)] = convertToFloatVector(current_algorithm_value.embedding.value());
+                    }
                 }
             }
         }
@@ -156,6 +195,7 @@ void write_not_impressioned_entry(const std::string &current_rank_time_path, con
     {
         LOG(DEBUG) << "not_impressioned_file_path " << not_impressioned_file_path << " already exist" << std::endl;
     }
+    return entry_integer_id_to_embedding;
 }
 
 void write_added_not_impressioned_entry(const std::string &current_rank_time_path, const RecommendTraceInfo &current_trace_info_value)
@@ -189,13 +229,15 @@ void write_added_not_impressioned_entry(const std::string &current_rank_time_pat
     }
 }
 
-void write_impressioned_clicked_entry(const std::string &current_rank_time_path, const RecommendTraceInfo &current_trace_info_value)
+std::unordered_map<int, std::vector<float>> write_impressioned_clicked_entry(const std::string &current_rank_time_path, const RecommendTraceInfo &current_trace_info_value, bool whether_must)
 {
     std::string impressioned_clicked_file_path = current_rank_time_path + "/" + IMPRESSIONED_CLICKED_FILE_NAME;
-    if (!std::filesystem::exists(impressioned_clicked_file_path))
+    std::unordered_map<int, std::vector<float>> entry_integer_id_to_embedding;
+    if (!std::filesystem::exists(impressioned_clicked_file_path) || whether_must)
     {
         std::vector<int> impression_integer_id = stringToArray(current_trace_info_value.impressioned_clicked_id);
         std::sort(impression_integer_id.begin(), impression_integer_id.end(), std::greater<int>());
+
         std::vector<Entry> impressioned_clicked_entry_list;
         for (auto current_impression_integer_id : impression_integer_id)
         {
@@ -208,6 +250,10 @@ void write_impressioned_clicked_entry(const std::string &current_rank_time_path,
                 if (current_entry != std::nullopt)
                 {
                     impressioned_clicked_entry_list.push_back(current_entry.value());
+                    if (entry_integer_id_to_embedding.size() <= MOST_SIMLAR_IMPRESSIONED_CLICKED_ENTRY && current_impression_value.embedding != std::nullopt)
+                    {
+                        entry_integer_id_to_embedding[int(current_entry.value().integer_id)] = convertToFloatVector(current_impression_value.embedding.value());
+                    }
                 }
             }
         }
@@ -217,6 +263,7 @@ void write_impressioned_clicked_entry(const std::string &current_rank_time_path,
     {
         LOG(DEBUG) << "impressioned_clicked_file_path " << impressioned_clicked_file_path << " already exist" << std::endl;
     }
+    return entry_integer_id_to_embedding;
 }
 
 void write_added_impressioned_clicked_entry(const std::string &current_rank_time_path, const RecommendTraceInfo &current_trace_info_value)
@@ -343,9 +390,91 @@ void write_user_embedding_common(const std::string &current_rank_time_path, cons
     }
 }
 
+void write_latest_clicked_most_similar_three(const std::string &current_rank_time_path, const RecommendTraceInfo &current_trace_info_value, unordered_map<int, vector<float>> &not_impressioned_entry_integer_id_to_embedding, unordered_map<int, vector<float>> &impressioned_clicked_entry_integer_id_to_embedding)
+{
+
+    std::string latest_clicked_most_similar_three_file_path = current_rank_time_path + "/" + LATEST_CLICKED_MOST_SIMILAR_THREE_FILE_NAME;
+    LOG(DEBUG) << "latest_clicked_most_similar_three_file_path [" << latest_clicked_most_similar_three_file_path << "]" << std::endl;
+
+    if (!std::filesystem::exists(latest_clicked_most_similar_three_file_path))
+    {
+
+        if (not_impressioned_entry_integer_id_to_embedding.size() == 0)
+        {
+            not_impressioned_entry_integer_id_to_embedding = write_not_impressioned_entry(current_rank_time_path, current_trace_info_value, true);
+        }
+
+        if (impressioned_clicked_entry_integer_id_to_embedding.size() == 0)
+        {
+            impressioned_clicked_entry_integer_id_to_embedding = write_impressioned_clicked_entry(current_rank_time_path, current_trace_info_value, true);
+        }
+
+        if (not_impressioned_entry_integer_id_to_embedding.size() == 0 || impressioned_clicked_entry_integer_id_to_embedding.size() == 0)
+        {
+            LOG(ERROR) << "not_impressioned_entry_integer_id_to_embedding size [" << not_impressioned_entry_integer_id_to_embedding.size() << "] impressioned_clicked_entry_integer_id_to_embedding size [" << impressioned_clicked_entry_integer_id_to_embedding.size() << "]" << std::endl;
+            return;
+        }
+        LOG(DEBUG) << "not_impressioned_entry_integer_id_to_embedding size [" << not_impressioned_entry_integer_id_to_embedding.size() << "]" << std::endl;
+        LOG(DEBUG) << "impressioned_clicked_entry_integer_id_to_embedding size [" << impressioned_clicked_entry_integer_id_to_embedding.size() << "]" << std::endl;
+        std::vector<std::vector<float>> not_impressioned_embedding_list;
+        std::unordered_map<int, int> row_index_to_entry_integer_id;
+        int row = 0;
+        for (auto &current_item : not_impressioned_entry_integer_id_to_embedding)
+        {
+            not_impressioned_embedding_list.push_back(current_item.second);
+            row_index_to_entry_integer_id[row++] = current_item.first;
+        }
+        not_impressioned_entry_integer_id_to_embedding.clear(); // save memory, but from program rule,it is not good
+        FAISSArticleSearch not_impressioned_search(not_impressioned_embedding_list);
+
+        not_impressioned_embedding_list.clear(); // save memory, but from program rule,it is not good
+        nlohmann::json total_entry_list;
+        for (auto &current_item : impressioned_clicked_entry_integer_id_to_embedding)
+        {
+            std::optional<Entry> targe_current_entry_optional = knowledgebase::EntryCache::getInstance().getEntryByIntegerId(current_item.first);
+            if (targe_current_entry_optional == std::nullopt)
+            {
+                LOG(ERROR) << "entry [" << current_item.first << "] not exist" << std::endl;
+                continue;
+            }
+            Entry targe_current_entry = targe_current_entry_optional.value();
+            nlohmann::json target_current_entry_item;
+            target_current_entry_item["integer_id"] = targe_current_entry.integer_id;
+            target_current_entry_item["title"] = targe_current_entry.title;
+            target_current_entry_item["url"] = targe_current_entry.url;
+
+            std::vector<std::pair<int, float>> current_item_samiliar_entries = not_impressioned_search.findMostSimilarArticles(current_item.second, MOST_SIMLAR_NUMBER_ENTRY);
+            // std::vector<Entry> current_item_similar_entry_list;
+            nlohmann::json json_array = nlohmann::json::array();
+            for (auto &current_item : current_item_samiliar_entries)
+            {
+                std::optional<Entry> current_entry_optional = knowledgebase::EntryCache::getInstance().getEntryByIntegerId(row_index_to_entry_integer_id[current_item.first]);
+                // std::cout << "current_item [" << row_index_to_entry_integer_id[current_item.first] << "] most similar [" << entry.first << "]" << std::endl;
+                if (current_entry_optional != std::nullopt)
+                {
+                    Entry current_entry = current_entry_optional.value();
+                    nlohmann::json current_entry_item;
+                    current_entry_item["integer_id"] = current_entry.integer_id;
+                    current_entry_item["title"] = current_entry.title;
+                    current_entry_item["url"] = current_entry.url;
+                    json_array.push_back(current_entry_item);
+                    // current_item_similar_entry_list.push_back(current_entry_optional.value());
+                }
+            }
+            target_current_entry_item["most_similary_entries"] = json_array;
+            total_entry_list.push_back(target_current_entry_item);
+        }
+        writeNlohmannJsonToFile(total_entry_list, latest_clicked_most_similar_three_file_path);
+    }
+    else
+    {
+        LOG(DEBUG) << "latest_clicked_most_similar_three_file_path [" << latest_clicked_most_similar_three_file_path << "] already exist" << std::endl;
+    }
+}
+
 void dump_traceinfo_main(std::string source_name)
 {
-    knowledgebase::init_global_terminus_recommend_params();
+
     // get all rank_time
     std::vector<int> rank_time_list = knowledgebase::findAllRecomendTraceInfoRankTimesBySource(source_name);
 
@@ -373,9 +502,12 @@ void dump_traceinfo_main(std::string source_name)
                 std::filesystem::create_directories(current_rank_time_path);
             }
 
-            write_not_impressioned_entry(current_rank_time_path, current_trace_info_value);
             write_added_not_impressioned_entry(current_rank_time_path, current_trace_info_value);
-            write_impressioned_clicked_entry(current_rank_time_path, current_trace_info_value);
+            std::unordered_map<int, std::vector<float>> not_impressioned_entry_integer_id_to_embedding = write_not_impressioned_entry(current_rank_time_path, current_trace_info_value, false);
+            std::unordered_map<int, std::vector<float>> impressioned_clicked_entry_integer_id_to_embedding = write_impressioned_clicked_entry(current_rank_time_path, current_trace_info_value, false);
+            write_latest_clicked_most_similar_three(current_rank_time_path, current_trace_info_value, not_impressioned_entry_integer_id_to_embedding, impressioned_clicked_entry_integer_id_to_embedding);
+            not_impressioned_entry_integer_id_to_embedding.clear();
+            impressioned_clicked_entry_integer_id_to_embedding.clear();
             write_added_impressioned_clicked_entry(current_rank_time_path, current_trace_info_value);
             write_top_ranked_entry(current_rank_time_path, current_trace_info_value);
             write_recommend_parameter(current_rank_time_path, current_trace_info_value);
