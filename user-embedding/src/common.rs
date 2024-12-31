@@ -15,7 +15,7 @@ pub fn init_tracing() {
         .with_file(true)
         .with_max_level(tracing::Level::DEBUG)
         .init();
-    tracing::error!("tracing initialized.");
+    tracing::info!("tracing initialized.");
 }
 pub fn init_logger() {
     let env: env_logger::Env<'_> =
