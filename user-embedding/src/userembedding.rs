@@ -4,6 +4,7 @@ use userembedding::{bertcommon, common, embedding_common::MODEL_RELATED_INFO_MAP
 #[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() {
     // common::init_logger();
+    /**
     common::init_tracing();
     std::env::var("TERMINUS_RECOMMEND_SOURCE_NAME")
         .expect("TERMINUS_RECOMMEND_SOURCE_NAME not exist");
@@ -16,4 +17,7 @@ async fn main() {
     }
     bertcommon::execute_bertv2_user_embedding().await;
     tracing::debug!("execute bertv2_user_embedding compelete");
+    */
+    common::init_tracing();
+    logdebug!("execute bertv2_user_embedding current need not to execute");
 }
