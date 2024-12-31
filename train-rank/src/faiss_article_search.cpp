@@ -104,6 +104,39 @@ std::pair<int, float> FAISSArticleSearch::findMostSimilarArticle(const std::vect
     return {labels[0], distances[0]};
 }
 
+std::vector<std::pair<int, float>> FAISSArticleSearch::findMostSimilarArticles(const std::vector<float> &queryVec, int k)
+{
+    // Normalize the query vector
+    std::vector<float> normalizedQuery = queryVec;
+    normalizeVectors(normalizedQuery);
+    if (k >= nb)
+    {
+        k = nb;
+    }
+
+    // Perform the search, returning the k most similar articles
+    std::vector<float> distances(k);     // Store distances
+    std::vector<faiss::idx_t> labels(k); // Store article indices
+
+    // Query the FAISS index
+    index->search(1, normalizedQuery.data(), k, distances.data(), labels.data());
+
+    // Return the nearest article index and distance (cosine distance is equivalent to Euclidean distance)
+    std::vector<std::pair<int, float>> result;
+    for (int i = 0; i < k; ++i)
+    {
+        result.push_back({labels[i], distances[i]});
+    }
+    return result;
+}
+
+std::vector<std::pair<int, float>> FAISSArticleSearch::findMostSimilarArticles(const std::vector<double> &queryVec, int k)
+{
+
+    std::vector<float> queryVecFloat(queryVec.begin(), queryVec.end());
+    return findMostSimilarArticles(queryVecFloat, k);
+}
+
 std::pair<int, float> FAISSArticleSearch::findMostSimilarArticle(const std::vector<double> &queryVec)
 {
     //
