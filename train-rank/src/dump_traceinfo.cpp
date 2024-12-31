@@ -2,9 +2,12 @@
 #include "knowledgebase_api.h"
 #include "common_tool.h"
 #include "dump_traceinfo.h"
+#include "json.hpp"
 #include <filesystem>
 #include <xlnt/xlnt.hpp> // 引入 xlnt 库
 #include <cmath>
+
+using nlohmann::json;
 
 /**
  * @brief
@@ -25,6 +28,43 @@
  *           r4tech
  *
  */
+
+std::optional<Entry> getEntryByImpressionIntegerId(int current_impression_integer_id)
+{
+    std::optional<Impression> current_impression = knowledgebase::GetImpressionByIntegerId(current_impression_integer_id);
+    if (current_impression != std::nullopt)
+    {
+        Impression current_impression_value = current_impression.value();
+        std::cout << current_impression_value.id << " " << current_impression_value.entry_id << std::endl;
+        std::optional<Entry> current_entry = knowledgebase::EntryCache::getInstance().getEntryById(current_impression_value.entry_id);
+        return current_entry;
+    }
+    return std::nullopt;
+}
+
+void writeWebJsonValueToFile(const web::json::value &web_json, const std::string &file_path)
+{
+    // Step 1: Serialize web::json::value to JSON string
+    std::string web_json_string = utility::conversions::to_utf8string(web_json.serialize());
+
+    // Step 2: Parse JSON string to nlohmann::json object
+    nlohmann::json nlohmannJson = nlohmann::json::parse(web_json_string);
+
+    // Step 3: Open a file output stream
+    std::ofstream outFile(file_path);
+
+    // Step 4: Format and output JSON data to file with 4-space indentation
+    if (outFile.is_open())
+    {
+        outFile << nlohmannJson.dump(4); // Format output with 4-space indentation
+        outFile.close();
+        LOG(INFO) << "Successfully wrote info to: " << file_path << std::endl;
+    }
+    else
+    {
+        LOG(ERROR) << "Failed to write info to: " << file_path << std::endl;
+    }
+}
 void writeEntryToExcel(const std::vector<Entry> &entries, const std::string &xlsx_path)
 {
     // Create a workbook object
@@ -241,8 +281,71 @@ void write_top_ranked_entry(const std::string &current_rank_time_path, const Rec
     }
 }
 
+void write_recommend_parameter(const std::string &current_rank_time_path, const RecommendTraceInfo &current_trace_info_value)
+{
+    std::string parameter_file_path = current_rank_time_path + "/" + PARAMETER_FILE_NAME;
+    LOG(DEBUG) << "parameter_file_path " << parameter_file_path << std::endl;
+    if (!std::filesystem::exists(parameter_file_path))
+    {
+        std::string recommend_parameter_json_serialized = current_trace_info_value.recommend_parameter_json_serialized;
+        web::json::value current_value = web::json::value::parse(recommend_parameter_json_serialized);
+        // std::ofstream parameter_file(parameter_file_path);
+        // current_value.serialize(parameter_file);
+        // parameter_file.close();
+        writeWebJsonValueToFile(current_value, parameter_file_path);
+    }
+    else
+    {
+        LOG(DEBUG) << "parameter_file_path [" << parameter_file_path << "] already exist" << std::endl;
+    }
+}
+
+void write_user_embedding_common(const std::string &current_rank_time_path, const std::string &user_embedding_id, const std::string &user_embedding_file_name)
+{
+    std::string user_embedding_file_path = current_rank_time_path + "/" + user_embedding_file_name;
+    if (!std::filesystem::exists(user_embedding_file_path))
+    {
+        std::optional<RecommendTraceUserEmbedding> recommend_trace_user_embedding = knowledgebase::findRecommendTraceUserEmbeddingByUniqueId(user_embedding_id);
+        if (recommend_trace_user_embedding != std::nullopt)
+        {
+            RecommendTraceUserEmbedding current_recommend_trace_user_embedding = recommend_trace_user_embedding.value();
+            // std::ofstream user_embedding_file(user_embedding_file_path);
+            std::optional<web::json::value> current_value_optional = knowledgebase::convertFromRecommendTraceUserEmbeddingToWebJsonValue(current_recommend_trace_user_embedding);
+            if (current_value_optional != std::nullopt)
+            {
+                web::json::value current_value = current_value_optional.value();
+                std::vector<int> impression_integer_id_vec = current_recommend_trace_user_embedding.getImpressionIdUsedToCalculateEmbeddingVec();
+                web::json::value entry_list = web::json::value::array();
+                int index = 0;
+                for (int current_impression_integer_id : impression_integer_id_vec)
+                {
+                    std::optional<Entry> current_entry_optional = getEntryByImpressionIntegerId(current_impression_integer_id);
+                    if (current_entry_optional != std::nullopt)
+                    {
+                        Entry current_entry = current_entry_optional.value();
+                        web::json::value current_entry_json;
+                        current_entry_json["integer_id"] = web::json::value::number(int(current_entry.integer_id));
+                        current_entry_json["title"] = web::json::value::string(current_entry.title);
+                        current_entry_json["url"] = web::json::value::string(current_entry.url);
+                        entry_list[index++] = current_entry_json;
+                    }
+                }
+                current_value["entry_list"] = entry_list;
+                writeWebJsonValueToFile(current_value, user_embedding_file_path);
+                // current_value.serialize(user_embedding_file);
+            }
+            // user_embedding_file.close();
+        }
+    }
+    else
+    {
+        LOG(DEBUG) << "user_embedding_file_path [" << user_embedding_file_path << "] already exist" << std::endl;
+    }
+}
+
 void dump_traceinfo_main(std::string source_name)
 {
+    knowledgebase::init_global_terminus_recommend_params();
     // get all rank_time
     std::vector<int> rank_time_list = knowledgebase::findAllRecomendTraceInfoRankTimesBySource(source_name);
 
@@ -275,6 +378,9 @@ void dump_traceinfo_main(std::string source_name)
             write_impressioned_clicked_entry(current_rank_time_path, current_trace_info_value);
             write_added_impressioned_clicked_entry(current_rank_time_path, current_trace_info_value);
             write_top_ranked_entry(current_rank_time_path, current_trace_info_value);
+            write_recommend_parameter(current_rank_time_path, current_trace_info_value);
+            write_user_embedding_common(current_rank_time_path, current_trace_info_value.long_term_user_embedding_id, LONGE_TERM_USER_EMBEDDING_FILE_NAME);
+            write_user_embedding_common(current_rank_time_path, current_trace_info_value.short_term_user_embedding_id, SHORT_TERM_USER_EMBEDDING_FILE_NAME);
             list_need_zip_directory.push_back(current_rank_time_path);
         }
     }
