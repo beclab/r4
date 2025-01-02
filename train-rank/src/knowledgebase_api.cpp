@@ -2061,6 +2061,11 @@ namespace knowledgebase
 
   std::optional<RecommendTraceUserEmbedding> findRecommendTraceUserEmbeddingByUniqueId(const std::string &unique_id)
   {
+    if (unique_id.empty())
+    {
+      LOG(ERROR) << "unique_id is empty" << std::endl;
+      return std::nullopt;
+    }
     http_client *current_client = HttpClientSingleton::get_instance();
     http_client &client = *current_client;
     std::string current_suffix = std::string(RECOMMEND_TRACE_USER_EMBEDDING_API_SUFFIX) + "/findByUniqueId/" + unique_id;
@@ -2070,7 +2075,9 @@ namespace knowledgebase
     client.request(methods::GET, U(current_suffix))
         .then([](http_response response) -> pplx::task<web::json::value>
               {
+      
         if (response.status_code() == status_codes::OK) {
+          LOG(DEBUG) << "find user embedding status_code " << response.status_code() << std::endl;
           return response.extract_json();
         }
         return pplx::task_from_result(web::json::value()); })
@@ -2086,12 +2093,14 @@ namespace knowledgebase
           LOG(DEBUG) << "code " << code << " message " << message << std::endl;
           if (code == 0) {
             web::json::value current_value = v.at("data");
+            LOG(DEBUG) << "current_value 11111111111111111111111111111 " << current_value << std::endl;
             option_embedding = convertFromWebJsonValueToRecommendTraceUserEmbedding(current_value);
           }
         } catch (http_exception const &e) {
           LOG(ERROR) << "Error exception " << e.what() << std::endl;
         } })
         .wait();
+    LOG(DEBUG) << "option_embedding 22222222222222222222222222 " << option_embedding.has_value() << std::endl;
     return option_embedding;
   }
 
