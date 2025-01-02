@@ -2093,14 +2093,12 @@ namespace knowledgebase
           LOG(DEBUG) << "code " << code << " message " << message << std::endl;
           if (code == 0) {
             web::json::value current_value = v.at("data");
-            LOG(DEBUG) << "current_value 11111111111111111111111111111 " << current_value << std::endl;
             option_embedding = convertFromWebJsonValueToRecommendTraceUserEmbedding(current_value);
           }
         } catch (http_exception const &e) {
           LOG(ERROR) << "Error exception " << e.what() << std::endl;
         } })
         .wait();
-    LOG(DEBUG) << "option_embedding 22222222222222222222222222 " << option_embedding.has_value() << std::endl;
     return option_embedding;
   }
 
