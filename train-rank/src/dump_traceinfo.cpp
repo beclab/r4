@@ -304,7 +304,10 @@ void write_top_ranked_entry(const std::string &current_rank_time_path, const Rec
         std::vector<int> algorithm_integer_id = current_trace_info_value.top_ranked_algorithm_id;
         // std::sort(algorithm_integer_id.begin(), algorithm_integer_id.end(), std::greater<int>());
         std::vector<float> algorithm_score = current_trace_info_value.top_ranked_algorithm_score;
+        LOG(DEBUG) << "algorithm_integer_id size " << algorithm_integer_id.size() << " algorithm_score size " << algorithm_score.size() << std::endl;
         std::vector<Entry> top_ranked_entry_list;
+        std::vector<float> top_ranked_score;
+
         for (int index = 0; index < algorithm_integer_id.size(); index++)
         {
             int current_algorithm_integer_id = algorithm_integer_id[index];
@@ -317,10 +320,13 @@ void write_top_ranked_entry(const std::string &current_rank_time_path, const Rec
                 if (current_entry != std::nullopt)
                 {
                     top_ranked_entry_list.push_back(current_entry.value());
+                    top_ranked_score.push_back(algorithm_score[index]);
                 }
             }
         }
-        writeEntryToExcelWithScore(top_ranked_entry_list, top_ranked_entry_file_path, algorithm_score);
+        LOG(DEBUG) << "algorithm_integer_id size " << algorithm_integer_id.size() << " algorithm_score size " << algorithm_score.size() << std::endl;
+
+        writeEntryToExcelWithScore(top_ranked_entry_list, top_ranked_entry_file_path, top_ranked_score);
     }
     else
     {
@@ -353,8 +359,10 @@ void write_user_embedding_common(const std::string &current_rank_time_path, cons
     if (!std::filesystem::exists(user_embedding_file_path))
     {
         std::optional<RecommendTraceUserEmbedding> recommend_trace_user_embedding = knowledgebase::findRecommendTraceUserEmbeddingByUniqueId(user_embedding_id);
+        LOG(DEBUG) << "find user_embedding_id [" << user_embedding_id << "] success" << std::endl;
         if (recommend_trace_user_embedding != std::nullopt)
         {
+            LOG(DEBUG) << "user embedding [" << recommend_trace_user_embedding.value() << "]" << std::endl;
             RecommendTraceUserEmbedding current_recommend_trace_user_embedding = recommend_trace_user_embedding.value();
             // std::ofstream user_embedding_file(user_embedding_file_path);
             std::optional<web::json::value> current_value_optional = knowledgebase::convertFromRecommendTraceUserEmbeddingToWebJsonValue(current_recommend_trace_user_embedding);
@@ -382,6 +390,11 @@ void write_user_embedding_common(const std::string &current_rank_time_path, cons
                 // current_value.serialize(user_embedding_file);
             }
             // user_embedding_file.close();
+        }
+        else
+        {
+            LOG(ERROR) << "find user_embedding_id [" << user_embedding_id << "] failed, write empty" << std::endl;
+            writeNlohmannJsonToFile(nlohmann::json(), user_embedding_file_path);
         }
     }
     else
