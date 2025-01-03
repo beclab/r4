@@ -2345,7 +2345,7 @@ namespace knowledgebase
   {
     http_client *current_client = HttpClientSingleton::get_instance();
     http_client &client = *current_client;
-    std::string current_suffix = std::string(RECOMMEND_TRACE_INFO_API_SUFFIX) + "/findBySourceAndRankTime?source=" + source + "&rank_time" + std::to_string(rank_time);
+    std::string current_suffix = std::string(RECOMMEND_TRACE_INFO_API_SUFFIX) + "/findBySourceAndRankTime?source=" + source + "&rank_time=" + std::to_string(rank_time);
     LOG(DEBUG) << "current_suffix " << current_suffix << std::endl;
 
     std::optional<RecommendTraceInfo> option_info = std::nullopt;
