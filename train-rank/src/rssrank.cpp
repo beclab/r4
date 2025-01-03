@@ -1222,7 +1222,7 @@ namespace rssrank
       double score = similarity_score * (1 - article_time_weight) + article_time_weight * time_score;
       LOG(INFO) << "current_item [" << temp_entry.value().title << "] score [" << score << "]" << std::endl;
       std::pair<int, float> row_id_to_distance = search.findMostSimilarArticle(current_algorithm.value().embedding.value());
-      std::string most_similar_article_id = clicked_impressions[row_id_to_distance.first].id;
+      std::string most_similar_article_id = clicked_impressions[row_id_to_distance.first].entry_id;
       id_to_score_with_meta.emplace(current_item.first, buildScoreWithMeta(score, most_similar_article_id, current_rank_time, ScoreEnum::SCORE_DISTANCE_ARTICLE_WITH_SHORT_AND_LONG_TERM_USER_EMBEDDING_PLUS_PUBLISHED_TIME));
       algorithm_integer_id_to_score.push_back(std::make_pair(current_algorithm.value().integer_id, score));
     }
