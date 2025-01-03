@@ -603,8 +603,8 @@ TEST(KnowledgeApiTest, findRecommendTraceInfoByRankTimeAndSource)
   // --gtest_filter=KnowledgeApiTest.findRecommendTraceInfoByRankTimeAndSource
   initDevelop();
   init_log();
-  std::string source = "testsource";
-  int64_t rank_time = 1711080226;
+  std::string source = "r4wechat";
+  int64_t rank_time = 1735832592;
   std::optional<RecommendTraceInfo> recommend_trace_info = knowledgebase::findRecommendTraceInfoByRankTimeAndSource(source, rank_time);
   if (recommend_trace_info != std::nullopt)
   {
@@ -618,11 +618,11 @@ TEST(KnowledgeApiTest, findAllRecomendTraceInfoRankTimesBySource)
   // --gtest_filter=KnowledgeApiTest.findAllRecomendTraceInfoRankTimesBySource
   initDevelop();
   init_log();
-  std::string source = "testsource";
+  std::string source = "r4techbiz";
   std::vector<int> rank_times = knowledgebase::findAllRecomendTraceInfoRankTimesBySource(source);
   for (auto current : rank_times)
   {
-    std::cout << current << " ";
+    std::cout << current << " " << std::endl;
   }
   std::cout << std::endl;
 }
