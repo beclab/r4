@@ -143,6 +143,16 @@ RUN cd /opt && \
     cmake .. && \
     make -j$(nproc) && \
     make 
+
+RUN cd /opt && \
+    curl -LJO https://github.com/SRombauts/SQLiteCpp/archive/refs/tags/3.3.2.tar.gz && \
+    tar -xvzf SQLiteCpp-3.3.2.tar.gz && \
+    cd SQLiteCpp-3.3.2 && \
+    mkdir build && \
+    cd build && \
+    cmake .. && \
+    make -j$(nproc) && \
+    make install
     
 RUN cd /opt && \
     wget https://github.com/libarchive/libarchive/releases/download/v3.7.7/libarchive-3.7.7.tar.gz && \

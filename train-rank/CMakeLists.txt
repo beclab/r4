@@ -323,6 +323,37 @@ target_link_libraries(
 
 # https://github.com/Microsoft/cpprestsdk/wiki/How-to-build-for-Linux
 
+
+add_executable(
+  experiment_embedding_tool
+  src/experiment_embedding_similarity_tool.cpp
+)
+
+target_link_libraries(
+  experiment_embedding_tool
+  libgtest_main.a
+  libgmock.a  
+  libgmock_main.a  
+  libgtest.a
+  rankcommon
+  xgboost::xgboost 
+  openblas
+  lapack
+  faiss
+  # ${LIBMONGOCXX_LIBRARIES}
+  # ${LIBBSONCXX_LIBRARIES}
+  cpprestsdk::cpprest
+  boost_system
+  ssl
+  crypto
+  gflags
+  xlnt
+  archive
+  SQLiteCpp
+  sqlite3
+  pthread
+  dl
+)
 include(GoogleTest)
 gtest_discover_tests(hello_test)
 gtest_discover_tests(data_process_test)
