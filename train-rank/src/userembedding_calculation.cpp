@@ -6,6 +6,30 @@
 #include "rssrank.h"
 using namespace Eigen;
 
+std::vector<float> calcluateUserEmbeddingSimple(const std::vector<std::vector<float>> &input_embeddings)
+{
+    if (input_embeddings.empty())
+    {
+        return {};
+    }
+    int row = input_embeddings.size();
+    int col = input_embeddings[0].size();
+    MatrixXf embeddings(row, col);
+
+    // Fill these vectors
+    for (int i = 0; i < row; ++i)
+    {
+        for (int j = 0; j < col; ++j)
+        {
+            embeddings(i, j) = input_embeddings[i][j];
+        }
+    }
+    // Sum the vectors
+    VectorXf eig_vec = embeddings.colwise().sum();
+    eig_vec = eig_vec / eig_vec.norm();
+    return std::vector<float>(eig_vec.data(), eig_vec.data() + eig_vec.size());
+}
+
 std::vector<double> calcluateUserLongTermEmbedding(const std::vector<Impression> &impressions)
 {
     if (impressions.empty())

@@ -2,3 +2,4 @@ build/*
 train-rank/src/gitinfo.h
 *.db
 *.xlsx
+experiment
