@@ -142,7 +142,7 @@ RUN cd /opt && \
     cd build && \
     cmake .. && \
     make -j$(nproc) && \
-    make 
+    make install
     
 RUN cd /opt && \
     wget https://github.com/libarchive/libarchive/releases/download/v3.7.7/libarchive-3.7.7.tar.gz && \
