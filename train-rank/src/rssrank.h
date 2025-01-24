@@ -117,4 +117,6 @@ namespace rssrank
 
     std::vector<int> getIntegerIdFromVecImpression(const std::vector<Impression> &impressions);
 
+    bool judgeWhetherExtractorCompelete();
+
 } // namespace rssrank

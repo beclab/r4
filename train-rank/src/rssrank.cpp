@@ -486,6 +486,33 @@ namespace rssrank
     return algorithm_entry_id_to_score_with_meta;
   }
 
+  bool judgeWhetherExtractorCompelete()
+  {
+    const char *source_name = std::getenv("TERMINUS_RECOMMEND_SOURCE_NAME");
+    int64_t last_rank_time =
+        knowledgebase::getLastRankTime(std::string(source_name));
+    LOG(DEBUG) << knowledgebase::LAST_RANK_TIME << last_rank_time << std::endl;
+    int64_t last_extractor_time =
+        knowledgebase::getLastExtractorTime(std::string(source_name));
+    LOG(DEBUG) << knowledgebase::LAST_EXTRACTOR_TIME << last_extractor_time
+               << std::endl;
+    if (last_extractor_time == -1)
+    {
+      LOG(DEBUG) << "last_extractor_time is  " << last_extractor_time
+                 << " mean extractor not executed" << std::endl;
+      return false;
+    }
+
+    if (last_rank_time != -1 && last_extractor_time != -1 &&
+        last_rank_time > last_extractor_time)
+    {
+      LOG(DEBUG) << knowledgebase::LAST_RANK_TIME << " bigger than"
+                 << knowledgebase::LAST_EXTRACTOR_TIME << " task top"
+                 << std::endl;
+      return false;
+    }
+    return true;
+  }
   /*void rankPredict() {
     const char *source_name = std::getenv("TERMINUS_RECOMMEND_SOURCE_NAME");
     int64_t last_rank_time =
@@ -590,7 +617,8 @@ namespace rssrank
     }
   }*/
 
-  void getEachImpressionScoreKnowledge(
+  void
+  getEachImpressionScoreKnowledge(
       std::unordered_map<std::string, float> *positive,
       std::unordered_map<std::string, float> *negative)
   {
@@ -1078,6 +1106,11 @@ namespace rssrank
   bool rankShortTermAndLongTermUserEmbedding()
   {
     knowledgebase::init_global_terminus_recommend_params();
+    if (!judgeWhetherExtractorCompelete())
+    {
+      LOG(ERROR) << "extractor not complete" << std::endl;
+      return false;
+    }
     long long current_rank_time = getTimeStampNow();
     std::string current_srouce_name = envOrBlank("TERMINUS_RECOMMEND_SOURCE_NAME");
     if (FLAGS_recommend_source_name.size() == 0)
