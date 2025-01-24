@@ -496,6 +496,9 @@ namespace rssrank
         knowledgebase::getLastExtractorTime(std::string(source_name));
     LOG(DEBUG) << knowledgebase::LAST_EXTRACTOR_TIME << last_extractor_time
                << std::endl;
+
+    LOG(INFO) << "last_rank_time " << last_rank_time << " last_extractor_time "
+              << last_extractor_time << std::endl;
     if (last_extractor_time == -1)
     {
       LOG(DEBUG) << "last_extractor_time is  " << last_extractor_time

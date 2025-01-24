@@ -1367,6 +1367,11 @@ namespace knowledgebase
 
   std::optional<Entry> GetEntryById(const std::string &id)
   {
+    if (id.empty() || id == "")
+    {
+      LOG(ERROR) << "id is empty" << std::endl;
+      return std::nullopt;
+    }
     http_client *current_client = HttpClientSingleton::get_instance();
     // http_client client(U(std::getenv("KNOWLEDGE_BASE_API_URL")));
     http_client &client = *current_client;

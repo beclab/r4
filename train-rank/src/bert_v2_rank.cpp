@@ -37,7 +37,10 @@ int main(int argc, char **argv)
   setenv(TERMINUS_RECOMMEND_EMBEDDING_DIMENSION, "384", 0);
   // rssrank::rankPredict();
   //  rssrank::rankLR();
-  rssrank::rankShortTermAndLongTermUserEmbedding();
+  bool rank_success = rssrank::rankShortTermAndLongTermUserEmbedding();
   LOG(DEBUG) << "compelete rank" << std::endl;
-  dump_traceinfo_main(std::string(source_name));
+  if (rank_success == true)
+  {
+    dump_traceinfo_main(std::string(source_name));
+  }
 }
