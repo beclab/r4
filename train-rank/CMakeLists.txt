@@ -205,6 +205,11 @@ target_link_libraries(
   archive
 )
 
+add_executable(
+  experiment_similarity_search
+  test/experiment/experiment_similarity_search.cpp
+)
+
 
  add_executable(
   common_test
