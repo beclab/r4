@@ -152,5 +152,16 @@ RUN cd /opt && \
     make && \
     make install
 
+RUN  apt-get install  libsqlite3-dev && \
+     cd /opt && \
+     git clone https://github.com/SRombauts/SQLiteCpp.git && \
+     cd SQLiteCpp && \
+     git submodule init && \
+     git submodule update && \
+     mkdir build && cd build && \
+     cmake .. && \
+     make -j$(nproc) && \
+     make install
+
 
 ENTRYPOINT ["tail", "-f", "/dev/null"]
