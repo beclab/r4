@@ -205,6 +205,31 @@ target_link_libraries(
   archive
 )
 
+add_executable(
+  experiment_similarity_search
+  test/experiment/experiment_similarity_search.cpp
+)
+
+target_link_libraries(
+  experiment_similarity_search
+  rankcommon
+  xgboost::xgboost 
+  # ${LIBMONGOCXX_LIBRARIES}
+  # ${LIBBSONCXX_LIBRARIES}
+  cpprestsdk::cpprest
+  boost_system
+  crypto
+  ssl
+  gflags
+  openblas
+  lapack
+  faiss
+  xlnt
+  archive
+  libSQLiteCpp.a
+  sqlite3
+)
+
 
  add_executable(
   common_test
