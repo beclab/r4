@@ -18,8 +18,11 @@ import (
 func LoadEntriesInMongo() (map[string]int, error) {
 	existEntryList := make(map[string]int, 0)
 	url := common.EntryAlgorithmMonogoApiUrl() + common.GetAlgorithmSource()
+	request, _ := http.NewRequest("GET", url, nil)
+	request.Header.Set("X-Bfl-User", common.GetBflUser())
 	client := &http.Client{Timeout: time.Second * 30}
-	res, err := client.Get(url)
+	//res, err := client.Get(url)
+	res, err := client.Do(request)
 	if err != nil {
 		common.Logger.Error("get entry data  fail", zap.Error(err))
 		return existEntryList, err
@@ -53,6 +56,7 @@ func AddEntriesInMongo(list []*model.EntryModel) {
 		url := common.EntryMonogoEntryApiUrl()
 		request, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonByte))
 		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("X-Bfl-User", common.GetBflUser())
 		client := &http.Client{Timeout: time.Second * 10}
 		response, err := client.Do(request)
 		if err != nil {
@@ -69,12 +73,12 @@ func AddEntriesInMongo(list []*model.EntryModel) {
 		if resObj.Code == 0 {
 			resEntryMap := make(map[string]string, 0)
 			for _, resDataDetail := range resObj.Data {
-				common.Logger.Info("response entry direct",zap.String("url",resDataDetail.Url),zap.String("id",resDataDetail.ID),zap.String("source",resDataDetail.Source))
+				common.Logger.Info("response entry direct", zap.String("url", resDataDetail.Url), zap.String("id", resDataDetail.ID), zap.String("source", resDataDetail.Source))
 				resEntryMap[resDataDetail.Url] = resDataDetail.ID
 			}
 			addAlgorithmList := make([]*model.AlgorithmAddModel, 0)
 			for _, entryModel := range list {
-				common.Logger.Info("construct add algorithm",zap.String("url",entryModel.Url),zap.String("id", resEntryMap[entryModel.Url]))
+				common.Logger.Info("construct add algorithm", zap.String("url", entryModel.Url), zap.String("id", resEntryMap[entryModel.Url]))
 				algoModel := model.GetAddAlgorithmModel(resEntryMap[entryModel.Url], entryModel.RecallPoint, entryModel.PrerankPoint, entryModel.Embedding)
 				addAlgorithmList = append(addAlgorithmList, algoModel)
 			}
@@ -89,8 +93,8 @@ func AddEntriesInMongo(list []*model.EntryModel) {
 
 func UpdateEntryAlgorith(addAlgorithmList []*model.AlgorithmAddModel) {
 	if len(addAlgorithmList) > 0 {
-		for _,currentAlgorithm := range addAlgorithmList {
-			common.Logger.Info("current_algorithm",zap.String("source",currentAlgorithm.Source),zap.String("entry_id",currentAlgorithm.Entry))
+		for _, currentAlgorithm := range addAlgorithmList {
+			common.Logger.Info("current_algorithm", zap.String("source", currentAlgorithm.Source), zap.String("entry_id", currentAlgorithm.Entry))
 		}
 		algoUrl := common.AlgorithMonogoApiUrl()
 		algoJsonByte, err := json.Marshal(addAlgorithmList)
@@ -102,6 +106,7 @@ func UpdateEntryAlgorith(addAlgorithmList []*model.AlgorithmAddModel) {
 
 		algoReq, _ := http.NewRequest("POST", algoUrl, bytes.NewBuffer(algoJsonByte))
 		algoReq.Header.Set("Content-Type", "application/json")
+		algoReq.Header.Set("X-Bfl-User", common.GetBflUser())
 		algoClient := &http.Client{Timeout: time.Second * 5}
 		_, err = algoClient.Do(algoReq)
 
@@ -125,6 +130,7 @@ func DelEntriesInMongo(list []string) {
 		url := common.EntryMonogoEntryApiUrl() + common.GetAlgorithmSource()
 		request, _ := http.NewRequest("DELETE", url, bytes.NewBuffer(jsonByte))
 		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("X-Bfl-User", common.GetBflUser())
 		client := &http.Client{Timeout: time.Second * 30}
 		_, err := client.Do(request)
 
@@ -144,8 +150,12 @@ func LoadFeedsInMongo(source string) map[string]int {
 	url := common.FeedMonogoApiUrl() + source
 
 	common.Logger.Info("load feeds in mongo", zap.String("url", url))
+	request, _ := http.NewRequest("GET", url, nil)
+	request.Header.Set("X-Bfl-User", common.GetBflUser())
 	client := &http.Client{Timeout: time.Second * 5}
-	res, err := client.Get(url)
+	//res, err := client.Get(url)
+	res, err := client.Do(request)
+
 	if err != nil {
 		common.Logger.Error("get entry data  fail", zap.Error(err))
 		return existFeedList
@@ -170,8 +180,12 @@ func LoadFeedsInMongo(source string) map[string]int {
 
 func getAllEntries(reqParam string) *model.EntryApiDataResponseModel {
 	url := common.EntryMonogoEntryApiUrl() + "?" + reqParam
+	request, _ := http.NewRequest("GET", url, nil)
+	request.Header.Set("X-Bfl-User", common.GetBflUser())
 	client := &http.Client{Timeout: time.Second * 5}
-	res, err := client.Get(url)
+	//res, err := client.Get(url)
+	res, err := client.Do(request)
+
 	if err != nil {
 		common.Logger.Error("get entry data  fail", zap.Error(err))
 		return nil
@@ -202,6 +216,7 @@ func UpdateEntriesInMongo(addList []*model.EntryAddModel) {
 			return
 		}
 		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("X-Bfl-User", common.GetBflUser())
 		client := &http.Client{Timeout: time.Second * 5}
 		response, err := client.Do(request)
 		if err != nil {
@@ -227,11 +242,15 @@ func GetUnextractedData(limit int) *model.EntryApiDataResponseModel {
 	return getAllEntries(param)
 }
 
-func GetRedisConfig(provider, key string) interface{} {
+func GetRedisConfig(bflUser, provider, key string) interface{} {
 	url := common.RedisConfigApiUrl() + provider + "/" + key
 	common.Logger.Info("get redis config", zap.String("url", url))
+
+	request, _ := http.NewRequest("GET", url, nil)
+	request.Header.Set("X-Bfl-User", common.GetBflUser())
 	client := &http.Client{Timeout: time.Second * 5}
-	res, err := client.Get(url)
+	//res, err := client.Get(url)
+	res, err := client.Do(request)
 	if err != nil {
 		common.Logger.Error("get redis config  fail", zap.Error(err))
 		return ""
@@ -267,6 +286,7 @@ func SetRedisConfig(provider, key string, val interface{}) {
 
 	algoReq, _ := http.NewRequest("POST", url, bytes.NewBuffer(jsonByte))
 	algoReq.Header.Set("Content-Type", "application/json")
+	algoReq.Header.Set("X-Bfl-User", common.GetBflUser())
 	algoClient := &http.Client{Timeout: time.Second * 5}
 	_, err = algoClient.Do(algoReq)
 	if err != nil {

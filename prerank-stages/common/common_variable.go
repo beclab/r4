@@ -70,8 +70,8 @@ func GetSupportTimeliness() int {
 	return ParseInt(os.Getenv("SUPPORT_TIMELINESS"), 0)
 }
 
-func GetTermiusUserName() string {
-	return os.Getenv("TERMIUS_USER_NAME")
+func GetBflUser() string {
+	return os.Getenv("BFL_USER")
 }
 
 func GetSupportTimelinessShow() string {
