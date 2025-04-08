@@ -71,7 +71,11 @@ func GetSupportTimeliness() int {
 }
 
 func GetBflUser() string {
-	return os.Getenv("BFL_USER")
+	bflUser := os.Getenv("BFL_USER")
+	if bflUser == "" {
+		return "mmchong2021"
+	}
+	return bflUser
 }
 
 func GetSupportTimelinessShow() string {
