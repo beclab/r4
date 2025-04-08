@@ -37,7 +37,7 @@ func GetAlgorithmConfig() *model.AlgorithmConfig {
 	source := common.GetAlgorithmSource()
 	embeddingStr := common.FloatArrayToString(curOption.Embedding) + ";" + fmt.Sprintf("%d", time.Now().UTC().Unix())
 
-	recallItemConfig := api.GetRedisConfig(source, "recall_item_num")
+	recallItemConfig := api.GetRedisConfig(common.GetBflUser(), source, "recall_item_num")
 	if recallItemConfig == nil || recallItemConfig == "" {
 		api.SetRedisConfig(source, "recall_item_num", curOption.RecallItemNum)
 	} else {
@@ -48,7 +48,7 @@ func GetAlgorithmConfig() *model.AlgorithmConfig {
 		}
 		curOption.RecallItemNum = recallItemsNumber
 	}
-	prerankItemConfig := api.GetRedisConfig(source, "prerank_item_num")
+	prerankItemConfig := api.GetRedisConfig(common.GetBflUser(), source, "prerank_item_num")
 	if prerankItemConfig == nil || prerankItemConfig == "" {
 		api.SetRedisConfig(source, "prerank_item_num", curOption.PrerankItemNum)
 	} else {
@@ -60,7 +60,7 @@ func GetAlgorithmConfig() *model.AlgorithmConfig {
 		curOption.PrerankItemNum = prerankItemsNumber
 	}
 
-	userEmbeddingConfig := api.GetRedisConfig(source, "user_embedding")
+	userEmbeddingConfig := api.GetRedisConfig(common.GetBflUser(), source, "user_embedding")
 	if userEmbeddingConfig == nil || userEmbeddingConfig == "" {
 		api.SetRedisConfig(source, "user_embedding", embeddingStr)
 	} else {

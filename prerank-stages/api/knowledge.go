@@ -242,12 +242,12 @@ func GetUnextractedData(limit int) *model.EntryApiDataResponseModel {
 	return getAllEntries(param)
 }
 
-func GetRedisConfig(provider, key string) interface{} {
+func GetRedisConfig(bflUser, provider, key string) interface{} {
 	url := common.RedisConfigApiUrl() + provider + "/" + key
 	common.Logger.Info("get redis config", zap.String("url", url))
 
 	request, _ := http.NewRequest("GET", url, nil)
-	request.Header.Set("X-Bfl-User", common.GetBflUser())
+	request.Header.Set("X-Bfl-User", bflUser)
 	client := &http.Client{Timeout: time.Second * 5}
 	//res, err := client.Get(url)
 	res, err := client.Do(request)

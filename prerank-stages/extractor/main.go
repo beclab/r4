@@ -30,9 +30,9 @@ func main() {
 	common.Logger.Info("extractor  start...")
 	source := common.GetAlgorithmSource()
 	startTimestamp := int64(time.Now().UTC().Unix())
-	lastCrawlerTimeStr, _ := api.GetRedisConfig(source, "last_crawler_time").(string)
+	lastCrawlerTimeStr, _ := api.GetRedisConfig(common.GetBflUser(), source, "last_crawler_time").(string)
 	lastCrawlerTime, _ := strconv.ParseInt(lastCrawlerTimeStr, 10, 64)
-	lastExtractorTimeStr, _ := api.GetRedisConfig(source, "last_extractor_time").(string)
+	lastExtractorTimeStr, _ := api.GetRedisConfig(common.GetBflUser(), source, "last_extractor_time").(string)
 	lastExtractorTime, _ := strconv.ParseInt(lastExtractorTimeStr, 10, 64)
 	common.Logger.Info("extractor start", zap.String("source:", source), zap.Int64("last crawler time:", lastCrawlerTime), zap.Int64("last extractor time:", lastExtractorTime))
 	if lastCrawlerTime < lastExtractorTime || lastCrawlerTimeStr == "" {
