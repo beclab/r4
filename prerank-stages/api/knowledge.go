@@ -245,7 +245,7 @@ func GetUnextractedData(limit int) *model.EntryApiDataResponseModel {
 
 func GetRedisConfig(bflUser, provider, key string) interface{} {
 	url := common.RedisConfigApiUrl() + provider + "/" + key
-	common.Logger.Info("get redis config", zap.String("url", url))
+	common.Logger.Info("get redis config2", zap.String("api", common.RedisConfigApiUrl()), zap.String("provider", provider), zap.String("url", url))
 
 	request, _ := http.NewRequest("GET", url, nil)
 	request.Header.Set("X-Bfl-User", bflUser)
