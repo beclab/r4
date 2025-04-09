@@ -279,6 +279,5 @@ func main() {
 	}
 	api.SetRedisConfig(source, "last_recall_time", allMaxCreatedAt)
 	api.SetRedisConfig(source, "last_recall_exec_time", startTimestamp)
-	time.Sleep(180 * time.Second)
 	common.Logger.Info("recall  end", zap.Int64("end time:", allMaxCreatedAt))
 }
