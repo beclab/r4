@@ -72,6 +72,7 @@ func main() {
 					addList = append(addList, &addEntry)
 				} else {
 					common.Logger.Info("extract pure less than 100 ", zap.String("language", rank.Language), zap.String("url", rank.Url), zap.Int("content len:", contentLen))
+					common.Logger.Info(pureContent)
 					delList = append(delList, rank.Url)
 				}
 			}
