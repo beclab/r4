@@ -149,7 +149,7 @@ func LoadFeedsInMongo(source string) map[string]int {
 	existFeedList := make(map[string]int, 0)
 	url := common.FeedMonogoApiUrl() + source
 
-	common.Logger.Info("load feeds in mongo", zap.String("url", url))
+	common.Logger.Info("load feeds in mongo", zap.String("bfl user", common.GetBflUser()), zap.String("url", url))
 	request, _ := http.NewRequest("GET", url, nil)
 	request.Header.Set("X-Bfl-User", common.GetBflUser())
 	client := &http.Client{Timeout: time.Second * 5}
@@ -175,6 +175,7 @@ func LoadFeedsInMongo(source string) map[string]int {
 	for _, jsonObj := range resObj.Data {
 		existFeedList[jsonObj] = 1
 	}
+	common.Logger.Info("load feeds size", zap.Int("len", len(existFeedList)))
 	return existFeedList
 }
 
