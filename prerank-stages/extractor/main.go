@@ -61,7 +61,7 @@ func main() {
 					contentLen = len(usedText)
 				}
 
-				if fullContent != "" && contentLen > 400 {
+				if fullContent != "" && contentLen > 200 {
 					var addEntry model.EntryAddModel
 					addEntry.Url = rank.Url
 					addEntry.Source = rank.Source
@@ -72,7 +72,6 @@ func main() {
 					addList = append(addList, &addEntry)
 				} else {
 					common.Logger.Info("extract pure less than 100 ", zap.String("language", rank.Language), zap.String("url", rank.Url), zap.Int("content len:", contentLen))
-					common.Logger.Info(pureContent)
 					delList = append(delList, rank.Url)
 				}
 			}
