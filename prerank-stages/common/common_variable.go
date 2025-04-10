@@ -94,17 +94,17 @@ func GetSupportLanguage() string {
 	return languages
 }
 
-func NFSRootDirectory() string {
-	envDir := os.Getenv("NFS_ROOT_DIRECTORY")
+func AppDataDirectory() string {
+	envDir := os.Getenv("APP_DATA_DIRECTORY")
 	if envDir == "" {
 		return defaultNfSDir
 	}
 	return envDir
 }
 
-func JUICEFSRootDirectory() string {
+func AppCacheDirectory() string {
 
-	envDir := os.Getenv("JUICEFS_ROOT_DIRECTORY")
+	envDir := os.Getenv("APP_CACHE_DIRECTORY")
 	if envDir == "" {
 		return defaultJUICEFSDir
 	}
@@ -148,22 +148,22 @@ func WeChatEntryContentApiUrl() string {
 }
 
 func SyncFeedDirectory(provider, packageName string) string {
-	path := filepath.Join(JUICEFSRootDirectory(), FeedPathPrefix, provider, packageName)
+	path := filepath.Join(AppDataDirectory(), FeedPathPrefix, provider, packageName)
 	return path
 }
 
 func SyncEntryDirectory(provider, feedName, modelName string) string {
-	path := filepath.Join(JUICEFSRootDirectory(), EntryPathPrefix, provider, feedName, modelName)
+	path := filepath.Join(AppDataDirectory(), EntryPathPrefix, provider, feedName, modelName)
 	return path
 }
 
 func RecallDirectory(source string) string {
-	path := filepath.Join(NFSRootDirectory(), RecallPathPrefix, source)
+	path := filepath.Join(AppDataDirectory(), RecallPathPrefix, source)
 	return path
 }
 
 func RecallFilePath(source, language string) string {
-	path := filepath.Join(NFSRootDirectory(), RecallPathPrefix, source, fmt.Sprintf("%s.recall", language))
+	path := filepath.Join(AppDataDirectory(), RecallPathPrefix, source, fmt.Sprintf("%s.recall", language))
 	return path
 }
 
