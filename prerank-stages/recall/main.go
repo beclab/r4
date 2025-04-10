@@ -198,15 +198,15 @@ func main() {
 	startTimestamp := int64(time.Now().UTC().Unix())
 
 	syncKey := common.GetSyncProvider() + common.GetSyncFeedName() + "_" + common.GetSyncModelName()
-	lastSyncTimeStr, _ := api.GetRedisConfig(syncKey, "last_sync_time").(string)
+	lastSyncTimeStr, _ := api.GetRedisConfig("sync", syncKey, "last_sync_time").(string)
 	if lastSyncTimeStr == "" {
 		common.Logger.Info("sync data is not end no execute", zap.String("syncKey:", syncKey))
 		return
 	}
 
-	lastRecallTimeStr, _ := api.GetRedisConfig(source, "last_recall_time").(string)
+	lastRecallTimeStr, _ := api.GetRedisConfig(common.GetBflUser(), source, "last_recall_time").(string)
 	lastRecallTime, _ := strconv.ParseInt(lastRecallTimeStr, 10, 64)
-	lastRecallExecTimeStr, _ := api.GetRedisConfig(source, "last_recall_exec_time").(string)
+	lastRecallExecTimeStr, _ := api.GetRedisConfig(common.GetBflUser(), source, "last_recall_exec_time").(string)
 	lastRecallExecTime, _ := strconv.ParseInt(lastRecallExecTimeStr, 10, 64)
 	if lastRecallExecTimeStr != "" && startTimestamp < lastRecallExecTime+60*60 {
 		common.Logger.Info("recall is end no execute", zap.String("source:", source), zap.String("last recall exec time:", lastRecallExecTimeStr), zap.Int64("now time:", startTimestamp))
@@ -214,7 +214,7 @@ func main() {
 	}
 	config := config.GetAlgorithmConfig()
 	recallEnvVersion := os.Getenv("RECALL_VERSION")
-	recallVersion, _ := api.GetRedisConfig(source, "RECALL_VERSION").(string)
+	recallVersion, _ := api.GetRedisConfig(common.GetBflUser(), source, "RECALL_VERSION").(string)
 
 	common.Logger.Info("recall  start", zap.String("sync finish time:", lastSyncTimeStr), zap.Int64("start time:", lastRecallTime), zap.Int("recall item:", config.RecallItemNum))
 

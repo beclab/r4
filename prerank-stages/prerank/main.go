@@ -131,9 +131,9 @@ func main() {
 	common.Logger.Info("prerank  start...1")
 	source := common.GetAlgorithmSource()
 
-	lastRecallTimeStr, _ := api.GetRedisConfig(source, "last_recall_time").(string)
+	lastRecallTimeStr, _ := api.GetRedisConfig(common.GetBflUser(), source, "last_recall_time").(string)
 	lastRecallTime, _ := strconv.ParseInt(lastRecallTimeStr, 10, 64)
-	lastPrerankTimeStr, _ := api.GetRedisConfig(source, "last_prerank_time").(string)
+	lastPrerankTimeStr, _ := api.GetRedisConfig(common.GetBflUser(), source, "last_prerank_time").(string)
 	lastPrerankTime, _ := strconv.ParseInt(lastPrerankTimeStr, 10, 64)
 	if lastRecallTime < lastPrerankTime || lastRecallTimeStr == "" {
 		common.Logger.Info("prerank is end no execute", zap.String("source:", source), zap.String("last recall time:", lastRecallTimeStr), zap.String("last prerank time:", lastPrerankTimeStr))
