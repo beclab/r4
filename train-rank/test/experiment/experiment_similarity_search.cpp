@@ -326,9 +326,9 @@ int main()
     // The input is a sqlite db path, a folder path storing user summary embeddings, and an experiment output path
 
     // Read all summary embeddings from the path storing summary embeddings, store them in a map where the key is the summary id and the value is a vector<float> representing the summary embedding
-    std::string embedding_directory = "/opt/data/process_result_huoshan_v3_zh_embedding";
+    std::string embedding_directory = "/opt/data/process_result_gemi3_27b_zh_embedding";
     std::string db_path = "/opt/data/zhcn.db";
-    std::string summary_directory = "/opt/data/process_result_huoshan_v3_zh";
+    std::string summary_directory = "/opt/data/process_result_gemi3_27b";
     std::string output_path = "/opt/data/experiment_3.xlsx";
     std::vector<std::string> queried_keys;
     FAISSArticleSearch *faiss_search = nullptr;

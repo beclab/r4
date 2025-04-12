@@ -15,8 +15,8 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 WORKDIR /userembedding
 COPY user-embedding/src  /userembedding/src
 COPY user-embedding/Cargo.toml /userembedding/Cargo.toml
-RUN cargo build --release 
-RUN  /userembedding/target/release/downloadmodel
+RUN cargo build --release  
+# RUN  /userembedding/target/release/downloadmodel  # temp removed 
 
 
 

@@ -57,6 +57,8 @@ namespace knowledgebase
     static const char LAST_EXTRACTOR_TIME[] = "last_extractor_time";
     // static const char LONG_TERM_USER_EMBEDDING[] = "user_embedding";
     static const char REDIS_KEY_RECALL_USER_EMBEDDING[] = "user_embedding";
+    static const char X_BFL_USER_HEADER[] = "X-Bfl-User";
+    static const char BFL_USER_ENV_NAME[] = "BFL_USER";
 
     bool updateAlgorithmScoreAndRanked(const std::string &entry_id,
                                        float rank_score, bool ranked);
