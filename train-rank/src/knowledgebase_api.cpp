@@ -1963,7 +1963,15 @@ namespace knowledgebase
     LOG(DEBUG) << "current_userembedding_api_prefix " << current_user_embedding_api_suffix
                << std::endl;
     std::string source = embedding.source;
-    client.request(methods::POST, U(current_user_embedding_api_suffix), value)
+
+    http_request req(methods::POST);
+    req.set_request_uri(U(current_user_embedding_api_suffix));
+    std::string blf_user_env_value = getEnvString(BFL_USER_ENV_NAME, "");
+    req.headers()
+        .add(U(X_BFL_USER_HEADER), U(blf_user_env_value));
+    req.set_body(value);
+    // client.request(methods::POST, U(current_user_embedding_api_suffix), value)
+    client.request(req)
         .then([source](http_response response) -> pplx::task<string_t>
               {
         LOG(DEBUG) << "create user embedding status_code "
