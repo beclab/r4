@@ -1071,7 +1071,14 @@ namespace knowledgebase
     uri_builder builder(U(current_config_api_suffix));
 
     std::string value;
-    client.request(methods::GET, builder.to_string())
+    http_request req(methods::GET);
+    req.set_request_uri(U(current_config_api_suffix));
+    std::string blf_user_env_value = getEnvString(BFL_USER_ENV_NAME, "");
+    req.headers()
+        .add(U(X_BFL_USER_HEADER), U(blf_user_env_value));
+
+    // client.request(methods::GET, builder.to_string())
+    client.request(req)
         .then([](http_response response) -> pplx::task<web::json::value>
               {
         if (response.status_code() == status_codes::OK) {
@@ -1113,7 +1120,16 @@ namespace knowledgebase
 
     // Impression current_impression;
     int64_t last_extractor_time = -1;
-    client.request(methods::GET, builder.to_string())
+
+    std::string value;
+    http_request req(methods::GET);
+    req.set_request_uri(U(builder.to_string()));
+    std::string blf_user_env_value = getEnvString(BFL_USER_ENV_NAME, "");
+    req.headers()
+        .add(U(X_BFL_USER_HEADER), U(blf_user_env_value));
+
+    // client.request(methods::GET, builder.to_string())
+    client.request(req)
         .then([](http_response response) -> pplx::task<web::json::value>
               {
         if (response.status_code() == status_codes::OK) {
@@ -1157,7 +1173,15 @@ namespace knowledgebase
     uri_builder builder(U(current_config_api_suffix));
 
     vector<double> long_term_user_embedding;
-    client.request(methods::GET, builder.to_string())
+
+    std::string value;
+    http_request req(methods::GET);
+    req.set_request_uri(U(builder.to_string()));
+    std::string blf_user_env_value = getEnvString(BFL_USER_ENV_NAME, "");
+    req.headers()
+        .add(U(X_BFL_USER_HEADER), U(blf_user_env_value));
+    // client.request(methods::GET, builder.to_string())
+    client.request(req)
         .then([](http_response response) -> pplx::task<web::json::value>
               {
         if (response.status_code() == status_codes::OK) {
@@ -1203,7 +1227,16 @@ namespace knowledgebase
 
     // Impression current_impression;
     int64_t last_rank_time = -1;
-    client.request(methods::GET, builder.to_string())
+
+    std::string value;
+    http_request req(methods::GET);
+    req.set_request_uri(U(builder.to_string()));
+    std::string blf_user_env_value = getEnvString(BFL_USER_ENV_NAME, "");
+    req.headers()
+        .add(U(X_BFL_USER_HEADER), U(blf_user_env_value));
+
+    // client.request(methods::GET, builder.to_string())
+    client.request(req)
         .then([](http_response response) -> pplx::task<web::json::value>
               {
         if (response.status_code() == status_codes::OK) {
@@ -2011,7 +2044,14 @@ namespace knowledgebase
     LOG(DEBUG) << "current_config_api_suffix " << current_config_api_suffix
                << std::endl;
 
-    client.request(methods::POST, U(current_config_api_suffix), value)
+    http_request req(methods::POST);
+    req.set_request_uri(U(current_config_api_suffix));
+    std::string blf_user_env_value = getEnvString(BFL_USER_ENV_NAME, "");
+    req.headers()
+        .add(U(X_BFL_USER_HEADER), U(blf_user_env_value));
+    req.set_body(value);
+    // client.request(methods::POST, U(current_config_api_suffix), value)
+    client.request(req)
         .then([source, key](http_response response) -> pplx::task<string_t>
               {
         LOG(DEBUG) << "update source [" << source << "]   key [" << key << "] "
