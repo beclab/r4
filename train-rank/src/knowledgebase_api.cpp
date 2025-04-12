@@ -992,7 +992,14 @@ namespace knowledgebase
 
     uri_builder builder(U(current_impression_api_suffix));
 
-    client.request(methods::GET, builder.to_string())
+    http_request req(methods::GET);
+    req.set_request_uri(U(builder.to_string()));
+    std::string blf_user_env_value = getEnvString(BFL_USER_ENV_NAME, "");
+    req.headers()
+        .add(U(X_BFL_USER_HEADER), U(blf_user_env_value));
+
+    // client.request(methods::GET, builder.to_string())
+    client.request(req)
         .then([](http_response response) -> pplx::task<web::json::value>
               {
         if (response.status_code() == status_codes::OK) {
@@ -1297,7 +1304,14 @@ namespace knowledgebase
     // Impression current_impression;
     std::optional<Impression> option_impression = std::nullopt;
 
-    client.request(methods::GET, builder.to_string())
+    http_request req(methods::GET);
+    req.set_request_uri(U(builder.to_string()));
+    std::string blf_user_env_value = getEnvString(BFL_USER_ENV_NAME, "");
+    req.headers()
+        .add(U(X_BFL_USER_HEADER), U(blf_user_env_value));
+
+    // client.request(methods::GET, builder.to_string())
+    client.request(req)
         .then([](http_response response) -> pplx::task<web::json::value>
               {
         if (response.status_code() == status_codes::OK) {
@@ -1361,7 +1375,14 @@ namespace knowledgebase
     // Impression current_impression;
     std::optional<Impression> option_impression = std::nullopt;
 
-    client.request(methods::GET, builder.to_string())
+    http_request req(methods::GET);
+    req.set_request_uri(U(builder.to_string()));
+    std::string blf_user_env_value = getEnvString(BFL_USER_ENV_NAME, "");
+    req.headers()
+        .add(U(X_BFL_USER_HEADER), U(blf_user_env_value));
+
+    // client.request(methods::GET, builder.to_string())
+    client.request(req)
         .then([](http_response response) -> pplx::task<web::json::value>
               {
         if (response.status_code() == status_codes::OK) {
