@@ -28,7 +28,7 @@ jobs:
                 platforms: linux/amd64
 
     publish_dockerhub_arm64:
-        runs-on: [linux-arm64-utuntu22.04-4core-16g]
+        runs-on: [self-hosted, linux, ARM64]
         steps:
             - name: Check out the repo
               uses: actions/checkout@v3
