@@ -164,6 +164,10 @@ RUN cd /opt/rss-terminus-v2-rank && \
 
 FROM ubuntu:jammy
 # FROM alpine
+RUN apt-get update && \
+    apt install sudo -y && \
+    apt update && \
+    apt install postgresql-client -y
 
 
 COPY --from=builder /usr/local/bin/bertv2rank /usr/local/bin/bertv2rank
