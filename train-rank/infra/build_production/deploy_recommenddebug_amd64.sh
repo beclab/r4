@@ -1,0 +1,1 @@
+docker run --name temp_recommend_develop   --net=host -d beclab/recommenddebug
