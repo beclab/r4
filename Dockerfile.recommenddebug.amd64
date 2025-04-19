@@ -147,6 +147,17 @@ RUN cd /opt && \
     make && \
     make install
 
+RUN  apt-get install  libsqlite3-dev && \
+    cd /opt && \
+    git clone https://github.com/SRombauts/SQLiteCpp.git && \
+    cd SQLiteCpp && \
+    git submodule init && \
+    git submodule update && \
+    mkdir build && cd build && \
+    cmake .. && \
+    make -j$(nproc) && \
+    make install
+
 
 
 ADD train-rank/src /opt/rss-terminus-v2-rank/src
@@ -168,12 +179,23 @@ FROM ubuntu:jammy
 # FROM alpine
 RUN apt-get update && \
     apt install sudo -y && \
+    apt install wget -y && \
+    apt install gnupg -y && \
+    echo "deb http://apt.postgresql.org/pub/repos/apt jammy-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list && \
+    wget -qO - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && \
     apt update && \
-    apt install postgresql-client -y
+    apt install postgresql-client-16 -y && \
+    wget "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -O "awscliv2.zip" && \
+    apt update && sudo apt install unzip -y && \
+    unzip awscliv2.zip && \
+    ./aws/install
+
+# pg_dump postgres://myuser:mysecretpassword@127.0.0.1:5434/mydatabase > mydatabase_dump.sql export data
 
 COPY --from=builder /usr/local/bin/bertv2rank /usr/local/bin/bertv2rank
 COPY --from=builder /usr/local/bin/parameter_tune_tool /usr/local/bin/parameter_tune_tool
 COPY --from=builder /usr/local/bin/dump_traceinfo_tool /usr/local/bin/dump_traceinfo_tool
+ADD train-rank/infra/build_production/concat_url.sh /root/concat_url.sh
 
 COPY  --from=builder /usr/local/lib/libmongocxx.so._noabi /usr/local/lib/libmongocxx.so._noabi
 COPY  --from=builder /usr/local/lib/libbsoncxx.so._noabi  /usr/local/lib/libbsoncxx.so._noabi
