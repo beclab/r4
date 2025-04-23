@@ -1125,6 +1125,7 @@ namespace knowledgebase
     http_request req(methods::GET);
     req.set_request_uri(U(builder.to_string()));
     std::string blf_user_env_value = getEnvString(BFL_USER_ENV_NAME, "");
+    LOG(DEBUG) << "blf_user_env_value " << blf_user_env_value << std::endl;
     req.headers()
         .add(U(X_BFL_USER_HEADER), U(blf_user_env_value));
 
@@ -1148,9 +1149,12 @@ namespace knowledgebase
           }
           LOG(DEBUG) << "code " << code << " message " << message << std::endl;
           if (v.has_string_field("data")) {
-            std::string last_rankt_time_data = v.at("data").as_string();
-            convertStringTimestampToInt64(last_rankt_time_data,
+            std::string last_extractor_time_data = v.at("data").as_string();
+            LOG(DEBUG) << "last_extractor_time_data_str " << last_extractor_time_data
+                       << std::endl;
+            convertStringTimestampToInt64(last_extractor_time_data,
                                           &last_extractor_time);
+            LOG(DEBUG) << "compelete last_extractor_time " << last_extractor_time << std::endl;
           }
         } catch (http_exception const &e) {
           LOG(ERROR) << "Error exception " << e.what() << std::endl;
