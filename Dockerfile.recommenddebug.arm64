@@ -186,12 +186,14 @@ RUN apt-get update && \
     wget "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -O "awscliv2.zip" && \
     apt update && sudo apt install unzip -y && \
     unzip awscliv2.zip && \
-    ./aws/install
+    ./aws/install && \
+    apt install redis-tools -y 
 
 COPY --from=builder /usr/local/bin/bertv2rank /usr/local/bin/bertv2rank
 COPY --from=builder /usr/local/bin/parameter_tune_tool /usr/local/bin/parameter_tune_tool
 COPY --from=builder /usr/local/bin/dump_traceinfo_tool /usr/local/bin/dump_traceinfo_tool
 ADD train-rank/infra/build_production/concat_url.sh /root/concat_url.sh
+ADD train-rank/infra/build_production/concat_redis_url.sh /root/concat_redis_url.sh
 
 
 COPY  --from=builder /usr/local/lib/libmongocxx.so._noabi /usr/local/lib/libmongocxx.so._noabi

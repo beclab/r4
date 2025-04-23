@@ -172,7 +172,7 @@ TEST(KnowledgeApiTest, TestUpdateLastExtractorTime)
   // --gtest_filter=KnowledgeApiTest.TestUpdateLastExtractorTime
   initDevelop();
   init_log();
-  knowledgebase::updateLastExtractorTime("r4world", 1711080229);
+  knowledgebase::updateLastExtractorTime("r4business", 1711080229);
 }
 
 TEST(KnowledgeApiTest, TestGetLastRankTime)
@@ -189,7 +189,7 @@ TEST(KnowledgeApiTest, TestGetLastExtractTime)
   // --gtest_filter=KnowledgeApiTest.TestGetLastExtractTime
   initDevelop();
   init_log();
-  int64_t last_extractor_time = knowledgebase::getLastExtractorTime("bert_v2");
+  int64_t last_extractor_time = knowledgebase::getLastExtractorTime("_r4business");
   std::cout << "last_extractor_time " << last_extractor_time << std::endl;
 }
 
