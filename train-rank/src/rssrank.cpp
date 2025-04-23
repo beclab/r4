@@ -1093,8 +1093,11 @@ namespace rssrank
       {
         LOG(INFO) << "Algorithm [" << pr.first << "] score [" << pr.second << "]" << std::endl;
       }
-      // std::cout << "max " << sorted_algorithm_to_score[0].second << " min " << sorted_algorithm_to_score[sorted_algorithm_to_score.size() - 1].second << std::endl;
-    }
+      if (sorted_algorithm_to_score.size() > 0)
+      {
+        std::cout << "Algorithm [" << sorted_algorithm_to_score[0].first << "] max score [" << sorted_algorithm_to_score[0].second << "]" << std::endl;
+      }
+        }
 
     if (FLAGS_upload_score)
     {
