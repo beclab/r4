@@ -189,7 +189,7 @@ TEST(KnowledgeApiTest, TestGetLastExtractTime)
   // --gtest_filter=KnowledgeApiTest.TestGetLastExtractTime
   initDevelop();
   init_log();
-  int64_t last_extractor_time = knowledgebase::getLastExtractorTime("_r4business");
+  int64_t last_extractor_time = knowledgebase::getLastExtractorTime("r4business");
   std::cout << "last_extractor_time " << last_extractor_time << std::endl;
 }
 

@@ -1038,6 +1038,7 @@ namespace rssrank
     int embedding_dimension = getCurrentEmbeddingDimension();
     std::vector<double> recall_user_embedding = knowledgebase::init_user_embedding(embedding_dimension);
     knowledgebase::updateRecallUserEmbedding(current_srouce_name, recall_user_embedding, current_rank_time);
+
     for (const auto &current_item : not_impressioned_algorithm_to_entry)
     {
       std::optional<Entry> temp_entry =
@@ -1080,6 +1081,11 @@ namespace rssrank
 
     std::sort(algorithm_integer_id_to_score.begin(), algorithm_integer_id_to_score.end(), [](const std::pair<int, double> &a, const std::pair<int, double> &b)
               { return a.second > b.second; });
+
+    if (id_to_score_with_meta.size() == 0)
+    {
+      LOG(ERROR) << "rankByTimeForColdStart no algorithm to rank" << std::endl;
+    }
     if (FLAGS_verbose)
     {
       std::vector<std::pair<std::string, float>> sorted_algorithm_to_score = knowledgebase::rankScoreMetadata(id_to_score_with_meta);
@@ -1087,8 +1093,12 @@ namespace rssrank
       {
         LOG(INFO) << "Algorithm [" << pr.first << "] score [" << pr.second << "]" << std::endl;
       }
-      std::cout << "max " << sorted_algorithm_to_score[0].second << " min " << sorted_algorithm_to_score[sorted_algorithm_to_score.size() - 1].second << std::endl;
-    }
+      if (sorted_algorithm_to_score.size() > 0)
+      {
+        std::cout << "Algorithm [" << sorted_algorithm_to_score[0].first << "] max score [" << sorted_algorithm_to_score[0].second << "]" << std::endl;
+      }
+        }
+
     if (FLAGS_upload_score)
     {
       LOG(INFO) << "score with metadata update to knowledge " << std::endl;
