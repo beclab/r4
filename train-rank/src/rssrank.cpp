@@ -1030,6 +1030,8 @@ namespace rssrank
 
     std::unordered_map<std::string, std::string> not_impressioned_algorithm_to_entry =
         getNotImpressionedAlgorithmToEntry();
+    LOG(INFO) << "rankByTimeForColdStart not_impressioned_algorithm_to_entry size "
+              << not_impressioned_algorithm_to_entry.size() << std::endl;
     std::unordered_map<std::string, ScoreWithMetadata> id_to_score_with_meta;
     std::vector<int> not_impressioned_algorithm_integer_ids;
     std::vector<pair<int, double>> algorithm_integer_id_to_score;
@@ -1115,7 +1117,7 @@ namespace rssrank
       return false;
     }
     long long current_rank_time = getTimeStampNow();
-    std::string current_srouce_name = envOrBlank("TERMINUS_RECOMMEND_SOURCE_NAME");
+    std::string current_srouce_name = envOrBlank(TERMINUS_RECOMMEND_SOURCE_NAME);
     if (FLAGS_recommend_source_name.size() == 0)
     {
       LOG(ERROR) << "recommend_source_name not provided." << std::endl;

@@ -1,0 +1,31 @@
+        - name: recommend-debug
+          image: beclab/recommenddebug:v0.0.35
+          env:
+            - name: SEARCH_URL
+              value: 'http://search3.os-system:80'
+            - name: REDIS_PASSWORD
+              value: NFXdDoDTF8i95vk8
+            - name: REDIS_ADDR
+              value: redis-cluster-proxy.os-system
+            - name: PG_USERNAME
+              value: knowledge_os_system
+            - name: PG_PASSWORD
+              value: odITYOCEjqIkzxhl
+            - name: PG_HOST
+              value: citus-headless.os-system
+            - name: PG_PORT
+              value: '5432'
+            - name: PG_DATABASE
+              value: os_system_knowledge
+            - name: DOWNLOAD_URL
+              value: 'http://download-svc.os-system:3080'
+          volumeMounts:
+            - name: userspace-dir
+              mountPath: /data
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+        
